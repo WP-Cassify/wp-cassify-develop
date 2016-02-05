@@ -21,6 +21,16 @@ XPath Query to parse cas server xml response, user attributes you want to popula
 
 https://wpcassify.wordpress.com/
 
+= Features included =
+
+* Authorization rule editor
+* Automatic user creation if not exist in Wordpress database
+* You can customize CAS Ticket parsing thanks to XPath Query
+* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
+* Manage URL White List to bypass CAS Authentication on certain pages
+* Network activation allowed
+* You can set logout URL. This perform a logout redirection avec CAS Logout.
+
 == Installation ==
 
 This section describes how to install the plugin and get it working.
@@ -53,19 +63,7 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 = 1.0 =
 * First version.
 
+= 1.2 =
+* Multisite configuration possible if network activated.
+
 == Upgrade Notice ==
-
-== Arbitrary section ==
-
-== Features included ==
-
-* Authorization rule editor
-* Automatic user creation if not exist in Wordpress database
-* You can customize CAS Ticket parsing thanks to XPath Query
-* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
-* Manage URL White List to bypass CAS Authentication on certain pages
-* Network activation allowed
-* You can set logout URL. This perform a logout redirection avec CAS Logout.
-
-Here's a link to [WordPress](http://wordpress.org/ "Your favorite software") and one to [Markdown's Syntax Documentation][markdown syntax].
-Titles are optional, naturally.

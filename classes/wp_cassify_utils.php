@@ -148,7 +148,7 @@ class WP_Cassify_Utils {
 	 * Process http redirection.
 	 * @param string redirect_url
 	 */ 
-	public function wp_cassify_redirect_url( $redirect_url ) {
+	public static function wp_cassify_redirect_url( $redirect_url ) {
 		
 		// Perform redirection only if url is valid.
 		if ( filter_var( $redirect_url, FILTER_VALIDATE_URL ) ) {
@@ -158,7 +158,27 @@ class WP_Cassify_Utils {
 		else {
 			die( 'Redirect URL is not valid !');
 		}	
-	}	
+	}
+        
+        /**
+         * Get plugin option according to activation plugin level
+         * @param bool $network_activated
+         * @param string $option_name
+         * @return $wp_cassify_plugin_option;
+         */
+        public static function wp_cassify_get_option( $network_activated, $option_name ) {
+            
+            $wp_cassify_plugin_option = '';
+            
+            if ( $network_activated ) {
+                $wp_cassify_plugin_option = get_site_option( $option_name );
+            }
+            else {
+                $wp_cassify_plugin_option = get_option( $option_name );
+            }
+            
+            return $wp_cassify_plugin_option;
+        }
 }
 
 ?>
