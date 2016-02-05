@@ -18,6 +18,7 @@ if (! function_exists( 'get_plugin_data' )) {
 
 $wp_cassify_plugin_datas = get_plugin_data( __FILE__ );
 $wp_cassify_plugin_directory = plugin_dir_url( __FILE__ ); 
+$wp_cassify_network_activated = FALSE;
 
 include( plugin_dir_path( __FILE__ ) . 'config.php');
 include( plugin_dir_path( __FILE__ ) . 'classes/wp_cassify_utils.php');
@@ -33,16 +34,35 @@ register_deactivation_hook( __FILE__, 'wp_cassify_deactivation' );
 function wp_cassify_deactivation() {
 	
 	global $wp_cassify_plugin_options_list;
+        global $wp_cassify_network_activated;
 	
 	foreach ( $wp_cassify_plugin_options_list as $option ) {
-		delete_option( $option );
+            if ( $wp_cassify_network_activated ) {
+                delete_site_option( $option );
+            }
+            else {
+                delete_option( $option );
+            }
 	}  
+}
+
+/**
+ * Test if plugin is network activated.
+ * 
+ */
+if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+    require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+}
+
+if ( is_plugin_active_for_network( 'wp-cassify/wp-cassify.php' ) ) {
+    $wp_cassify_network_activated = TRUE;
 }
 
 $wp_cassify_admin_page = new \wp_cassify\WP_Cassify_Admin_Page();
 $wp_cassify_admin_page->init_parameters(
 		$wp_cassify_plugin_datas,
 		$wp_cassify_plugin_directory,
+                $wp_cassify_network_activated,
 		$wp_cassify_plugin_options_list,
 		$wp_cassify_default_login_servlet,
 		$wp_cassify_default_logout_servlet,
@@ -54,7 +74,8 @@ $wp_cassify_admin_page->init_parameters(
 );
 
 $GLOBALS['wp-cassify'] = new \wp_cassify\WP_Cassify_Plugin(); 
-$GLOBALS['wp-cassify']->init_parameters( 
+$GLOBALS['wp-cassify']->init_parameters(
+                $wp_cassify_network_activated,
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
 		$wp_cassify_default_redirect_parameter_name,
