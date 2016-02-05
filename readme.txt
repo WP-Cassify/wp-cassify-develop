@@ -1,5 +1,5 @@
 === Plugin Name ===
-Contributors: aaf
+Contributors: aaf017
 Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system
 Donate link: https://wpcassify.wordpress.com/
 Requires at least: 4.4
