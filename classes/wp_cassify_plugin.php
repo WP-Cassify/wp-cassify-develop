@@ -2,8 +2,8 @@
 namespace wp_cassify;
 
 class WP_Cassify_Plugin {
-
-        public $wp_cassify_network_activated;
+	
+	public $wp_cassify_network_activated;
     
 	public $wp_cassify_default_xpath_query_to_extact_cas_user;
 	public $wp_cassify_default_xpath_query_to_extact_cas_attributes;
@@ -48,7 +48,7 @@ class WP_Cassify_Plugin {
 	}
 	
 	public function init_parameters(
-                $wp_cassify_network_activated,
+        $wp_cassify_network_activated,
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
 		$wp_cassify_default_redirect_parameter_name,
@@ -139,7 +139,8 @@ class WP_Cassify_Plugin {
 		$wp_cassify_service_validate_servlet =  WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_service_validate_servlet' );
 		$wp_cassify_allow_deny_order = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_allow_deny_order' );
 		$wp_cassify_autorization_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_autorization_rules' ) );		
-		
+        $wp_cassify_user_role_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_role_rules' ) );
+
 		// Define default values if options values empty.
 		if ( empty( $wp_cassify_login_servlet ) ) {
 			$wp_cassify_login_servlet = $this->wp_cassify_default_login_servlet;
@@ -157,7 +158,7 @@ class WP_Cassify_Plugin {
 			$wp_cassify_ssl_cipher_selected = $wp_cassify_ssl_cipher;
 		}
 		else {
-			$wp_cassify_ssl_cipher_selected = "1";
+			$wp_cassify_ssl_cipher_selected = '1';
 		}
 		
 		if ( empty( $wp_cassify_allow_deny_order ) ) {
@@ -183,10 +184,15 @@ class WP_Cassify_Plugin {
 					$this->wp_cassify_default_service_ticket_parameter_name . '=' . $service_ticket . '&' .
 					$this->wp_cassify_default_service_service_parameter_name .'=' . $service_url;				
 					
-				$cas_server_xml_response = WP_Cassify_Utils::wp_cassify_do_ssl_web_request( $service_validate_url, 
-					$wp_cassify_ssl_cipher_selected );
+				$cas_server_xml_response = WP_Cassify_Utils::wp_cassify_do_ssl_web_request( 
+					$service_validate_url, 
+					$wp_cassify_ssl_cipher_selected 
+				);
 					
-				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response, $wp_cassify_attributes_list );
+				$cas_user_datas = $this->wp_cassify_parse_xml_response( 
+					$cas_server_xml_response, 
+					$wp_cassify_attributes_list 
+				);
 
 				if ( count( $wp_cassify_autorization_rules ) > 0 ) {
 					$this->wp_cassify_separate_rules( $wp_cassify_autorization_rules );
@@ -203,6 +209,22 @@ class WP_Cassify_Plugin {
 				// Create wordpress user account if not exist
 				if ( $wp_cassify_create_user_if_not_exist == 'create_user_if_not_exist' ) {
 					WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], NULL );
+				}
+				
+				// Set wordpress user roles if defined in plugin admin settings
+				if ( ( is_array( $wp_cassify_user_role_rules ) ) && ( count( $wp_cassify_user_role_rules ) > 0 ) ) {
+					foreach ( $wp_cassify_user_role_rules as $wp_cassify_user_role_rule ) {
+						$wp_cassify_user_role_rule_parts = explode( '|', $wp_cassify_user_role_rule );
+						
+						if ( ( is_array( $wp_cassify_user_role_rule_parts ) ) && ( count( $wp_cassify_user_role_rule_parts ) == 2 ) ) {
+							$wp_cassify_user_role_key = $wp_cassify_user_role_rule_parts[0];
+							$wp_cassify_user_role_rule_expression = stripslashes( $wp_cassify_user_role_rule_parts[1] );
+
+							if ( $this->is_user_role_allowed( $cas_user_datas, $wp_cassify_user_role_rule_expression ) ) {
+								WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $wp_cassify_user_role_key );		
+							}
+						}
+					}
 				}
 				
 				// Auth user into wordpress
@@ -441,15 +463,17 @@ class WP_Cassify_Plugin {
 				$query_cas_attributes = $wp_cassify_xpath_query_to_extact_cas_attributes;
 				$cas_user_attributes = $xpath->query( $query_cas_attributes );
 				
-				foreach ( $cas_user_attributes as $cas_user_attribute ) {
-					if ( ( $cas_user_attribute->hasAttribute( 'name' ) && ( $cas_user_attribute->hasAttribute( 'value' ) ) ) ) {
+				if ( $cas_user_attributes->length > 0) {
+					$cas_user_attributes_items = $cas_user_attributes->item(0);
+					
+					foreach ( $cas_user_attributes_items->childNodes as $cas_user_attributes_item ) {
 						foreach ( $cas_user_attributes_names  as $cas_user_attributes_name ) {
-							if ( $cas_user_attribute->getAttribute( 'name' ) == $cas_user_attributes_name ) {
-								$cas_user_datas[ $cas_user_attribute->getAttribute( 'name' )] = $cas_user_attribute->getAttribute( 'value' );
+							if ( $cas_user_attributes_item->nodeName == 'cas:' . $cas_user_attributes_name ) {
+								$cas_user_datas[ $cas_user_attributes_item->nodeName ] = $cas_user_attributes_item->nodeValue;
 							}
 						}
 					}
-				}	
+				}
 			}
 		}
 
@@ -499,8 +523,7 @@ class WP_Cassify_Plugin {
 		 
 		 return $is_in_while_list;
 	 } 
-	
-	
+
 	/**
 	 * Check if user is allow to connect according to autorization rules.
 	 * @param array $cas_user_datas
@@ -577,5 +600,31 @@ class WP_Cassify_Plugin {
 
 		return $is_user_allowed;
 	}
+	
+	/**
+	 * Check if user is matched by Conditionnal User Role Rule
+	 * @param array $cas_user_datas
+	 * @param string $wp_cassify_user_role_rule
+	 * @return $is_user_role_allowed
+	 */ 
+	private function is_user_role_allowed( $cas_user_datas = array(), $wp_cassify_user_role_rule ) {
+
+		$is_user_role_allowed = FALSE;
+
+		$solver = new \wp_cassify\wp_cassify_rule_solver();
+
+		$solver->match_first_level_parenthesis_group_pattern = $this->wp_cassify_match_first_level_parenthesis_group_pattern;
+		$solver->match_second_level_parenthesis_group_pattern = $this->wp_cassify_match_second_level_parenthesis_group_pattern;
+		$solver->match_cas_variable_pattern = $this->wp_cassify_match_cas_variable_pattern;
+		$solver->allowed_operators = $this->wp_cassify_allowed_operators;
+		$solver->operator_prefix = $this->wp_cassify_operator_prefix;
+		$solver->allowed_parenthesis = $this->wp_cassify_allowed_parenthesis;
+		$solver->error_messages = $this->wp_cassify_error_messages;
+		$solver->cas_user_datas = $cas_user_datas;
+
+		$is_user_role_allowed = $solver->solve( $wp_cassify_user_role_rule );
+
+		return $is_user_role_allowed;
+	}	
 }
 ?>
