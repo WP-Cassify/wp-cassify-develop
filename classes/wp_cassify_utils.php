@@ -129,10 +129,12 @@ class WP_Cassify_Utils {
 	 * Create wordpress user account if not exist.
 	 * @param string $cas_user_id
 	 * @param string $cas_user_email_attribute_value
+	 * @return wp_user_id
 	 */ 
 	public static function wp_cassify_create_wordpress_user( $cas_user_id, $cas_user_email_attribute_value ) {
 
 		$user_email = NULL;
+		$wp_user_id = 0;
 
 		if (! username_exists( $cas_user_id ) ) {
 			if ( (! empty( $cas_user_email_attribute_value ) ) && ( email_exists( $cas_user_email_attribute_value ) == FALSE ) ) {
@@ -140,10 +142,43 @@ class WP_Cassify_Utils {
 			}
 			
 			$random_password = wp_generate_password( $length=12, $include_standard_special_chars=false );
-			$user_id = wp_create_user( $cas_user_id, $random_password, $user_email );
+			$wp_user_id = wp_create_user( $cas_user_id, $random_password, $user_email );
 		}
-	}	
+		
+		return $wp_user_id;
+	}
 	
+	/**
+	 * Set role to an existing Wordpress user
+	 * @param string $wordpress_user_login
+	 * @param string $role_key
+	 * @return $wp_user_role_updated
+	 */ 
+	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
+		
+		$wp_user_role_updated = FALSE;
+		$wp_user = get_user_by( 'login', $wordpress_user_login );
+		
+		if ( $wp_user != FALSE ) {
+			$wp_user->set_role( $role_key );
+			$wp_user_role_updated = TRUE;
+		}
+
+		return $wp_user_role_updated;
+	}
+	
+    /**
+     * Return array with Wordpress user roles.
+     * @return $wordpress_roles;
+     */
+    public static function wp_cassify_get_wordpress_roles_names() {
+        
+		$wp_roles = new \WP_Roles();
+		$wordpress_roles = $wp_roles->get_names();
+		
+		return $wordpress_roles;
+    }
+    	
 	/**
 	 * Process http redirection.
 	 * @param string redirect_url
@@ -160,25 +195,25 @@ class WP_Cassify_Utils {
 		}	
 	}
         
-        /**
-         * Get plugin option according to activation plugin level
-         * @param bool $network_activated
-         * @param string $option_name
-         * @return $wp_cassify_plugin_option;
-         */
-        public static function wp_cassify_get_option( $network_activated, $option_name ) {
-            
-            $wp_cassify_plugin_option = '';
-            
-            if ( $network_activated ) {
-                $wp_cassify_plugin_option = get_site_option( $option_name );
-            }
-            else {
-                $wp_cassify_plugin_option = get_option( $option_name );
-            }
-            
-            return $wp_cassify_plugin_option;
+    /**
+     * Get plugin option according to activation plugin level
+     * @param bool $network_activated
+     * @param string $option_name
+     * @return $wp_cassify_plugin_option;
+     */
+    public static function wp_cassify_get_option( $network_activated, $option_name ) {
+        
+        $wp_cassify_plugin_option = '';
+        
+        if ( $network_activated ) {
+            $wp_cassify_plugin_option = get_site_option( $option_name );
         }
+        else {
+            $wp_cassify_plugin_option = get_option( $option_name );
+        }
+        
+        return $wp_cassify_plugin_option;
+    }
 }
 
 ?>
