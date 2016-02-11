@@ -4,7 +4,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.4
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,15 +21,23 @@ XPath Query to parse cas server xml response, user attributes you want to popula
 
 https://wpcassify.wordpress.com/
 
+= Requirements =
+
+* Require php5-curl package
+* Require at least PHP version 5.3.10
+
 = Features included =
 
+* (New Feature !) Set conditionnal users roles
+* Tested with CAS Server version 4.1.4
+* Compatible with CAS Protocol version 2 and 3
 * Authorization rule editor
 * Automatic user creation if not exist in Wordpress database
-* You can customize CAS Ticket parsing thanks to XPath Query
-* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
+* Compatible with Wordpress Access Control Plugin
+* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session
 * Manage URL White List to bypass CAS Authentication on certain pages
 * Network activation allowed
-* You can set logout URL. This perform a logout redirection avec CAS Logout.
+* You can set logout URL. This perform a logout redirection avec CAS Logout
 
 == Installation ==
 
@@ -45,7 +53,7 @@ e.g.
 
 1. This is the basic options of the plugin.
 2. This is the authorization rule editor.
-3. You can edit the xpath query to parse cas ticket with custom structure. You can also define user attribute's you want to population into php session.
+3. This is the user role rule editor. Set users roles according CAS User Attributes.
 
 == Frequently Asked Questions ==
 
