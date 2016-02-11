@@ -2,14 +2,21 @@
 
 /**
  *	Default options values.
- */  
+ */
+ 
 $wp_cassify_default_login_servlet = 'login';
 $wp_cassify_default_logout_servlet = 'logout';
 $wp_cassify_default_service_validate_servlet = 'serviceValidate';
 $wp_cassify_default_wordpress_blog_http_port = '80';
 $wp_cassify_default_wordpress_blog_https_port = '443';
 $wp_cassify_default_xpath_query_to_extact_cas_user = '//cas:serviceResponse/cas:authenticationSuccess/cas:user';
-$wp_cassify_default_xpath_query_to_extact_cas_attributes  = '//cas:serviceResponse/cas:authenticationSuccess/cas:attribute';
+$wp_cassify_default_xpath_query_to_extact_cas_attributes  = '//cas:serviceResponse/cas:authenticationSuccess/cas:attributes';
+
+// CAS Protocol version
+$wp_cassify_default_protocol_version_values = array( 
+	'2' => '2',
+	'3' => '3'
+); 
 
 $wp_cassify_default_redirect_parameter_name = 'redirect_to';
 $wp_cassify_default_service_ticket_parameter_name = 'ticket';
@@ -27,6 +34,7 @@ $wp_cassify_default_allow_deny_order = array(
 
 $wp_cassify_plugin_options_list = array(
 	'wp_cassify_base_url',
+	'wp_cassify_protocol_version',
 	'wp_cassify_disable_authentication',
 	'wp_cassify_create_user_if_not_exist',
 	'wp_cassify_ssl_cipher',
@@ -39,6 +47,7 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_attributes_list',
 	'wp_cassify_allow_deny_order',
 	'wp_cassify_autorization_rules',
+	'wp_cassify_user_role_rules',
 	'wp_cassify_redirect_url_if_not_allowed',
 	'wp_cassify_redirect_url_white_list'
 );
