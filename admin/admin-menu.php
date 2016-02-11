@@ -12,7 +12,7 @@ class WP_Cassify_Admin_Page {
 	public $wp_cassify_default_login_servlet;
 	public $wp_cassify_default_logout_servlet;
 	public $wp_cassify_default_service_validate_servlet;
-	public $wp_cassify_default_ssl_cipher_values;
+	public $wp_cassify_default_ssl_cipher_values = array();
 	public $wp_cassify_default_xpath_query_to_extact_cas_user;
 	public $wp_cassify_default_xpath_query_to_extact_cas_attributes;
 	public $wp_cassify_default_allow_deny_order;
@@ -321,7 +321,7 @@ class WP_Cassify_Admin_Page {
 								<?php } ?>						
 							<?php } ?>
 						</select>
-						<br /><span class="description">Default value : <?php echo $wp_cassify_default_ssl_cipher_values["1"]; ?></span>
+						<br /><span class="description">Default value : <?php echo $wp_cassify_default_ssl_cipher_values[ '3' ]; ?></span>
 					</td>
 				</tr>	
 				<tr valign="top">
@@ -370,7 +370,7 @@ class WP_Cassify_Admin_Page {
 				<tr valign="top">
 					<th scope="row">Build authorizaton rules</th>
 					<td>
-						<span class="description">Example rule syntax (Refer to plugin documentation) : (CAS{cas_user_id} -EQ "m.brown") -AND (CAS{courriel} -CONTAINS "my-university.fr")</span>
+						<span class="description">Example rule syntax (Refer to plugin documentation) : (CAS{cas_user_id} -EQ "m.brown") -AND (CAS{email} -CONTAINS "my-university.fr")</span>
 					</td>
 				</tr>
 				<tr valign="top">
@@ -416,7 +416,7 @@ class WP_Cassify_Admin_Page {
 				<tr valign="top">
 					<th scope="row">Set Conditionnal Users Roles</th>
 					<td>
-						<span class="description">Example rule syntax (Refer to plugin documentation) : (CAS{cas_user_id} -EQ "m.brown") -AND (CAS{courriel} -CONTAINS "my-university.fr")</span>
+						<span class="description">Example rule syntax (Refer to plugin documentation) : (CAS{cas_user_id} -EQ "m.brown") -AND (CAS{email} -CONTAINS "my-university.fr")</span>
 					</td>
 				</tr>				
 				<tr valign="top">
