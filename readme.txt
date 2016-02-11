@@ -4,7 +4,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,7 +53,7 @@ e.g.
 
 1. This is the basic options of the plugin.
 2. This is the authorization rule editor.
-3. You can edit the xpath query to parse cas ticket with custom structure. You can also define user attribute's you want to population into php session.
+3. This is the user role rule editor. Set users roles according CAS User Attributes.
 
 == Frequently Asked Questions ==
 
