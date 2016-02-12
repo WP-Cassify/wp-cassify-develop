@@ -8,9 +8,13 @@ class WP_Cassify_Utils {
 	 * cas-user id and cas-user attributes.
 	 * @param string $url
 	 * @param string $ssl_cipher
-	 * @return string
+	 * @return string $response
 	 */ 
 	public static function wp_cassify_do_ssl_web_request( $url, $ssl_cipher ) {
+		
+		if (! function_exists ( 'curl_init' ) ) {
+			die( 'Please install php cURL library !');
+		}
 
 		$ch = curl_init();
 
@@ -21,18 +25,18 @@ class WP_Cassify_Utils {
 		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 1);
 		
 		//curl_setopt( $ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13' );
-		curl_setopt($ch, CURLOPT_SSLVERSION, $ssl_cipher);
+		curl_setopt( $ch, CURLOPT_SSLVERSION, $ssl_cipher );
 
 		if ( ( defined( 'WP_DEBUG' ) ) && ( WP_DEBUG == true ) ) {
-			curl_setopt($ch, CURLOPT_VERBOSE, true);
+			curl_setopt( $ch, CURLOPT_VERBOSE, true );
 		}
 		
-		$result = curl_exec( $ch );
+		$response = curl_exec( $ch );
 
-		if(curl_errno($ch))	{		
+		if( curl_errno( $ch ) )	{		
 			if ( ( defined( 'WP_DEBUG' ) ) && ( WP_DEBUG == true ) ) {
-				$info = curl_getinfo($ch);
-				die( 'Curl error: ' . curl_error($ch) . print_r($info, TRUE) );		
+				$info = curl_getinfo( $ch );
+				die( 'Curl error: ' . curl_error( $ch ) . print_r( $info, TRUE ) );		
 			}
 			else {
 				die( 'Curl error: active WP_DEBUG in wp-config.php');
@@ -41,25 +45,26 @@ class WP_Cassify_Utils {
 
 		curl_close( $ch );
 
-		return $result;
+		return $response;
 	}
 	
 	/**
 	 * Return the current url with parameters.
 	 * @param string $wp_cassify_default_wordpress_blog_http_port
 	 * @param string $wp_cassify_default_wordpress_blog_https_port
-	 * @return string
+	 * @return string $current_url
 	 */   
 	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port, $wp_cassify_default_wordpress_blog_https_port ) {
-		$current_url = (@$_SERVER["HTTPS"] == "on") ? "https://" : "http://";
-		$current_url .= $_SERVER["SERVER_NAME"];
+		
+		$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ) ? 'https://' : 'http://';
+		$current_url .= $_SERVER[ 'SERVER_NAME' ];
 	 
-		if( ( $_SERVER["SERVER_PORT"] != $wp_cassify_default_wordpress_blog_http_port ) && 
-			( $_SERVER["SERVER_PORT"] != $wp_cassify_default_wordpress_blog_https_port ) ) {
-			$current_url .= ":".$_SERVER["SERVER_PORT"];
+		if( ( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
+			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
+			$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
 		} 
 	 
-		$current_url .= $_SERVER["REQUEST_URI"];
+		$current_url .= $_SERVER[ 'REQUEST_URI' ];
 		
 		return $current_url;
 	}
@@ -68,15 +73,15 @@ class WP_Cassify_Utils {
 	 * Return value of a parameter passed in url with get method.
 	 * @param string $url
 	 * @param string $get_parameter_name
-	 * @return string
+	 * @return string $get_parameter_value
 	 */ 
 	public static function wp_cassify_extract_get_parameter( $url , $get_parameter_name ) {
 		
 		$get_parameter_value = NULL;
 		
-		$query = parse_url( $url , PHP_URL_QUERY);
+		$query = parse_url( $url , PHP_URL_QUERY );
 		
-		parse_str($query, $url_params);
+		parse_str( $query, $url_params );
 
 		if (! empty( $url_params[ $get_parameter_name ] ) ) {
 			$get_parameter_value = $url_params[ $get_parameter_name ];
@@ -88,7 +93,7 @@ class WP_Cassify_Utils {
 	/**
 	 * Return the left part of an URI
 	 * @param string $url
-	 * @return string
+	 * @return string $left_part_uri
 	 */ 
 	public static function wp_cassify_get_host_uri( $url ) {
 		
@@ -129,7 +134,7 @@ class WP_Cassify_Utils {
 	 * Create wordpress user account if not exist.
 	 * @param string $cas_user_id
 	 * @param string $cas_user_email_attribute_value
-	 * @return wp_user_id
+	 * @return object $wp_user_id
 	 */ 
 	public static function wp_cassify_create_wordpress_user( $cas_user_id, $cas_user_email_attribute_value ) {
 
@@ -152,7 +157,7 @@ class WP_Cassify_Utils {
 	 * Set role to an existing Wordpress user
 	 * @param string $wordpress_user_login
 	 * @param string $role_key
-	 * @return $wp_user_role_updated
+	 * @return bool $wp_user_role_updated
 	 */ 
 	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
 		
@@ -169,7 +174,7 @@ class WP_Cassify_Utils {
 	
     /**
      * Return array with Wordpress user roles.
-     * @return $wordpress_roles;
+     * @return array $wordpress_roles;
      */
     public static function wp_cassify_get_wordpress_roles_names() {
         

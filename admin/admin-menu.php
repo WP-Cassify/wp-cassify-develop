@@ -16,6 +16,7 @@ class WP_Cassify_Admin_Page {
 	public $wp_cassify_default_xpath_query_to_extact_cas_user;
 	public $wp_cassify_default_xpath_query_to_extact_cas_attributes;
 	public $wp_cassify_default_allow_deny_order;
+	public $wp_cassify_wordpress_user_meta_list;
         
     private static $wp_cassify_admin_page_slug = 'options-general.php';
     private static $wp_cassify_multisite_admin_page_slug = 'settings.php';
@@ -38,7 +39,8 @@ class WP_Cassify_Admin_Page {
 		$wp_cassify_default_ssl_cipher_values,
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
-		$wp_cassify_default_allow_deny_order
+		$wp_cassify_default_allow_deny_order,
+		$wp_cassify_wordpress_user_meta_list
 	) {
 		$this->wp_cassify_plugin_datas = $wp_cassify_plugin_datas;
 		$this->wp_cassify_plugin_directory = $wp_cassify_plugin_directory;
@@ -52,6 +54,7 @@ class WP_Cassify_Admin_Page {
 		$this->wp_cassify_default_xpath_query_to_extact_cas_user = $wp_cassify_default_xpath_query_to_extact_cas_user;
 		$this->wp_cassify_default_xpath_query_to_extact_cas_attributes = $wp_cassify_default_xpath_query_to_extact_cas_attributes;
 		$this->wp_cassify_default_allow_deny_order = $wp_cassify_default_allow_deny_order;
+		$this->wp_cassify_wordpress_user_meta_list = $wp_cassify_wordpress_user_meta_list;
 		
         // Add the actions
         if ( $this->wp_cassify_network_activated ) {
@@ -162,6 +165,8 @@ class WP_Cassify_Admin_Page {
                     $this->wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_role_rules' ); 
                     $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_if_not_allowed' ); 
                     $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_white_list' ); 
+                    
+                    $this->wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_attributes_mapping_list' ); 
 
                     // Empty cache when options are updated.
                     if (function_exists('w3tc_pgcache_flush')) {
@@ -254,7 +259,23 @@ class WP_Cassify_Admin_Page {
             else {
             	$wp_cassify_user_role_rules_selected = array();
             }
+            
+            $wp_cassify_user_attributes_mapping_list = unserialize( 
+                    WP_Cassify_Utils::wp_cassify_get_option( 
+                            $this->wp_cassify_network_activated, 
+                            'wp_cassify_user_attributes_mapping_list' 
+                    ) 
+            );
 
+            if ( ( is_array( $wp_cassify_user_attributes_mapping_list ) ) && ( count( $wp_cassify_user_attributes_mapping_list ) > 0 ) ) {
+                foreach ( $wp_cassify_user_attributes_mapping_list as $wp_cassify_user_attributes_mapping_key => $wp_cassify_user_attributes_mapping_value ) {
+                    $wp_cassify_user_attributes_mapping_list_selected[ $wp_cassify_user_attributes_mapping_value ] = $wp_cassify_user_attributes_mapping_value;  
+                }
+            }
+            else {
+            	$wp_cassify_user_attributes_mapping_list_selected = array();
+            }
+			
             $post_action_page = NULL;
             
             if ( $this->wp_cassify_network_activated ) {
@@ -414,6 +435,20 @@ class WP_Cassify_Admin_Page {
 					</td>
 				</tr>
 				<tr valign="top">
+					<th scope="row"><label for="wp_cassify_redirect_url_if_not_allowed">User not allowed redirect url</label></th>
+					<td>
+						<input type="text" id="wp_cassify_redirect_url_if_not_allowed" name="wp_cassify_redirect_url_if_not_allowed" class="post_form" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_if_not_allowed' ) ); ?>" size="40" class="regular-text" />
+						<br /><span class="description">Url where to redirect if user is not allowed to connect according to autorization rules below. If it's blog page, this page does not require authenticated access. The blog home url is used when this option is not set.</span>
+					</td>
+				</tr>
+				<tr valign="top">
+					<th scope="row"><label for="wp_cassify_redirect_url_white_list">White List URL(s)</label></th>
+					<td>
+						<input type="text" id="wp_cassify_redirect_url_white_list" name="wp_cassify_redirect_url_white_list" class="post_form" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_white_list' ) ); ?>" size="40" class="regular-text" />
+						<br /><span class="description">List of URL(s) that don't intercepted by CAS Authentication. Use ';' as URL separator.</span>
+					</td>
+				</tr>				
+				<tr valign="top">
 					<th scope="row">Set Conditionnal Users Roles</th>
 					<td>
 						<span class="description">Example rule syntax (Refer to plugin documentation) : (CAS{cas_user_id} -EQ "m.brown") -AND (CAS{email} -CONTAINS "my-university.fr")</span>
@@ -442,24 +477,52 @@ class WP_Cassify_Admin_Page {
 				<tr valign="top">
 					<td></td>
 					<td>
+						<span class="description">Double click on rule in list to edit it.</span>
 						<?php submit_button( 'Add Conditional Rule Role', 'secondary', 'wp_cassify_add_user_role_rule', FALSE, array( 'id' => 'wp_cassify_add_user_role_rule' ) ); ?>
 						<?php submit_button( 'Remove Conditional Rule Role', 'secondary', 'wp_cassify_remove_user_role_rule', FALSE, array( 'id' => 'wp_cassify_remove_user_role_rule' ) ); ?>
 					</td>
 				</tr>
 				<tr valign="top">
-					<th scope="row"><label for="wp_cassify_redirect_url_if_not_allowed">User not allowed redirect url</label></th>
+					<th scope="row" colspan="2">Synchronize Wordpress User metas with CAS User attributes </th>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Wordpress User Meta</th>
 					<td>
-						<input type="text" id="wp_cassify_redirect_url_if_not_allowed" name="wp_cassify_redirect_url_if_not_allowed" class="post_form" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_if_not_allowed' ) ); ?>" size="40" class="regular-text" />
-						<br /><span class="description">Url where to redirect if user is not allowed to connect according to autorization rules below. If it's blog page, this page does not require authenticated access. The blog home url is used when this option is not set.</span>
+						<select id="wp_cassify_wordpress_user_meta_list" name="wp_cassify_wordpress_user_meta_list" class="post_form"> ?>
+						<?php foreach ( $this->wp_cassify_wordpress_user_meta_list as $wp_cassify_wordpress_user_meta ) { ?>
+						<?php 		echo "<option value='$wp_cassify_wordpress_user_meta'>$wp_cassify_wordpress_user_meta</option>"; ?>
+						<?php } ?>
+						</select>
+						<input type="text" id="wp_cassify_custom_user_meta" name="wp_cassify_custom_user_meta" class="post_form" value="" size="40" class="regular-text" />
 					</td>
 				</tr>
 				<tr valign="top">
-					<th scope="row"><label for="wp_cassify_redirect_url_white_list">White List URL(s)</label></th>
+					<th scope="row">CAS User Attribute</th>
 					<td>
-						<input type="text" id="wp_cassify_redirect_url_white_list" name="wp_cassify_redirect_url_white_list" class="post_form" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_white_list' ) ); ?>" size="40" class="regular-text" />
-						<br /><span class="description">List of URL(s) that don't intercepted by CAS Authentication. Use ';' as URL separator.</span>
+						<input type="text" id="wp_cassify_cas_user_attribute" name="wp_cassify_cas_user_attribute" class="post_form" value="" size="40" class="regular-text" />
 					</td>
-				</tr>																										
+				</tr>
+				<tr valign="top">
+					<td>
+					</td>
+					<td>
+						<select id="wp_cassify_user_attributes_mapping_list" name="wp_cassify_user_attributes_mapping_list[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
+						<?php if ( ( is_array( $wp_cassify_user_attributes_mapping_list_selected )  ) && ( count( $wp_cassify_user_attributes_mapping_list_selected ) > 0 ) ) { ?>
+						<?php 	foreach ( $wp_cassify_user_attributes_mapping_list_selected as $wp_cassify_user_attributes_mapping_list_selected_key => $wp_cassify_user_attributes_mapping_list_selected_value ) { ?>
+						<?php 		echo "<option value='$wp_cassify_user_attributes_mapping_list_selected_value'>$wp_cassify_user_attributes_mapping_list_selected_value</option>"; ?>
+						<?php 	} ?>
+						<?php } ?>
+						</select>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td></td>
+					<td>
+						<span class="description">Double click on rule in list to edit it.</span>
+						<?php submit_button( 'Add User Attribute Mapping', 'secondary', 'wp_cassify_add_user_attribute_mapping', FALSE, array( 'id' => 'wp_cassify_add_user_attribute_mapping' ) ); ?>
+						<?php submit_button( 'Remove User Attribute Mapping', 'secondary', 'wp_cassify_remove_user_attribute_mapping', FALSE, array( 'id' => 'wp_cassify_remove_user_attribute_mapping' ) ); ?>
+					</td>
+				</tr>
 			</table>
 			<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options', FALSE, array( 'id' => 'wp_cassify_save_options' ) ); ?>			
 		</form>

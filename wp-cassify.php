@@ -71,7 +71,8 @@ $wp_cassify_admin_page->init_parameters(
 		$wp_cassify_default_ssl_cipher_values,
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
-		$wp_cassify_default_allow_deny_order
+		$wp_cassify_default_allow_deny_order,
+		$wp_cassify_wordpress_user_meta_list
 );
 
 $GLOBALS['wp-cassify'] = new \wp_cassify\WP_Cassify_Plugin(); 
