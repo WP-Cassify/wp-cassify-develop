@@ -49,7 +49,21 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_autorization_rules',
 	'wp_cassify_user_role_rules',
 	'wp_cassify_redirect_url_if_not_allowed',
-	'wp_cassify_redirect_url_white_list'
+	'wp_cassify_redirect_url_white_list',
+	'wp_cassify_user_attributes_mapping_list'
+);
+
+$wp_cassify_wordpress_user_meta_list = array(
+	'user_nicename',
+	'user_email',
+	'user_registered',
+	'user_url',
+	'display_name',
+	'nickname',
+	'first_name',
+	'last_name',
+	'description',
+	'custom_user_meta'
 );
 
 $wp_cassify_operator_prefix = '-';
