@@ -142,7 +142,6 @@ class WP_Cassify_Plugin {
         $wp_cassify_user_role_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_role_rules' ) );
         $wp_cassify_user_attributes_mapping_list = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_attributes_mapping_list' ) );
 
-
 		// Define default values if options values empty.
 		if ( empty( $wp_cassify_login_servlet ) ) {
 			$wp_cassify_login_servlet = $this->wp_cassify_default_login_servlet;
@@ -229,8 +228,11 @@ class WP_Cassify_Plugin {
 				}
 				
 				// Sync CAS User attributes with Wordpress User meta
-
-				
+				$this->wp_cassify_sync_user_metadata( 
+					$cas_user_datas[ 'cas_user_id' ], 
+					$cas_user_datas, 
+					$wp_cassify_user_attributes_mapping_list
+				);
 				
 				// Auth user into wordpress
 				WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
@@ -648,12 +650,9 @@ class WP_Cassify_Plugin {
 	private function wp_cassify_sync_user_metadata( $cas_user_id, $cas_user_datas = array(), $wp_cassify_user_attributes_mapping_list = array() ) {
 		
 		if ( ( is_array( $wp_cassify_user_attributes_mapping_list ) ) && ( count( $wp_cassify_user_attributes_mapping_list ) > 0 ) ) {
-
             $wp_user = get_user_by( 'login', $cas_user_id );
 			
 			if ( $wp_user != FALSE  ) {
-	            $wp_user_meta = get_user_meta( $wp_user->ID );
-	            
 	            foreach( $wp_cassify_user_attributes_mapping_list as $wp_cassify_user_attributes_mapping ) {
 	            	$wp_cassify_user_attributes_mapping_parts = explode( '|', $wp_cassify_user_attributes_mapping );
 	            	
@@ -664,12 +663,32 @@ class WP_Cassify_Plugin {
 	            	
 	            	if ( property_exists( $wp_user->data, $wp_cassify_wordpress_user_meta ) ) {
 	            		$wp_user->data->$wp_cassify_wordpress_user_meta = $cas_user_datas[ $wp_cassify_cas_user_attribute ];
-	            	} 
+	            		$mapping_set = TRUE;
+	            	}
+	            	
+	            	if (! $mapping_set ) {
 	            		
+	            		$wp_cassify_wordpress_user_meta_value = get_user_meta( $wp_user->ID, $wp_cassify_wordpress_user_meta );
+	            		
+	            		if ( empty( $wp_cassify_wordpress_user_meta_value ) ) {
+            				add_user_meta( 
+            					$wp_user->ID, 
+            					$wp_cassify_wordpress_user_meta, 
+            					$cas_user_datas[ $wp_cassify_cas_user_attribute ], 
+            					TRUE 
+    						);
+	            		}
+	            		else {
+	            			update_user_meta( 
+	            				$wp_user->ID, 
+	            				$wp_cassify_wordpress_user_meta, 
+	            				$cas_user_datas[ $wp_cassify_cas_user_attribute ]
+            				);
+	            		}
+	            	}
 	            }
 			}
 		}
 	}
-	
 }
 ?>
