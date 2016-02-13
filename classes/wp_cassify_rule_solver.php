@@ -401,7 +401,7 @@ class wp_cassify_rule_solver {
 		if ( $this->check_if_no_error() ) {
 			$this->wp_cassify_initial_rule = $this->replace_groups_with_results();
 		}
-		
+
 		// Step 4 : match first level parenthesis groups
 		$this->match_parenthesis_groups($this->wp_cassify_rule_solver_item_array,
 			$this->wp_cassify_initial_rule, 
