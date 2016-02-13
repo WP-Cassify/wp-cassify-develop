@@ -1,10 +1,10 @@
 === Plugin Name ===
 Contributors: aaf017
 Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS
-Donate link: https://wpcassify.wordpress.com/
+Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +28,7 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
+* (New Feature !) Synchronize Wordpress User metas with CAS User attributes
 * (New Feature !) Set conditionnal users roles
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -76,5 +77,8 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 = 1.5 =
 * User Role Rule Editor : set user wordpress role according to CAS Attributes values.
+
+= 1.5.1 =
+* Synchronize Wordpress User metas with CAS User attributes
 
 == Upgrade Notice ==
