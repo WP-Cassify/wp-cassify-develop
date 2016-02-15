@@ -159,7 +159,7 @@ class WP_Cassify_Plugin {
 			$wp_cassify_ssl_cipher_selected = $wp_cassify_ssl_cipher;
 		}
 		else {
-			$wp_cassify_ssl_cipher_selected = '1';
+			$wp_cassify_ssl_cipher_selected = '0';
 		}
 		
 		if ( empty( $wp_cassify_allow_deny_order ) ) {
