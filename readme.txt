@@ -84,5 +84,8 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 = 1.5.2 =
 * Some bug fixes.
 
+= 1.5.3 =
+* Some bug fixes. Security fixes.
+
 
 == Upgrade Notice ==
