@@ -137,9 +137,15 @@ class WP_Cassify_Admin_Page {
                     wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
             }
 
-            if ( ( isset($_POST[ 'action' ]) ) && ( $_POST[ 'action' ] == 'update' ) ) {    
+            if ( ( isset( $_POST[ 'action' ] ) ) && ( $_POST[ 'action' ] == 'update' ) ) {    
+            	
+            		// Check security tocken
+					if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
+						die( 'Security Check !' );
+					}
+            	
                     $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_base_url' );                        
-					$this->wp_cassify_update_textfield( $_POST, 'wp_cassify_default_protocol_version' ); 
+					$this->wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version' ); 
 
                     $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_disable_authentication', 'disabled' );
                     $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist' );		
@@ -156,7 +162,10 @@ class WP_Cassify_Admin_Page {
                 		);
                     }
                     else {
-                    	$this->wp_cassify_update_textfield( $_POST, 'wp_cassify_service_validate_servlet' ); 
+						$this->wp_cassify_update_textfield_manual( 
+                    		'', 
+                    		'wp_cassify_service_validate_servlet' 
+                		);
                     }
                     
                     $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_xpath_query_to_extact_cas_user' ); 
@@ -282,16 +291,17 @@ class WP_Cassify_Admin_Page {
             $post_action_page = NULL;
             
             if ( $this->wp_cassify_network_activated ) {
-                $post_action_page = $this->wp_cassify_multisite_admin_page_slug;
+                $wp_cassify_post_action_url = $this->wp_cassify_multisite_admin_page_slug . '?page=wp-cassify.php';
             }
             else {
-                $post_action_page = $this->wp_cassify_admin_page_slug;
+                $wp_cassify_post_action_url = $this->wp_cassify_admin_page_slug . '?page=wp-cassify.php';
             }
 ?>
 		<div class="wrap">
 		<h2><?php echo $this->wp_cassify_plugin_datas[ 'Name' ] ?></h2>
 
-		<form method="post" action="<?php echo $post_action_page; ?>?page=wp-cassify.php">
+		<form method="post" action="<?php echo $wp_cassify_post_action_url; ?>">
+			<?php wp_nonce_field( 'admin_form', 'wp_cassify_admin_form' ); // Set security token ?>
 			<?php settings_fields( 'wp-cassify-settings-group' ); ?>
 			<?php do_settings_sections( 'wp-cassify-settings-group' ); ?>
 			<table class="optiontable form-table">
@@ -305,7 +315,7 @@ class WP_Cassify_Admin_Page {
 				<tr valign="top">
 					<th scope="row">CAS Version protocol</th>
 					<td>
-						<select name="wp_cassify_protocol_version" class="post_form">
+						<select id="wp_cassify_protocol_version" name="wp_cassify_protocol_version" class="post_form">
 							<?php foreach ( $this->wp_cassify_default_protocol_version_values as $wp_cassify_default_protocol_version_key => $wp_cassify_default_protocol_version_value ) { ?>
 								<?php if ( $wp_cassify_default_protocol_version_value == $wp_cassify_default_protocol_version_selected ) { ?>
 									<option value="<?php echo $wp_cassify_default_protocol_version_key; ?>" selected><?php echo $wp_cassify_default_protocol_version_value; ?></option>
@@ -336,7 +346,7 @@ class WP_Cassify_Admin_Page {
 				<tr valign="top">
 					<th scope="row">SSL Cipher used for query CAS Server with HTTPS Webrequest to validate service ticket</th>
 					<td>
-						<select name="wp_cassify_ssl_cipher" class="post_form">
+						<select id="wp_cassify_ssl_cipher" name="wp_cassify_ssl_cipher" class="post_form">
 							<?php foreach ( $this->wp_cassify_default_ssl_cipher_values as $cipher_id => $cipher_name ) { ?>
 								<?php if ( $cipher_id == $wp_cassify_ssl_cipher_selected ) { ?>
 									<option value="<?php echo $cipher_id; ?>" selected><?php echo $cipher_name; ?></option>
@@ -567,7 +577,7 @@ class WP_Cassify_Admin_Page {
      */
     private function wp_cassify_update_textfield_manual( $field_value, $field_name ) {
 
-        if(! empty( $field_value ) ) {
+        if( isset( $field_value ) ) {
             if ( $this->wp_cassify_network_activated ) {
                 update_site_option( $field_name , sanitize_text_field( $field_value ) );
             }
