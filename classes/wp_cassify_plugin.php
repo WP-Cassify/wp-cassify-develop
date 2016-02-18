@@ -10,6 +10,7 @@ class WP_Cassify_Plugin {
 	public $wp_cassify_default_redirect_parameter_name;
 	public $wp_cassify_default_service_ticket_parameter_name;	
 	public $wp_cassify_default_service_service_parameter_name;
+	public $wp_cassify_default_bypass_parameter_name;
 	
 	public $wp_cassify_default_wordpress_blog_http_port;
 	public $wp_cassify_default_wordpress_blog_https_port;	
@@ -35,16 +36,6 @@ class WP_Cassify_Plugin {
 	 * Constructor
 	 */
 	public function __construct() {
-
-		// Add the filters
-		add_filter( 'query_vars', array( $this , 'add_custom_query_var' ) );
-		add_filter('login_url', array( $this, 'wp_cassify_clear_reauth') );
-		
-		// Add the actions
-		add_action('init', array( $this , 'wp_cassify_session_start' ), 1); 
-		add_action( 'init', array( $this , 'wp_cassify_grab_service_ticket' ) , 2); 
-		add_action( 'wp_authenticate', array( $this , 'wp_cassify_redirect' ) , 1); 
-		add_action( 'wp_logout', array( $this , 'wp_cassify_logout' ) , 10); 		
 	}
 	
 	public function init_parameters(
@@ -54,6 +45,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_default_redirect_parameter_name,
 		$wp_cassify_default_service_ticket_parameter_name,
 		$wp_cassify_default_service_service_parameter_name,
+		$wp_cassify_default_bypass_parameter_name,
 		$wp_cassify_default_wordpress_blog_http_port,
 		$wp_cassify_default_wordpress_blog_https_port,
 		$wp_cassify_default_login_servlet,
@@ -74,6 +66,7 @@ class WP_Cassify_Plugin {
 		$this->wp_cassify_default_redirect_parameter_name = $wp_cassify_default_redirect_parameter_name;
 		$this->wp_cassify_default_service_ticket_parameter_name = $wp_cassify_default_service_ticket_parameter_name;
 		$this->wp_cassify_default_service_service_parameter_name = $wp_cassify_default_service_service_parameter_name;	
+		$this->wp_cassify_default_bypass_parameter_name = $wp_cassify_default_bypass_parameter_name;
 		$this->wp_cassify_default_wordpress_blog_http_port = $wp_cassify_default_wordpress_blog_http_port;
 		$this->wp_cassify_default_wordpress_blog_https_port = $wp_cassify_default_wordpress_blog_https_port;
 		$this->wp_cassify_default_login_servlet = $wp_cassify_default_login_servlet;
@@ -86,7 +79,21 @@ class WP_Cassify_Plugin {
 		$this->wp_cassify_allowed_operators = $wp_cassify_allowed_operators;
 		$this->wp_cassify_operator_prefix = $wp_cassify_operator_prefix;
 		$this->wp_cassify_allowed_parenthesis = $wp_cassify_allowed_parenthesis;
-		$this->wp_cassify_error_messages	= $wp_cassify_error_messages;	
+		$this->wp_cassify_error_messages	= $wp_cassify_error_messages;
+		
+		// Check if CAS Authentication must be bypassed.
+		if (! $this->wp_cassify_bypass() ) {
+		
+			// Add the filters
+			add_filter( 'query_vars', array( $this , 'add_custom_query_var' ) );
+			add_filter('login_url', array( $this, 'wp_cassify_clear_reauth') );
+			
+			// Add the actions
+			add_action('init', array( $this , 'wp_cassify_session_start' ), 1); 
+			add_action( 'init', array( $this , 'wp_cassify_grab_service_ticket' ) , 2); 
+			add_action( 'wp_authenticate', array( $this , 'wp_cassify_redirect' ) , 1); 
+			add_action( 'wp_logout', array( $this , 'wp_cassify_logout' ) , 10); 		
+		}
 	}
 	
 	/**
@@ -98,6 +105,7 @@ class WP_Cassify_Plugin {
 	  
 	  $vars[] = $this->wp_cassify_default_service_ticket_parameter_name;
 	  $vars[] = $this->wp_cassify_default_service_service_parameter_name;
+	  $vars[] = $this->wp_cassify_default_bypass_parameter_name;
 	  
 	  return $vars;
 	}	
@@ -130,7 +138,6 @@ class WP_Cassify_Plugin {
 		$service_ticket = NULL;
 			
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
-		$wp_cassify_disable_authentication = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_disable_authentication' );
 		$wp_cassify_create_user_if_not_exist = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' );
 		$wp_cassify_ssl_cipher =  WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_ssl_cipher' );
 		$wp_cassify_attributes_list = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_attributes_list' );	
@@ -159,7 +166,7 @@ class WP_Cassify_Plugin {
 			$wp_cassify_ssl_cipher_selected = $wp_cassify_ssl_cipher;
 		}
 		else {
-			$wp_cassify_ssl_cipher_selected = '1';
+			$wp_cassify_ssl_cipher_selected = '0';
 		}
 		
 		if ( empty( $wp_cassify_allow_deny_order ) ) {
@@ -178,7 +185,7 @@ class WP_Cassify_Plugin {
 		$service_url = $this->wp_cassify_get_service_callback_url();
 		$service_ticket = $this->wp_cassify_get_service_ticket();	
 		
-		if ( (! is_user_logged_in() ) && ( $wp_cassify_disable_authentication != 'disabled' ) ) {	
+		if (! is_user_logged_in() ) {	
 			if (! empty( $service_ticket ) ) {
 				$service_validate_url = $wp_cassify_base_url .
 					$wp_cassify_service_validate_servlet . '?' .
@@ -239,7 +246,7 @@ class WP_Cassify_Plugin {
 
 				// Redirect to the service url.
 				WP_Cassify_Utils::wp_cassify_redirect_url( $service_url );
-			}	
+			}
 		}
 	}		
 	
@@ -252,7 +259,6 @@ class WP_Cassify_Plugin {
 		$service_ticket = NULL;
 			
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
-		$wp_cassify_disable_authentication = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_disable_authentication' );
 		$wp_cassify_login_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_login_servlet' );
 		$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
 		
@@ -279,7 +285,7 @@ class WP_Cassify_Plugin {
 		$service_url = $this->wp_cassify_get_service_callback_url();
 		$service_ticket = $this->wp_cassify_get_service_ticket();
 		
-		if ( (! is_user_logged_in() ) && ( $wp_cassify_disable_authentication != 'disabled' ) && (! empty($wp_cassify_base_url) ) ) {	
+		if ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) {	
 			if (! $this->wp_cassify_is_in_while_list( $service_url ) ) {	
 				if ( empty( $service_url ) ) {
 					die( 'CAS Service URL not set !');
@@ -516,9 +522,35 @@ class WP_Cassify_Plugin {
 	}
 	
 	/**
+	 * Test if this URL must be bypassed by CAS Authentication
+	 * @return bool $wp_cassify_bypass
+	 */
+	 private function wp_cassify_bypass() {
+	 	
+	 	$wp_cassify_bypass = FALSE;
+	 	
+	 	// 1- Check if byposss GET URL parameter is set from the Referrer.
+		$current_url = WP_Cassify_Utils::wp_cassify_get_current_url(
+			$this->wp_cassify_default_wordpress_blog_http_port,
+			$this->wp_cassify_default_wordpress_blog_https_port
+		);
+		
+		$wp_cassify_bypass = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $_SERVER['HTTP_REFERER'], $this->wp_cassify_default_bypass_parameter_name );
+		
+		// 2- Or check if bypass has been defined in admin panel.
+		$wp_cassify_disable_authentication = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_disable_authentication' );
+		
+		if ( ( $wp_cassify_bypass == 'bypass' ) || ( $wp_cassify_disable_authentication == 'disabled' ) ) {
+			$wp_cassify_bypass = TRUE;
+		}
+		
+		return $wp_cassify_bypass;
+	 }
+	
+	/**
 	 * Check if url is in white list and don't be authenticated by CAS.
 	 * @param string $url
-	 * @return bool
+	 * @return bool $is_in_while_list
 	 */
 	 private function wp_cassify_is_in_while_list( $url ) {
 		 
