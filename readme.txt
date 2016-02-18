@@ -4,7 +4,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5.3
+Stable tag: 1.5.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ e.g.
 
 == Frequently Asked Questions ==
 
+* Where can i find plugin documentation ?
+You can find documentation here (See Plugin options and Screencasts) : https://wpcassify.wordpress.com/
+
 * How to perform CAS Authentication on a front Office page ?
 Install WordPress Access Control Plugin. And mark page as "Only accessible by members". You can use anoter ACL plugin. If page require an authentication, CAS Authentication is fired.
 
@@ -87,5 +90,7 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 = 1.5.3 =
 * Some bug fixes. Security fixes.
 
+= 1.5.4 =
+* Add custom GET parameter (?wp_cassify_bypass=bypass) to bypass CAS Authentication on certain urls. See online documentation for more infos. Bug fixes on Authorization rule editor.
 
 == Upgrade Notice ==
