@@ -247,9 +247,6 @@ class WP_Cassify_Plugin {
 				// Redirect to the service url.
 				WP_Cassify_Utils::wp_cassify_redirect_url( $service_url );
 			}
-			else {
-				die( 'Service Ticket not set !');
-			}
 		}
 	}		
 	

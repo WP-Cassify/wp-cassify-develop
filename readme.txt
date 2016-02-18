@@ -4,7 +4,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5.4
+Stable tag: 1.5.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,5 +92,9 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 = 1.5.4 =
 * Add custom GET parameter (?wp_cassify_bypass=bypass) to bypass CAS Authentication on certain urls. See online documentation for more infos. Bug fixes on Authorization rule editor.
+
+= 1.5.5 =
+* Some bug fixes.
+
 
 == Upgrade Notice ==
