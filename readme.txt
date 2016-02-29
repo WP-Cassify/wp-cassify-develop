@@ -1,10 +1,11 @@
 === Plugin Name ===
+
 Contributors: aaf017
 Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5.5
+Stable tag: 1.5.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +29,8 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
+* (New Feature !) Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication. ( Screencast available )
+* (New Feature !) Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
 * Synchronize Wordpress User metas with CAS User attributes
@@ -54,7 +57,7 @@ e.g.
 
 1. This is the basic options of the plugin.
 2. This is the authorization rule editor.
-3. This is the user role rule editor. Set users roles according CAS User Attributes.
+3. Set up WordPress Roles to User according to CAS User attributes.
 
 == Frequently Asked Questions ==
 
@@ -95,6 +98,10 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 = 1.5.5 =
 * Some bug fixes.
+
+= 1.5.6 =
+* (New Feature !) Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication
+* (New Feature !) Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
 
 
 == Upgrade Notice ==

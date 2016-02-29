@@ -38,6 +38,30 @@ class WP_Cassify_Plugin {
 	public function __construct() {
 	}
 	
+	/**
+	 * Initialize the plugin with parameters
+	 * 
+	 * param string $wp_cassify_network_activated,
+	 * param string $wp_cassify_default_xpath_query_to_extact_cas_user,
+	 * param string $wp_cassify_default_xpath_query_to_extact_cas_attributes,
+	 * param string $wp_cassify_default_redirect_parameter_name,
+	 * param string $wp_cassify_default_service_ticket_parameter_name,
+	 * param string $wp_cassify_default_service_service_parameter_name,
+	 * param string $wp_cassify_default_bypass_parameter_name,
+	 * param string $wp_cassify_default_wordpress_blog_http_port,
+	 * param string $wp_cassify_default_wordpress_blog_https_port,
+	 * param string $wp_cassify_default_login_servlet,
+	 * param string $wp_cassify_default_logout_servlet,
+	 * param string $wp_cassify_default_service_validate_servlet,
+	 * param string $wp_cassify_default_allow_deny_order,
+	 * param string $wp_cassify_match_first_level_parenthesis_group_pattern,
+	 * param string $wp_cassify_match_second_level_parenthesis_group_pattern,
+	 * param string $wp_cassify_match_cas_variable_pattern,
+	 * param string $wp_cassify_allowed_operators,
+	 * param string $wp_cassify_operator_prefix,
+	 * param string $wp_cassify_allowed_parenthesis,
+	 * param string $wp_cassify_error_messages	
+	 */ 
 	public function init_parameters(
         $wp_cassify_network_activated,
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
@@ -86,13 +110,13 @@ class WP_Cassify_Plugin {
 		
 			// Add the filters
 			add_filter( 'query_vars', array( $this , 'add_custom_query_var' ) );
-			add_filter('login_url', array( $this, 'wp_cassify_clear_reauth') );
+			add_filter( 'login_url', array( $this, 'wp_cassify_clear_reauth' ) );
 			
 			// Add the actions
-			add_action('init', array( $this , 'wp_cassify_session_start' ), 1); 
-			add_action( 'init', array( $this , 'wp_cassify_grab_service_ticket' ) , 2); 
-			add_action( 'wp_authenticate', array( $this , 'wp_cassify_redirect' ) , 1); 
-			add_action( 'wp_logout', array( $this , 'wp_cassify_logout' ) , 10); 		
+			add_action( 'init', array( $this , 'wp_cassify_session_start' ), 1 ); 
+			add_action( 'init', array( $this , 'wp_cassify_grab_service_ticket' ) , 2 ); 
+			add_action( 'wp_authenticate', array( $this , 'wp_cassify_redirect' ) , 1 ); 
+			add_action( 'wp_logout', array( $this , 'wp_cassify_logout' ) , 10 ); 		
 		}
 	}
 	
@@ -115,7 +139,7 @@ class WP_Cassify_Plugin {
 	 */ 
     public function wp_cassify_clear_reauth( $login_url ) {
         
-        $login_url = remove_query_arg('reauth', $login_url);
+        $login_url = remove_query_arg( 'reauth', $login_url );
         return $login_url;
     }	
 	
@@ -200,6 +224,9 @@ class WP_Cassify_Plugin {
 				// Parse CAS Server response and store into associative array.
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
 				
+				// Define custom plugin hook to build your custom parsing function
+				do_action( 'wp_cassify_custom_parsing_cas_xml_response', $cas_server_xml_response );
+				
 				// Evaluate authorization rules
 				if ( count( $wp_cassify_autorization_rules ) > 0 ) {
 					$this->wp_cassify_separate_rules( $wp_cassify_autorization_rules );
@@ -209,6 +236,10 @@ class WP_Cassify_Plugin {
 						$this->wp_cassify_logout_if_not_allowed();
 					}	
 				}
+				
+				// Define custom plugin hook after cas authentication. 
+				// For example, for two factor authentication, you can plug another authentication plugin to fired custom action here.
+				do_action( 'wp_cassify_after_cas_authentication', $cas_user_datas );
 
 				// Populate selected attributes into session
 				$this->wp_cassify_populate_attributes_into_session( $cas_user_datas, $wp_cassify_attributes_list );
@@ -529,7 +560,7 @@ class WP_Cassify_Plugin {
 	 	
 	 	$wp_cassify_bypass = FALSE;
 	 	
-	 	// 1- Check if byposss GET URL parameter is set from the Referrer.
+	 	// 1- Check if bypass GET URL parameter is set from the Referrer.
 		$current_url = WP_Cassify_Utils::wp_cassify_get_current_url(
 			$this->wp_cassify_default_wordpress_blog_http_port,
 			$this->wp_cassify_default_wordpress_blog_https_port
