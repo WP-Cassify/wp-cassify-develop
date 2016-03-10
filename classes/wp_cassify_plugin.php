@@ -566,13 +566,15 @@ class WP_Cassify_Plugin {
 			$this->wp_cassify_default_wordpress_blog_https_port
 		);
 		
-		$wp_cassify_bypass = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $_SERVER['HTTP_REFERER'], $this->wp_cassify_default_bypass_parameter_name );
-		
-		// 2- Or check if bypass has been defined in admin panel.
-		$wp_cassify_disable_authentication = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_disable_authentication' );
-		
-		if ( ( $wp_cassify_bypass == 'bypass' ) || ( $wp_cassify_disable_authentication == 'disabled' ) ) {
-			$wp_cassify_bypass = TRUE;
+		if (! empty( $_SERVER['HTTP_REFERER'] ) ) {
+			$wp_cassify_bypass = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $_SERVER['HTTP_REFERER'], $this->wp_cassify_default_bypass_parameter_name );
+			
+			// 2- Or check if bypass has been defined in admin panel.
+			$wp_cassify_disable_authentication = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_disable_authentication' );
+			
+			if ( ( $wp_cassify_bypass == 'bypass' ) || ( $wp_cassify_disable_authentication == 'disabled' ) ) {
+				$wp_cassify_bypass = TRUE;
+			}
 		}
 		
 		return $wp_cassify_bypass;
