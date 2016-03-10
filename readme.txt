@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5.6
+Stable tag: 1.5.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,7 +24,6 @@ https://wpcassify.wordpress.com/
 
 = Requirements =
 
-* Require php5-curl package
 * Require at least PHP version 5.3.10
 
 = Features included =
@@ -102,6 +101,10 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 = 1.5.6 =
 * (New Feature !) Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication
 * (New Feature !) Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
+
+= 1.5.7 =
+* Replace cURL function with wp_remote_get function. Now plugin does not require php5-curl.
+* Add notice message on admin screen.
 
 
 == Upgrade Notice ==
