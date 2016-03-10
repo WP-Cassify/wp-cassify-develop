@@ -3,6 +3,7 @@ namespace wp_cassify;
 
 class WP_Cassify_Utils {
 
+
 	/**
 	 * Perform an SSL web request to retrieve xml response containing 
 	 * cas-user id and cas-user attributes.
@@ -11,41 +12,27 @@ class WP_Cassify_Utils {
 	 * @return string $response
 	 */ 
 	public static function wp_cassify_do_ssl_web_request( $url, $ssl_cipher ) {
+
+		$response = '';
+
+		$defaults = array (
+			'method' => 'GET',
+			'user-agent' => 'Mozilla/5.0 (Windows NT 5.1; en-US) Firefox/3.6.8',
+			'sslverify' => true
+		);
 		
-		if (! function_exists ( 'curl_init' ) ) {
-			die( 'Please install php cURL library !');
-		}
-
-		$ch = curl_init();
-
-		curl_setopt( $ch, CURLOPT_HEADER, false );
-		curl_setopt( $ch, CURLOPT_URL, $url ) ;
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 1);
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 1);
+		$response = wp_remote_get( $url );
 		
-		//curl_setopt( $ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13' );
-		curl_setopt( $ch, CURLOPT_SSLVERSION, $ssl_cipher );
-
-		if ( ( defined( 'WP_DEBUG' ) ) && ( WP_DEBUG == true ) ) {
-			curl_setopt( $ch, CURLOPT_VERBOSE, true );
+		if( is_wp_error( $response ) ) {
+			$error = $response->get_error_message();
+			die( 'Error [ wp_cassify_do_ssl_web_request ] : ' . $error );
 		}
 		
-		$response = curl_exec( $ch );
+		if ( empty( $response['body'] ) ) {
+			die( 'Error [ wp_cassify_do_ssl_web_request ] : Empty response' );	
+		}
 
-		if( curl_errno( $ch ) )	{		
-			if ( ( defined( 'WP_DEBUG' ) ) && ( WP_DEBUG == true ) ) {
-				$info = curl_getinfo( $ch );
-				die( 'Curl error: ' . curl_error( $ch ) . print_r( $info, TRUE ) );		
-			}
-			else {
-				die( 'Curl error: active WP_DEBUG in wp-config.php');
-			}
-		} 
-
-		curl_close( $ch );
-
-		return $response;
+		return $response['body'];
 	}
 	
 	/**
