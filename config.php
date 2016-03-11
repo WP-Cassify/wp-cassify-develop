@@ -18,6 +18,18 @@ $wp_cassify_default_protocol_version_values = array(
 	'3' => '3'
 ); 
 
+$wp_cassify_default_ssl_cipher_values = array( 
+	'0' => 'CURL_SSLVERSION_DEFAULT', 
+	'1' => 'CURL_SSLVERSION_TLSv1', 
+	'2' => 'CURL_SSLVERSION_SSLv2', 
+	'3' => 'CURL_SSLVERSION_SSLv3', 
+	'4' => 'CURL_SSLVERSION_TLSv1_0', 
+	'5' => 'CURL_SSLVERSION_TLSv1_1',
+	'6' => 'CURL_SSLVERSION_TLSv1_2'
+);
+
+$wp_cassify_default_ssl_check_certificate = 'disabled';
+
 $wp_cassify_default_redirect_parameter_name = 'redirect_to';
 $wp_cassify_default_service_ticket_parameter_name = 'ticket';
 $wp_cassify_default_service_service_parameter_name = 'service';
@@ -34,6 +46,7 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_disable_authentication',
 	'wp_cassify_create_user_if_not_exist',
 	'wp_cassify_ssl_cipher',
+	'wp_cassify_ssl_check_certificate',
 	'wp_cassify_redirect_url_after_logout',
 	'wp_cassify_login_servlet',
 	'wp_cassify_logout_servlet',

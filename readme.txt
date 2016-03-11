@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5.7
+Stable tag: 1.5.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ https://wpcassify.wordpress.com/
 = Requirements =
 
 * Require at least PHP version 5.3.10
+* Require at least PHP CURL package (for example, 'apt-get install php5-curl' if you're using php5 on debian systems).
 
 = Features included =
 
@@ -105,6 +106,10 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 = 1.5.7 =
 * Replace cURL function with wp_remote_get function. Now plugin does not require php5-curl.
 * Add notice message on admin screen.
+
+= 1.5.8 =
+* Fix SSL Certificate probleme. Reintroduce cURL function instead of wp_remote_get function.
+* Add SSL Configuration option : SSL Check Certificate wich turn on/off CURLOPT_SSL_VERIFYPEER option.
 
 
 == Upgrade Notice ==

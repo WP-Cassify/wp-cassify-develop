@@ -13,7 +13,8 @@ class WP_Cassify_Plugin {
 	public $wp_cassify_default_bypass_parameter_name;
 	
 	public $wp_cassify_default_wordpress_blog_http_port;
-	public $wp_cassify_default_wordpress_blog_https_port;	
+	public $wp_cassify_default_wordpress_blog_https_port;
+	public $wp_cassify_default_ssl_check_certificate;
 
 	public $wp_cassify_default_login_servlet;
 	public $wp_cassify_default_logout_servlet;
@@ -50,6 +51,7 @@ class WP_Cassify_Plugin {
 	 * param string $wp_cassify_default_bypass_parameter_name,
 	 * param string $wp_cassify_default_wordpress_blog_http_port,
 	 * param string $wp_cassify_default_wordpress_blog_https_port,
+	 * param string $wp_cassify_default_ssl_check_certificate,
 	 * param string $wp_cassify_default_login_servlet,
 	 * param string $wp_cassify_default_logout_servlet,
 	 * param string $wp_cassify_default_service_validate_servlet,
@@ -72,6 +74,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_default_bypass_parameter_name,
 		$wp_cassify_default_wordpress_blog_http_port,
 		$wp_cassify_default_wordpress_blog_https_port,
+		$wp_cassify_default_ssl_check_certificate,
 		$wp_cassify_default_login_servlet,
 		$wp_cassify_default_logout_servlet,
 		$wp_cassify_default_service_validate_servlet,
@@ -93,6 +96,7 @@ class WP_Cassify_Plugin {
 		$this->wp_cassify_default_bypass_parameter_name = $wp_cassify_default_bypass_parameter_name;
 		$this->wp_cassify_default_wordpress_blog_http_port = $wp_cassify_default_wordpress_blog_http_port;
 		$this->wp_cassify_default_wordpress_blog_https_port = $wp_cassify_default_wordpress_blog_https_port;
+		$this->wp_cassify_default_ssl_check_certificate = $wp_cassify_default_ssl_check_certificate;
 		$this->wp_cassify_default_login_servlet = $wp_cassify_default_login_servlet;
 		$this->wp_cassify_default_logout_servlet = $wp_cassify_default_logout_servlet;
 		$this->wp_cassify_default_service_validate_servlet = $wp_cassify_default_service_validate_servlet;
@@ -164,6 +168,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 		$wp_cassify_create_user_if_not_exist = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' );
 		$wp_cassify_ssl_cipher =  WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_ssl_cipher' );
+		$wp_cassify_ssl_check_certificate =  WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_ssl_check_certificate' );
 		$wp_cassify_attributes_list = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_attributes_list' );	
 		$wp_cassify_login_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_login_servlet' );
 		$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
@@ -172,8 +177,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_autorization_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_autorization_rules' ) );		
         $wp_cassify_user_role_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_role_rules' ) );
         $wp_cassify_user_attributes_mapping_list = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_attributes_mapping_list' ) );
-
-		// Define default values if options values empty.
+ 
 		if ( empty( $wp_cassify_login_servlet ) ) {
 			$wp_cassify_login_servlet = $this->wp_cassify_default_login_servlet;
 		}
@@ -184,7 +188,7 @@ class WP_Cassify_Plugin {
 		
 		if ( empty( $wp_cassify_service_validate_servlet ) ) {
 			$wp_cassify_service_validate_servlet = $this->wp_cassify_default_service_validate_servlet;
-		}	
+		}
 		
 		if (! empty( $wp_cassify_ssl_cipher ) ) {
 			$wp_cassify_ssl_cipher_selected = $wp_cassify_ssl_cipher;
@@ -192,6 +196,11 @@ class WP_Cassify_Plugin {
 		else {
 			$wp_cassify_ssl_cipher_selected = '0';
 		}
+		
+		if ( empty( $wp_cassify_ssl_check_certificate ) ) {
+			$wp_cassify_ssl_check_certificate = $this->wp_cassify_default_ssl_check_certificate;
+		}
+		
 		
 		if ( empty( $wp_cassify_allow_deny_order ) ) {
 			$wp_cassify_allow_deny_order = $this->wp_cassify_default_allow_deny_order;
@@ -218,7 +227,8 @@ class WP_Cassify_Plugin {
 					
 				$cas_server_xml_response = WP_Cassify_Utils::wp_cassify_do_ssl_web_request( 
 					$service_validate_url, 
-					$wp_cassify_ssl_cipher_selected 
+					$wp_cassify_ssl_cipher_selected,
+					$wp_cassify_ssl_check_certificate
 				);
 				
 				// Parse CAS Server response and store into associative array.
@@ -304,13 +314,6 @@ class WP_Cassify_Plugin {
 		
 		if ( empty( $wp_cassify_service_validate_servlet ) ) {
 			$wp_cassify_service_validate_servlet = $this->wp_cassify_default_service_validate_servlet;
-		}	
-		
-		if (! empty( $wp_cassify_ssl_cipher ) ) {
-			$wp_cassify_ssl_cipher_selected = $wp_cassify_ssl_cipher;
-		}
-		else {
-			$wp_cassify_ssl_cipher_selected = '1';
 		}	
 		
 		$service_url = $this->wp_cassify_get_service_callback_url();

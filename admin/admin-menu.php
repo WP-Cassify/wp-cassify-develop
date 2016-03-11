@@ -12,6 +12,7 @@ class WP_Cassify_Admin_Page {
 	public $wp_cassify_default_logout_servlet;
 	public $wp_cassify_default_service_validate_servlet;
 	public $wp_cassify_default_ssl_cipher_values = array();
+	public $wp_cassify_default_ssl_check_certificate;
 	public $wp_cassify_default_xpath_query_to_extact_cas_user;
 	public $wp_cassify_default_xpath_query_to_extact_cas_attributes;
 	public $wp_cassify_default_allow_deny_order;
@@ -35,6 +36,8 @@ class WP_Cassify_Admin_Page {
 		$wp_cassify_default_login_servlet,
 		$wp_cassify_default_logout_servlet,
 		$wp_cassify_default_service_validate_servlet,
+		$wp_cassify_default_ssl_cipher_values,
+		$wp_cassify_default_ssl_check_certificate,
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
 		$wp_cassify_default_allow_deny_order,
@@ -45,9 +48,11 @@ class WP_Cassify_Admin_Page {
       	$this->wp_cassify_network_activated = $wp_cassify_network_activated;
 		$this->wp_cassify_plugin_options_list = $wp_cassify_plugin_options_list;
 		$this->wp_cassify_default_protocol_version_values = $wp_cassify_default_protocol_version_values;
+		$this->wp_cassify_default_ssl_check_certificate = $wp_cassify_default_ssl_check_certificate;
 		$this->wp_cassify_default_login_servlet = $wp_cassify_default_login_servlet;
 		$this->wp_cassify_default_logout_servlet = $wp_cassify_default_logout_servlet;
 		$this->wp_cassify_default_service_validate_servlet = $wp_cassify_default_service_validate_servlet;
+		$this->wp_cassify_default_ssl_cipher_values = $wp_cassify_default_ssl_cipher_values;
 		$this->wp_cassify_default_xpath_query_to_extact_cas_user = $wp_cassify_default_xpath_query_to_extact_cas_user;
 		$this->wp_cassify_default_xpath_query_to_extact_cas_attributes = $wp_cassify_default_xpath_query_to_extact_cas_attributes;
 		$this->wp_cassify_default_allow_deny_order = $wp_cassify_default_allow_deny_order;
@@ -146,9 +151,10 @@ class WP_Cassify_Admin_Page {
             	
                     $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_base_url' );                        
 					$this->wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version' ); 
-
                     $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_disable_authentication', 'disabled' );
-                    $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist' );		
+                    $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist' );	
+                    $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_ssl_cipher', TRUE );
+                    $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_ssl_check_certificate', 'enabled' );
 
                     $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout' ); 
                     $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet' ); 
@@ -205,7 +211,7 @@ class WP_Cassify_Admin_Page {
             else {
                     $is_disabled = FALSE;
             }
-
+    
             $create_user_if_not_exist = FALSE;	
 
             if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' ) == 'create_user_if_not_exist' ) {
@@ -214,7 +220,28 @@ class WP_Cassify_Admin_Page {
             else {
                     $create_user_if_not_exist = FALSE;
             }
+            
+            $wp_cassify_ssl_cipher = WP_Cassify_Utils::wp_cassify_get_option( 
+                    $this->wp_cassify_network_activated, 
+                    'wp_cassify_ssl_cipher' 
+            );
 
+            if ( isset( $wp_cassify_ssl_cipher ) ) {
+                    $wp_cassify_ssl_cipher_selected = $wp_cassify_ssl_cipher;
+            }
+            else {
+                    $wp_cassify_ssl_cipher_selected = '0';
+            }
+            
+            $is_ssl_check_certificate_enabled = FALSE;
+
+            if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_ssl_check_certificate' ) == 'enabled' ) {
+                    $is_ssl_check_certificate_enabled = TRUE;
+            }
+            else {
+                    $is_ssl_check_certificate_enabled = FALSE;
+            }
+            
             $wp_cassify_allow_deny_order = WP_Cassify_Utils::wp_cassify_get_option( 
                     $this->wp_cassify_network_activated, 
                     'wp_cassify_allow_deny_order' 
@@ -334,7 +361,30 @@ class WP_Cassify_Admin_Page {
 					<?php } else { ?>
 					<td><input type="checkbox" name="wp_cassify_create_user_if_not_exist" class="post_form" value="create_user_if_not_exist" /><br /><span class="description">Create wordpress user account if not exist.</span></td>
 					<?php }?>
-				</tr>											
+				</tr>
+				<tr valign="top">
+					<th scope="row">SSL Cipher used for query CAS Server with HTTPS Webrequest to validate service ticket</th>
+					<td>
+						<select id="wp_cassify_ssl_cipher" name="wp_cassify_ssl_cipher" class="post_form">
+							<?php foreach ( $this->wp_cassify_default_ssl_cipher_values as $cipher_id => $cipher_name ) { ?>
+								<?php if ( $cipher_id == $wp_cassify_ssl_cipher_selected ) { ?>
+									<option value="<?php echo $cipher_id; ?>" selected><?php echo $cipher_name; ?></option>
+								<?php } else { ?>
+									<option value="<?php echo $cipher_id; ?>"><?php echo $cipher_name; ?></option>
+								<?php } ?>						
+							<?php } ?>
+						</select>
+						<br /><span class="description">Default value : <?php echo $this->wp_cassify_default_ssl_cipher_values[ '0' ]; ?></span>
+					</td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Enable SSL Certificate Check</th>
+					<?php if ( $is_ssl_check_certificate_enabled ) { ?>
+					<td><input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" checked /></td>
+					<?php } else { ?>
+					<td><input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" /></td>
+					<?php }?>
+				</tr>
 				<tr valign="top">
 					<th scope="row"><label for="wp_cassify_redirect_url_after_logout">Service logout redirect url</label></th>
 					<td>
