@@ -1,11 +1,11 @@
 === Plugin Name ===
 
 Contributors: aaf017
-Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication
+Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5.8
+Stable tag: 1.5.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,5 +111,7 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 * Fix SSL Certificate probleme. Reintroduce cURL function instead of wp_remote_get function.
 * Add SSL Configuration option : SSL Check Certificate wich turn on/off CURLOPT_SSL_VERIFYPEER option.
 
+= 1.5.9 =
+* Fix Bug on synchronization between CAS User attributes and Wordpress User metas
 
 == Upgrade Notice ==
