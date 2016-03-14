@@ -730,7 +730,16 @@ class WP_Cassify_Plugin {
 	            	$mapping_set = FALSE;
 	            	
 	            	if ( property_exists( $wp_user->data, $wp_cassify_wordpress_user_meta ) ) {
-	            		$wp_user->data->$wp_cassify_wordpress_user_meta = $cas_user_datas[ $wp_cassify_cas_user_attribute ];
+	            	
+	            		$user_id = wp_update_user( 
+	            			array( 
+	            				'ID' => $wp_user->data->ID, 
+	            				$wp_cassify_wordpress_user_meta => $cas_user_datas[ $wp_cassify_cas_user_attribute ] 
+            				) 
+        				);
+        				
+        				error_log( $wp_cassify_wordpress_user_meta .  '=>' . $cas_user_datas[ $wp_cassify_cas_user_attribute ]  );
+	            		
 	            		$mapping_set = TRUE;
 	            	}
 	            	
