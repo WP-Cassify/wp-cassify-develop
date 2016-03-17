@@ -230,7 +230,7 @@ class WP_Cassify_Plugin {
 					$wp_cassify_ssl_cipher_selected,
 					$wp_cassify_ssl_check_certificate
 				);
-				
+
 				// Parse CAS Server response and store into associative array.
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
 				
