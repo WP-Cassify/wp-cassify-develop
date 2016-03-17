@@ -34,7 +34,7 @@ register_deactivation_hook( __FILE__, 'wp_cassify_deactivation' );
 function wp_cassify_deactivation() {
 	
 	global $wp_cassify_plugin_options_list;
-        global $wp_cassify_network_activated;
+    global $wp_cassify_network_activated;
 	
 	foreach ( $wp_cassify_plugin_options_list as $option ) {
             if ( $wp_cassify_network_activated ) {
