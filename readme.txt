@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.5.9
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,8 +56,11 @@ e.g.
 == Screenshots ==
 
 1. This is the basic options of the plugin.
-2. This is the authorization rule editor.
-3. Set up WordPress Roles to User according to CAS User attributes.
+2. This is the URL settings.
+3. This is the attributes extraction settings.
+4. This is the authorization rule editor.
+5. You can set wordpress role to user according to CAS attributes values.
+6. Synchronize Wordpress User metas with CAS User attributes.
 
 == Frequently Asked Questions ==
 
@@ -113,5 +116,9 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 = 1.5.9 =
 * Fix Bug on synchronization between CAS User attributes and Wordpress User metas
+
+= 1.6.0 =
+* New admin interface with metaboxes.
+* Fix Bug multi-select fields if network activated.
 
 == Upgrade Notice ==

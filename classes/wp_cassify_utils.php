@@ -228,6 +228,104 @@ class WP_Cassify_Utils {
         
         return $wp_cassify_plugin_option;
     }
+
+    /**
+     * Save plugin options stored in form textfield into database.
+     * @param array $post_array
+     * @param string $field_name
+     * @param bool $do_not_check_empty
+     * @param bool $wp_cassify_network_activated
+     */
+    public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = FALSE, $wp_cassify_network_activated ) {
+
+		$field_value = '';
+		
+		if (! $do_not_check_empty ) {
+			if(! empty( $post_array[ $field_name ] ) ) {
+	        	$field_value = $post_array[ $field_name ];
+	        }
+		}
+		else {
+			$field_value = $post_array[ $field_name ];
+		}
+		
+        if ( $wp_cassify_network_activated ) {
+            update_site_option( $field_name , sanitize_text_field( $field_value ) );
+        }
+        else {
+            update_option( $field_name , sanitize_text_field( $field_value ) );
+        }                
+    }
+    
+    /**
+     * Save plugin options stored in form textfield into database.
+     * @param string $field_value
+     * @param string $field_name
+     * @param bool $wp_cassify_network_activated
+     */
+    public static function wp_cassify_update_textfield_manual( $field_value, $field_name, $wp_cassify_network_activated ) {
+
+        if( isset( $field_value ) ) {
+            if ( $wp_cassify_network_activated ) {
+                update_site_option( $field_name , sanitize_text_field( $field_value ) );
+            }
+            else {
+                update_option( $field_name , sanitize_text_field( $field_value ) );
+            }                
+        }
+    }    
+        
+    /**
+     * Save plugin options stored in form checkbox into database.
+     * @param array $post_array
+     * @param string $field_name
+     * @param bool $wp_cassify_network_activated
+     */
+    public static function wp_cassify_update_checkbox( &$post_array, $field_name, $checked_value_name, $wp_cassify_network_activated ) {
+
+        if ( (! empty( $post_array[ $field_name ] ) ) && ( $post_array[ $field_name ] == $checked_value_name ) ) {
+            if ( $wp_cassify_network_activated ) {
+                update_site_option( $field_name , $post_array[ $field_name ] );
+            }
+            else {
+                update_option( $field_name , $post_array[ $field_name ] );
+            }      
+        }
+        else {
+            if ( $wp_cassify_network_activated ) {
+                update_site_option( $field_name , '' );
+            }
+            else {
+                update_option( $field_name , '' );
+            }
+        }	            
+    } 
+    
+    /**
+     * Save plugin options stored in form multiple select into database.
+     * @param array $post_array
+     * @param string $field_name
+	 * @param bool $wp_cassify_network_activated
+     */
+    public static function wp_cassify_update_multiple_select( &$post_array, $field_name, $wp_cassify_network_activated  ) {
+        
+		$field_value = '';
+
+        if(! empty( $post_array[ $field_name ] ) ) {
+        	$field_value = $post_array[ $field_name ];
+        	
+            if( !is_serialized( $field_value ) ) {
+                $field_value = serialize( $field_value );
+            }
+        }
+        
+        if ( $wp_cassify_network_activated ) {
+            update_site_option( $field_name , sanitize_text_field( $field_value ) );
+        }
+        else {
+            update_option( $field_name , sanitize_text_field( $field_value ) );
+        }        
+    }         
 }
 
 ?>

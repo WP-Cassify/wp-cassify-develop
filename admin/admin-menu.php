@@ -594,8 +594,8 @@ class WP_Cassify_Admin_Page {
 				<td></td>
 				<td>
 					<span class="description">Double click on rule in list to edit it.</span>
-					<?php submit_button( 'Add User Attribute Mapping', 'secondary', 'wp_cassify_add_user_attribute_mapping', FALSE, array( 'id' => 'wp_cassify_add_user_attribute_mapping' ) ); ?>
-					<?php submit_button( 'Remove User Attribute Mapping', 'secondary', 'wp_cassify_remove_user_attribute_mapping', FALSE, array( 'id' => 'wp_cassify_remove_user_attribute_mapping' ) ); ?>
+					<?php submit_button( 'Add Attribute Mapping', 'secondary', 'wp_cassify_add_user_attribute_mapping', FALSE, array( 'id' => 'wp_cassify_add_user_attribute_mapping' ) ); ?>
+					<?php submit_button( 'Remove Attribute Mapping', 'secondary', 'wp_cassify_remove_user_attribute_mapping', FALSE, array( 'id' => 'wp_cassify_remove_user_attribute_mapping' ) ); ?>
 				</td>
 			</tr>
 		</table>
@@ -622,8 +622,6 @@ class WP_Cassify_Admin_Page {
                 wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
             }
 
-			error_log( print_r( $_POST, TRUE ) );
-
 			$is_updated = FALSE;
             if ( ( isset( $_POST[ 'action' ] ) ) && ( $_POST[ 'action' ] == 'update' ) ) {    
             	
@@ -634,41 +632,43 @@ class WP_Cassify_Admin_Page {
 					die( 'Security Check !' );
 				}
         	
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_base_url' );                        
-				$this->wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version' ); 
-                $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_disable_authentication', 'disabled' );
-                $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist' );	
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_ssl_cipher', TRUE );
-                $this->wp_cassify_update_checkbox( $_POST, 'wp_cassify_ssl_check_certificate', 'enabled' );
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_base_url', FALSE, $this->wp_cassify_network_activated );                        
+				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_disable_authentication', 'disabled', $this->wp_cassify_network_activated );
+                WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist', $this->wp_cassify_network_activated );	
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_ssl_cipher', TRUE, $this->wp_cassify_network_activated );
+                WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_ssl_check_certificate', 'enabled', $this->wp_cassify_network_activated );
 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout' ); 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet' ); 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_logout_servlet' );
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_logout_servlet', FALSE, $this->wp_cassify_network_activated );
                 
                 if ( $_POST[ 'wp_cassify_protocol_version' ] == '3' ) {
-                	$this->wp_cassify_update_textfield_manual( 
+                	WP_Cassify_Utils::wp_cassify_update_textfield_manual( 
                 		'p3/' . $this->wp_cassify_default_service_validate_servlet, 
-                		'wp_cassify_service_validate_servlet' 
+                		'wp_cassify_service_validate_servlet',
+                		$this->wp_cassify_network_activated
             		);
                 }
                 else {
-					$this->wp_cassify_update_textfield_manual( 
+					WP_Cassify_Utils::wp_cassify_update_textfield_manual( 
                 		'', 
-                		'wp_cassify_service_validate_servlet' 
+                		'wp_cassify_service_validate_servlet',
+                		$this->wp_cassify_network_activated
             		);
                 }
                     
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_xpath_query_to_extact_cas_user' ); 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_xpath_query_to_extact_cas_attributes' ); 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_attributes_list' ); 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_allow_deny_order' ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_xpath_query_to_extact_cas_user', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_xpath_query_to_extact_cas_attributes', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_attributes_list', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_allow_deny_order', FALSE, $this->wp_cassify_network_activated ); 
 
-                $this->wp_cassify_update_multiple_select( $_POST, 'wp_cassify_autorization_rules' ); 
-                $this->wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_role_rules' ); 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_if_not_allowed' ); 
-                $this->wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_white_list' ); 
+                WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_autorization_rules', $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_role_rules', $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_if_not_allowed', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_white_list', FALSE, $this->wp_cassify_network_activated ); 
                 
-                $this->wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_attributes_mapping_list' ); 
+                WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_attributes_mapping_list', $this->wp_cassify_network_activated ); 
 
                 // Empty cache when options are updated.
                 if (function_exists('w3tc_pgcache_flush')) {
@@ -713,94 +713,5 @@ class WP_Cassify_Admin_Page {
 		</div>
 		<?php
 	}
-        
-    /**
-     * Save plugin options stored in form textfield into database.
-     * @param array $post_array
-     * @param string $field_name
-     * @param bool $do_not_check_empty
-     */
-    private function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = FALSE ) {
-
-		$field_value = '';
-		
-		if (! $do_not_check_empty ) {
-			if(! empty( $post_array[ $field_name ] ) ) {
-	        	$field_value = $post_array[ $field_name ];
-	        }
-		}
-		else {
-			$field_value = $post_array[ $field_name ];
-		}
-		
-        if ( $this->wp_cassify_network_activated ) {
-            update_site_option( $field_name , sanitize_text_field( $field_value ) );
-        }
-        else {
-            update_option( $field_name , sanitize_text_field( $field_value ) );
-        }                
-    }
-    
-    /**
-     * Save plugin options stored in form textfield into database.
-     * @param string $field_value
-     * @param string $field_name
-     */
-    private function wp_cassify_update_textfield_manual( $field_value, $field_name ) {
-
-        if( isset( $field_value ) ) {
-            if ( $this->wp_cassify_network_activated ) {
-                update_site_option( $field_name , sanitize_text_field( $field_value ) );
-            }
-            else {
-                update_option( $field_name , sanitize_text_field( $field_value ) );
-            }                
-        }
-    }    
-        
-    /**
-     * Save plugin options stored in form checkbox into database.
-     * @param array $post_array
-     * @param string $field_name
-     */
-    private function wp_cassify_update_checkbox( &$post_array, $field_name, $checked_value_name ) {
-
-        if ( (! empty( $post_array[ $field_name ] ) ) && ( $post_array[ $field_name ] == $checked_value_name ) ) {
-            if ( $this->wp_cassify_network_activated ) {
-                update_site_option( $field_name , $post_array[ $field_name ] );
-            }
-            else {
-                update_option( $field_name , $post_array[ $field_name ] );
-            }      
-        }
-        else {
-            if ( $this->wp_cassify_network_activated ) {
-                update_site_option( $field_name , '' );
-            }
-            else {
-                update_option( $field_name , '' );
-            }
-        }	            
-    } 
-    
-    /**
-     * Save plugin options stored in form multiple select into database.
-     * @param array $post_array
-     * @param string $field_name
-     */
-    private function wp_cassify_update_multiple_select( &$post_array, $field_name ) {
-        
-		$field_value = '';
-
-        if(! empty( $post_array[ $field_name ] ) ) {
-        	$field_value = $post_array[ $field_name ];
-        	
-            if( !is_serialized( $field_value ) ) {
-                $field_value = serialize( $field_value );
-            }
-        }
-        
-        update_option( $field_name , sanitize_text_field( $field_value ) );
-    }     
 }
 ?>
