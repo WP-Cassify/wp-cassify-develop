@@ -737,9 +737,7 @@ class WP_Cassify_Plugin {
 	            				$wp_cassify_wordpress_user_meta => $cas_user_datas[ $wp_cassify_cas_user_attribute ] 
             				) 
         				);
-        				
-        				error_log( $wp_cassify_wordpress_user_meta .  '=>' . $cas_user_datas[ $wp_cassify_cas_user_attribute ]  );
-	            		
+
 	            		$mapping_set = TRUE;
 	            	}
 	            	
