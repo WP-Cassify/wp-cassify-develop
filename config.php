@@ -18,19 +18,27 @@ $wp_cassify_default_protocol_version_values = array(
 	'3' => '3'
 ); 
 
+$wp_cassify_default_ssl_cipher_values = array( 
+	'0' => 'CURL_SSLVERSION_DEFAULT', 
+	'1' => 'CURL_SSLVERSION_TLSv1', 
+	'2' => 'CURL_SSLVERSION_SSLv2', 
+	'3' => 'CURL_SSLVERSION_SSLv3', 
+	'4' => 'CURL_SSLVERSION_TLSv1_0', 
+	'5' => 'CURL_SSLVERSION_TLSv1_1',
+	'6' => 'CURL_SSLVERSION_TLSv1_2'
+);
+
+$wp_cassify_default_ssl_check_certificate = 'disabled';
+
 $wp_cassify_default_redirect_parameter_name = 'redirect_to';
 $wp_cassify_default_service_ticket_parameter_name = 'ticket';
 $wp_cassify_default_service_service_parameter_name = 'service';
+$wp_cassify_default_bypass_parameter_name = 'wp_cassify_bypass';
 
-$wp_cassify_default_ssl_cipher_values = array( 
-	'1' => 'SSLv1', // CURLOPT_SSLVERSION 1
-	'2' => 'SSLv2', // CURLOPT_SSLVERSION 2
-	'TLSv1' => 'TLSv1' // CURL_SSLVERSION_TLSv1
-	);
-	
 $wp_cassify_default_allow_deny_order = array(
 	'allow, deny',
-	'deny, allow');
+	'deny, allow'
+);
 
 $wp_cassify_plugin_options_list = array(
 	'wp_cassify_base_url',
@@ -38,6 +46,7 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_disable_authentication',
 	'wp_cassify_create_user_if_not_exist',
 	'wp_cassify_ssl_cipher',
+	'wp_cassify_ssl_check_certificate',
 	'wp_cassify_redirect_url_after_logout',
 	'wp_cassify_login_servlet',
 	'wp_cassify_logout_servlet',
@@ -99,5 +108,6 @@ $wp_cassify_matched_parenthesis_groups_simplified = array(
 	'left_operand' => '',
 	'right_operand' => '',
 	'operator' => '',
-	'result' => FALSE);
+	'result' => FALSE
+);
 ?>

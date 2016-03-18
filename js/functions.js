@@ -1,6 +1,10 @@
 
 jQuery( document ).ready(function() {
     jQuery( '#wp_cassify_custom_user_meta' ).hide();
+
+	// for metaboxes
+	jQuery(".if-js-closed").removeClass("if-js-closed").addClass("closed");
+	postboxes.add_postbox_toggles( 'wp-cassify');
 });
 
 jQuery( '#wp_cassify_add_rule' ).click( function ( evt ) {
@@ -137,7 +141,7 @@ jQuery( '#wp_cassify_wordpress_user_meta_list' ).change( function ( evt ) {
 	return false;
 });
 
-jQuery( '#wp_cassify_save_options' ).click( function ( evt ) {
+jQuery( '[data-style="wp_cassify_save_options"]' ).click( function ( evt ) {
 	
 	jQuery( '#wp_cassify_autorization_rules option' ).prop( 'selected', true );
 	jQuery( '#wp_cassify_user_role_rules option' ).prop( 'selected', true );
