@@ -228,6 +228,24 @@ class WP_Cassify_Utils {
         
         return $wp_cassify_plugin_option;
     }
+    
+    /**
+     * Set plugin option according to activation plugin level
+     * @param bool $network_activated
+     * @param string $option_name
+     * @param string $option_value
+     */
+    public static function wp_cassify_update_option( $network_activated, $option_name, $option_value ) {
+        
+        $wp_cassify_plugin_option = '';
+        
+        if ( $network_activated ) {
+            update_site_option( $option_name , sanitize_text_field( $option_value ) );
+        }
+        else {
+            update_option( $option_name , sanitize_text_field( $option_value ) );
+        }
+    }    
 
     /**
      * Save plugin options stored in form textfield into database.
@@ -325,7 +343,113 @@ class WP_Cassify_Utils {
         else {
             update_option( $field_name , sanitize_text_field( $field_value ) );
         }        
-    }         
+    }      
+    
+	/**
+	 * Function used to encrypt data
+	 * @return $encrypted_string
+	 */ 
+	public static function wp_cassify_simple_encrypt( $text, $salt = "wp_cassify" ) {
+		
+		if (! function_exists ( 'mcrypt_encrypt' ) ) {
+			die( 'Please install php mcrypt library !');
+		}		
+		
+		$encrypted_string = trim( 
+			base64_encode( 
+				mcrypt_encrypt( 
+					MCRYPT_RIJNDAEL_256, 
+					$salt, 
+					$text, 
+					MCRYPT_MODE_ECB, 
+					mcrypt_create_iv( 
+						mcrypt_get_iv_size( MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB ), 
+						MCRYPT_RAND 
+					) 
+				)
+			)
+		);
+		
+		return $encrypted_string;
+	}
+
+	/**
+	 * Function used to decrypt data
+	 * @return $decrypted_string
+	 */ 
+	public static function wp_cassify_simple_decrypt( $text, $salt = "wp_cassify" ) {
+		
+		if (! function_exists ( 'mcrypt_decrypt' ) ) {
+			die( 'Please install php mcrypt library !');
+		}			
+		
+		$decrypted_string = mcrypt_decrypt(
+			MCRYPT_RIJNDAEL_256, 
+			$salt, 
+			base64_decode( $text ), 
+			MCRYPT_MODE_ECB, 
+			mcrypt_create_iv( 
+				mcrypt_get_iv_size( 
+					MCRYPT_RIJNDAEL_256, 
+					MCRYPT_MODE_ECB
+				), 
+				MCRYPT_RAND
+			)
+		);
+		
+		return $decrypted_string;
+	}    
+	
+	/**
+	 * Function used by plugin to send mail.
+	 * @param string $from
+	 * @param $string $to
+	 * @param $string $subject
+	 * @param $string $body
+	 * @param $string $smtp_host
+	 * @param $string $smtp_port
+	 * @param $string $smtp_auth
+	 * @param $string $smtp_password
+	 * @return $send_result
+	 */ 
+	public static function wp_cassify_sendmail( $from, $to, $subject, $body, $priority, $smtp_host, $smtp_port = 25, $smtp_auth = false, $smtp_encryption_type, $smtp_user, $smtp_password ) {
+		
+		// Create the Transport
+		$transport = \Swift_SmtpTransport::newInstance( $smtp_host, $smtp_port )
+			->setUsername( $smtp_user )
+			->setPassword( $smtp_password );
+		
+		error_log( 'smtp_password =>' . $smtp_password );
+			
+		if ( $smtp_auth == TRUE ) {
+			$transport->setEncryption( $smtp_encryption_type );
+			// $transport->setStreamOptions( array( $smtp_encryption_type => array( 'allow_self_signed' => true, 'verify_peer' => false ) ) );
+		}
+			
+
+		// Create the Mailer using your created Transport
+		$mailer = \Swift_Mailer::newInstance( $transport );			
+		
+		// Create the message
+		$message = \Swift_Message::newInstance()
+			->setSubject( $subject )
+			->setFrom( array( $from => $from ) )
+			->setTo( array( $to ) )
+			->setBody( $body )
+			->setContentType( 'text/html; charset=UTF-8')
+			->setReturnPath( $from )
+			->setPriority( $priority );
+			
+		// Send the message
+		if (! $mailer->send( $message, $failures ) ) {
+			$send_result = $failures;
+		}
+		else {
+			$send_result = TRUE;
+		}
+		
+		return $send_result;
+	}
 }
 
 ?>
