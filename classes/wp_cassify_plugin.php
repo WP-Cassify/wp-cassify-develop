@@ -120,7 +120,9 @@ class WP_Cassify_Plugin {
 			add_action( 'init', array( $this , 'wp_cassify_session_start' ), 1 ); 
 			add_action( 'init', array( $this , 'wp_cassify_grab_service_ticket' ) , 2 ); 
 			add_action( 'wp_authenticate', array( $this , 'wp_cassify_redirect' ) , 1 ); 
-			add_action( 'wp_logout', array( $this , 'wp_cassify_logout' ) , 10 ); 		
+			add_action( 'wp_logout', array( $this , 'wp_cassify_logout' ) , 10 ); 
+			
+			add_action( 'wp_cassify_send_notification', array( $this, 'wp_cassify_send_notification_message' ), 1, 1 ); 
 		}
 	}
 	
@@ -177,6 +179,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_autorization_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_autorization_rules' ) );		
         $wp_cassify_user_role_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_role_rules' ) );
         $wp_cassify_user_attributes_mapping_list = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_attributes_mapping_list' ) );
+ 		$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
  
 		if ( empty( $wp_cassify_login_servlet ) ) {
 			$wp_cassify_login_servlet = $this->wp_cassify_default_login_servlet;
@@ -256,7 +259,33 @@ class WP_Cassify_Plugin {
 
 				// Create wordpress user account if not exist
 				if ( $wp_cassify_create_user_if_not_exist == 'create_user_if_not_exist' ) {
-					WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], NULL );
+					if ( WP_Cassify_Utils::wp_cassify_is_wordpress_user_exist( $cas_user_datas[ 'cas_user_id' ] ) == FALSE ) {
+						$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], NULL );
+						
+						if ( $wordpress_user_id > 0 ) {
+							$wordpress_user_info = get_userdata( $wordpress_user_id );
+
+							/* TODO with notification_rules
+							if ( ( is_array( $wp_cassify_user_role_rules ) ) && ( count( $wp_cassify_user_role_rules ) > 0 ) ) {
+								foreach ( $wp_cassify_user_role_rules as $wp_cassify_user_role_rule ) {
+									$wp_cassify_user_role_rule_parts = explode( '|', $wp_cassify_user_role_rule );
+									
+									if ( ( is_array( $wp_cassify_user_role_rule_parts ) ) && ( count( $wp_cassify_user_role_rule_parts ) == 2 ) ) {
+										$wp_cassify_user_role_key = $wp_cassify_user_role_rule_parts[0];
+										$wp_cassify_user_role_rule_expression = stripslashes( $wp_cassify_user_role_rule_parts[1] );
+			
+										if ( $this->wp_cassify_rule_matched( $cas_user_datas, $wp_cassify_user_role_rule_expression ) ) {
+											WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $wp_cassify_user_role_key );		
+										}
+									}
+								}
+							}
+							*/
+							
+							// Define custom plugin hook to send notification after user account has been created.
+							do_action( 'wp_cassify_send_notification', 'User account has been created :' . $wordpress_user_info->user_login );							
+						}
+					}
 				}
 				
 				// Set wordpress user roles if defined in plugin admin settings
@@ -268,7 +297,7 @@ class WP_Cassify_Plugin {
 							$wp_cassify_user_role_key = $wp_cassify_user_role_rule_parts[0];
 							$wp_cassify_user_role_rule_expression = stripslashes( $wp_cassify_user_role_rule_parts[1] );
 
-							if ( $this->wp_cassify_is_user_role_allowed( $cas_user_datas, $wp_cassify_user_role_rule_expression ) ) {
+							if ( $this->wp_cassify_rule_matched( $cas_user_datas, $wp_cassify_user_role_rule_expression ) ) {
 								WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $wp_cassify_user_role_key );		
 							}
 						}
@@ -684,14 +713,14 @@ class WP_Cassify_Plugin {
 	}
 	
 	/**
-	 * Check if user is matched by Conditionnal User Role Rule
+	 * Check if user is matched by Conditionnal Rule
 	 * @param array $cas_user_datas
-	 * @param string $wp_cassify_user_role_rule
+	 * @param string $wp_cassify_rule
 	 * @return $is_user_role_allowed
 	 */ 
-	private function wp_cassify_is_user_role_allowed( $cas_user_datas = array(), $wp_cassify_user_role_rule ) {
+	private function wp_cassify_rule_matched( $cas_user_datas = array(), $wp_cassify_rule ) {
 
-		$is_user_role_allowed = FALSE;
+		$wp_cassify_rule_matched = FALSE;
 
 		$solver = new \wp_cassify\wp_cassify_rule_solver();
 
@@ -704,9 +733,9 @@ class WP_Cassify_Plugin {
 		$solver->error_messages = $this->wp_cassify_error_messages;
 		$solver->cas_user_datas = $cas_user_datas;
 
-		$is_user_role_allowed = $solver->solve( $wp_cassify_user_role_rule );
+		$wp_cassify_rule_matched = $solver->solve( $wp_cassify_rule );
 
-		return $is_user_role_allowed;
+		return $wp_cassify_rule_matched;
 	}
 
 	/**
@@ -765,5 +794,64 @@ class WP_Cassify_Plugin {
 			}
 		}
 	}
-}
+	
+	/**
+	 * Send email notification
+	 * @param string $message
+	 */ 
+	public function wp_cassify_send_notification_message( $message ) {
+		
+		error_log( 'wp_cassify_send_notification_message : ' . $message );
+		
+		$wp_cassify_notifications_smtp_to = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_subject_prefix' ) );
+		$wp_cassify_notifications_subject_prefix = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_subject_prefix' ) );
+		$wp_cassify_send_notification_subject =  $this->wp_cassify_default_notifications_options[ 'wp_cassify_send_notification_default_subject' ];
+		$wp_cassify_send_notification_message = $this->wp_cassify_default_notifications_options[ 'wp_cassify_send_notification_default_message' ];
+	
+		if (! empty( $wp_cassify_notifications_subject_prefix ) ) {
+			$wp_cassify_send_notification_subject = $wp_cassify_notifications_subject_prefix . $wp_cassify_send_notification_subject;
+		}
+
+		$wp_cassify_notifications_smtp_auth = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_auth' ) );
+		
+		$wp_cassify_notifications_smtp_auth_enabled = FALSE;
+		$wp_cassify_notifications_encryption_type = NULL;
+		
+		if ( $wp_cassify_notifications_smtp_auth == 'enabled' ) {
+			$wp_cassify_notifications_smtp_auth_enabled = TRUE;
+			$wp_cassify_notifications_encryption_type = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_encryption_type' ) );
+		}
+		
+		$wp_cassify_notifications_priority = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_priority' ) );
+
+		$wp_cassify_notifications_smtp_user = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_user' ) );
+		$wp_cassify_notifications_smtp_password = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_password' ) );
+		
+		if (! empty( $wp_cassify_notifications_salt ) ) {
+			$wp_cassify_notifications_smtp_password = WP_Cassify_Utils::wp_cassify_simple_decrypt( 
+				$wp_cassify_notifications_smtp_password,
+				$wp_cassify_notifications_salt
+			);
+		}
+		else {
+			$wp_cassify_notifications_smtp_password = WP_Cassify_Utils::wp_cassify_simple_decrypt( 
+				$wp_cassify_notifications_smtp_password
+			);						
+		}
+
+		$send_result = WP_Cassify_Utils::wp_cassify_sendmail( 
+			esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_from' ) ), 
+			$wp_cassify_notifications_smtp_to, 
+			$wp_cassify_send_notification_subject, 
+			$wp_cassify_send_notification_message,
+			$wp_cassify_notifications_priority,
+			esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_host' ) ), 
+			esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_port' ) ), 
+			$wp_cassify_notifications_smtp_auth_enabled,
+			$wp_cassify_notifications_encryption_type,
+			$wp_cassify_notifications_smtp_user, 
+			$wp_cassify_notifications_smtp_password
+		);
+	}
+} 
 ?>
