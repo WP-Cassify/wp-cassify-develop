@@ -259,6 +259,14 @@ class Swift_Transport_StreamBuffer extends Swift_ByteStream_AbstractFilterableIn
         
         $options = array();
         
+        // Hack to use php swiftmailer with self-signed certificates.
+		// source : https://github.com/swiftmailer/swiftmailer/issues/544
+		// If you are using PHP 5.6, the error does occur because of the "SSL context options" used for the stream context in swiftmailer. 
+		// IN PHP 5.6 verify_peer and verify_peer_name the default was set to TRUE, so PHP checks the SSL certificate.
+		// It is currently not possible to disable it in swiftmailer using some options.
+		$options['ssl']['verify_peer'] = FALSE;
+		$options['ssl']['verify_peer_name'] = FALSE;
+        
         if (!empty($this->_params['sourceIp'])) {
             $options['socket']['bindto'] = $this->_params['sourceIp'].':0';
         }

@@ -163,6 +163,22 @@ class WP_Cassify_Utils {
 	}
 	
 	/**
+	 * Check if wordpress user account already exist
+	 * @param string $cas_user_id
+	 * @return bool $is_wordpress_user_exist
+	 */ 
+	public static function wp_cassify_is_wordpress_user_exist( $cas_user_id ) {
+
+		$is_wordpress_user_exist = TRUE;
+
+		if (! username_exists( $cas_user_id ) ) {
+			$is_wordpress_user_exist = FALSE;
+		}
+		
+		return $is_wordpress_user_exist;
+	}	
+	
+	/**
 	 * Set role to an existing Wordpress user
 	 * @param string $wordpress_user_login
 	 * @param string $role_key
@@ -418,15 +434,12 @@ class WP_Cassify_Utils {
 		$transport = \Swift_SmtpTransport::newInstance( $smtp_host, $smtp_port )
 			->setUsername( $smtp_user )
 			->setPassword( $smtp_password );
-		
-		error_log( 'smtp_password =>' . $smtp_password );
 			
 		if ( $smtp_auth == TRUE ) {
 			$transport->setEncryption( $smtp_encryption_type );
 			// $transport->setStreamOptions( array( $smtp_encryption_type => array( 'allow_self_signed' => true, 'verify_peer' => false ) ) );
 		}
-			
-
+		
 		// Create the Mailer using your created Transport
 		$mailer = \Swift_Mailer::newInstance( $transport );			
 		
