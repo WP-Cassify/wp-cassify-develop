@@ -40,6 +40,32 @@ $wp_cassify_default_allow_deny_order = array(
 	'deny, allow'
 );
 
+$wp_cassify_default_notifications_options = array(
+	'wp_cassify_default_notifications_smtp_port' => array(
+		'25' => '25',
+		'465' => '465',
+		'587' => '587'
+	),
+	'wp_cassify_default_notifications_encryption_type' => array(
+		'tls' => 'TLS',
+		'ssl' => 'SSL'
+	),	
+	'wp_cassify_default_notifications_priority' => array(
+		'1' => 'Highest',
+		'2' => 'High',
+		'3' => 'Normal',
+		'4' => 'Low',
+		'5' => 'Lowest'
+	),		
+	'wp_cassify_default_notifications_subject_prefix' => '[ WP Cassify notification ]',
+	'wp_cassify_send_notification_default_subject' => ' Test notification ',
+	'wp_cassify_send_notification_default_message' => ' This is a test message send by WP Cassify plugin.',
+	'wp_cassify_default_notifications_actions' => array(
+		'when_user_account_expire' => 'When user account expire (NOT YET IMPLEMENTED)',
+		'after_user_account_created' => 'After user account creation'
+	)
+);
+
 $wp_cassify_plugin_options_list = array(
 	'wp_cassify_base_url',
 	'wp_cassify_protocol_version',
@@ -59,7 +85,25 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_user_role_rules',
 	'wp_cassify_redirect_url_if_not_allowed',
 	'wp_cassify_redirect_url_white_list',
-	'wp_cassify_user_attributes_mapping_list'
+	'wp_cassify_user_attributes_mapping_list',
+	
+	'wp_cassify_notifications_smtp_host',
+	'wp_cassify_notifications_smtp_port',
+	'wp_cassify_notifications_smtp_auth',
+	'wp_cassify_notifications_encryption_type',
+	'wp_cassify_notifications_smtp_user',
+	'wp_cassify_notifications_smtp_password',
+	'wp_cassify_notifications_smtp_confirm_password',
+	'wp_cassify_notifications_salt',
+	'wp_cassify_notifications_priority',
+	'wp_cassify_notifications_smtp_from',
+	'wp_cassify_notifications_smtp_to',
+	'wp_cassify_notifications_subject_prefix',
+	'wp_cassify_notifications_send_to_test',
+	
+	'wp_cassify_notifications_rules',
+	'wp_cassify_notifications_actions',
+	'wp_cassify_user_notification_rules'
 );
 
 $wp_cassify_wordpress_user_meta_list = array(
