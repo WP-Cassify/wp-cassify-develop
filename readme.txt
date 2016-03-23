@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -120,5 +120,9 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 = 1.6.0 =
 * New admin interface with metaboxes.
 * Fix Bug multi-select fields if network activated.
+
+= 1.6.1 =
+* Email notifications when user account is created.
+
 
 == Upgrade Notice ==

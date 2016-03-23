@@ -264,44 +264,26 @@ class WP_Cassify_Plugin {
 						
 						if ( $wordpress_user_id > 0 ) {
 							$wordpress_user_info = get_userdata( $wordpress_user_id );
-
-							/* TODO with notification_rules
-							if ( ( is_array( $wp_cassify_user_role_rules ) ) && ( count( $wp_cassify_user_role_rules ) > 0 ) ) {
-								foreach ( $wp_cassify_user_role_rules as $wp_cassify_user_role_rule ) {
-									$wp_cassify_user_role_rule_parts = explode( '|', $wp_cassify_user_role_rule );
-									
-									if ( ( is_array( $wp_cassify_user_role_rule_parts ) ) && ( count( $wp_cassify_user_role_rule_parts ) == 2 ) ) {
-										$wp_cassify_user_role_key = $wp_cassify_user_role_rule_parts[0];
-										$wp_cassify_user_role_rule_expression = stripslashes( $wp_cassify_user_role_rule_parts[1] );
-			
-										if ( $this->wp_cassify_rule_matched( $cas_user_datas, $wp_cassify_user_role_rule_expression ) ) {
-											WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $wp_cassify_user_role_key );		
-										}
-									}
-								}
-							}
-							*/
 							
-							// Define custom plugin hook to send notification after user account has been created.
-							do_action( 'wp_cassify_send_notification', 'User account has been created :' . $wordpress_user_info->user_login );							
+							$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+								$cas_user_datas, 
+								$wp_cassify_notification_rules, 
+								'after_user_account_created'
+							);
+							
+							if ( $notification_rule_matched ) {
+								// Define custom plugin hook to send notification after user account has been created.
+								do_action( 'wp_cassify_send_notification', 'User account has been created :' . $wordpress_user_info->user_login );							
+							}
 						}
 					}
 				}
 				
 				// Set wordpress user roles if defined in plugin admin settings
-				if ( ( is_array( $wp_cassify_user_role_rules ) ) && ( count( $wp_cassify_user_role_rules ) > 0 ) ) {
-					foreach ( $wp_cassify_user_role_rules as $wp_cassify_user_role_rule ) {
-						$wp_cassify_user_role_rule_parts = explode( '|', $wp_cassify_user_role_rule );
-						
-						if ( ( is_array( $wp_cassify_user_role_rule_parts ) ) && ( count( $wp_cassify_user_role_rule_parts ) == 2 ) ) {
-							$wp_cassify_user_role_key = $wp_cassify_user_role_rule_parts[0];
-							$wp_cassify_user_role_rule_expression = stripslashes( $wp_cassify_user_role_rule_parts[1] );
-
-							if ( $this->wp_cassify_rule_matched( $cas_user_datas, $wp_cassify_user_role_rule_expression ) ) {
-								WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $wp_cassify_user_role_key );		
-							}
-						}
-					}
+				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
+				
+				foreach ( $roles_to_push as $role ) {
+					WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
 				}
 				
 				// Sync CAS User attributes with Wordpress User meta
@@ -716,11 +698,11 @@ class WP_Cassify_Plugin {
 	 * Check if user is matched by Conditionnal Rule
 	 * @param array $cas_user_datas
 	 * @param string $wp_cassify_rule
-	 * @return $is_user_role_allowed
+	 * @return $rule_matched
 	 */ 
 	private function wp_cassify_rule_matched( $cas_user_datas = array(), $wp_cassify_rule ) {
 
-		$wp_cassify_rule_matched = FALSE;
+		$rule_matched = FALSE;
 
 		$solver = new \wp_cassify\wp_cassify_rule_solver();
 
@@ -733,9 +715,71 @@ class WP_Cassify_Plugin {
 		$solver->error_messages = $this->wp_cassify_error_messages;
 		$solver->cas_user_datas = $cas_user_datas;
 
-		$wp_cassify_rule_matched = $solver->solve( $wp_cassify_rule );
+		$rule_matched = $solver->solve( $wp_cassify_rule );
 
-		return $wp_cassify_rule_matched;
+		return $rule_matched;
+	}
+
+
+	/**
+	 * Check if user is matched by Notification Rule
+	 * @param array $cas_user_datas
+	 * @param array $role_rules			Array containing all role rules
+	 * @return array $roles_to_push		Array containing roles to push to user
+	 */ 	
+	private function wp_cassify_get_roles_to_push( $cas_user_datas = array(), $role_rules = array() ) {
+		
+		$roles_to_push = array();
+
+		if ( ( is_array( $role_rules ) ) && ( count( $role_rules ) > 0 ) ) {
+			foreach ( $role_rules as $role_rule ) {
+				$role_rule_parts = explode( '|', $role_rule );
+				
+				if ( ( is_array( $role_rule_parts ) ) && ( count( $role_rule_parts ) == 2 ) ) {
+					$role_rule_key = $role_rule_parts[0];
+					$role_rule_expression = stripslashes( $role_rule_parts[1] );
+	
+					if ( $this->wp_cassify_rule_matched( $cas_user_datas, $role_rule_expression ) ) {
+						array_push( $roles_to_push, $role_rule_key );
+					}
+				}
+			}
+		}
+		
+		return $roles_to_push;
+	}
+
+
+	
+	/**
+	 * Check if user is matched by Notification Rule
+	 * @param array $cas_user_datas
+	 * @param array $notification_rules			Array containing all notification rules
+	 * @param array $trigger_name				The name of the action wich fire the notification
+	 * @return $notification_rule_matched
+	 */ 	
+	private function wp_cassify_notification_rule_matched( $cas_user_datas = array(), $notification_rules = array(), $trigger_name ) {
+		
+		$notification_rule_matched = FALSE;
+
+		if ( ( is_array( $notification_rules ) ) && ( count( $notification_rules ) > 0 ) ) {
+			foreach ( $notification_rules as $notification_rule ) {
+				$notification_rule_parts = explode( '|', $notification_rule );
+				
+				if ( ( is_array( $notification_rule_parts ) ) && ( count( $notification_rule_parts ) == 2 ) ) {
+					$notification_rule_key = $notification_rule_parts[0];
+					$notification_rule_expression = stripslashes( $notification_rule_parts[1] );
+					
+					if ( $notification_rule_key == $trigger_name ) {
+						if ( $this->wp_cassify_rule_matched( $cas_user_datas, $notification_rule_expression ) ) {
+							$notification_rule_matched = TRUE;
+						}						
+					}
+				}
+			}
+		}		
+		
+		return $notification_rule_matched;
 	}
 
 	/**
@@ -800,9 +844,7 @@ class WP_Cassify_Plugin {
 	 * @param string $message
 	 */ 
 	public function wp_cassify_send_notification_message( $message ) {
-		
-		error_log( 'wp_cassify_send_notification_message : ' . $message );
-		
+
 		$wp_cassify_notifications_smtp_to = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_subject_prefix' ) );
 		$wp_cassify_notifications_subject_prefix = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_subject_prefix' ) );
 		$wp_cassify_send_notification_subject =  $this->wp_cassify_default_notifications_options[ 'wp_cassify_send_notification_default_subject' ];
