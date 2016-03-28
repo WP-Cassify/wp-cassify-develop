@@ -61,8 +61,10 @@ $wp_cassify_default_notifications_options = array(
 	'wp_cassify_send_notification_default_subject' => ' Test notification ',
 	'wp_cassify_send_notification_default_message' => ' This is a test message send by WP Cassify plugin.',
 	'wp_cassify_default_notifications_actions' => array(
-		'when_user_account_expire' => 'When user account expire (NOT YET IMPLEMENTED)',
-		'after_user_account_created' => 'After user account creation'
+		'after_user_account_created' => 'After user account creation',
+		'after_user_login' => 'After user login',
+		'after_user_logout' => 'After user logout (*)',
+		//'when_user_account_expire' => 'When user account expire (NOT YET IMPLEMENTED)'
 	)
 );
 
