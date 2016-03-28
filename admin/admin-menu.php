@@ -861,7 +861,7 @@ class WP_Cassify_Admin_Page {
 	}
 	
 /**
-	 * Display html output for metabox Notifications Settings.
+	 * Display html output for metabox Notifications rules Settings.
 	 */ 	
 	public function wp_cassify_add_metabox_notifications_rules_settings() {
 		
@@ -917,6 +917,8 @@ class WP_Cassify_Admin_Page {
 					<?php 	} ?>
 					<?php } ?>
 					</select>
+					<br />
+					<span class="description">(*) Theses triggers needs that users attributes presents in notification rule are populated into session to be fired. See "Attributes Extraction Settings" to populate attributes into session.</span>
 				</td>
 			</tr>
 			<tr valign="top">

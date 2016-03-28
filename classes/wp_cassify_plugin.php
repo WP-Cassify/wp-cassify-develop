@@ -263,8 +263,6 @@ class WP_Cassify_Plugin {
 						$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], NULL );
 						
 						if ( $wordpress_user_id > 0 ) {
-							$wordpress_user_info = get_userdata( $wordpress_user_id );
-							
 							$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
 								$cas_user_datas, 
 								$wp_cassify_notification_rules, 
@@ -273,7 +271,7 @@ class WP_Cassify_Plugin {
 							
 							if ( $notification_rule_matched ) {
 								// Define custom plugin hook to send notification after user account has been created.
-								do_action( 'wp_cassify_send_notification', 'User account has been created :' . $wordpress_user_info->user_login );							
+								do_action( 'wp_cassify_send_notification', 'User account has been created :' . $cas_user_datas[ 'cas_user_id' ] );							
 							}
 						}
 					}
@@ -295,6 +293,17 @@ class WP_Cassify_Plugin {
 				
 				// Auth user into wordpress
 				WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
+
+				$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+					$cas_user_datas, 
+					$wp_cassify_notification_rules, 
+					'after_user_login'
+				);
+				
+				if ( $notification_rule_matched ) {
+					// Define custom plugin hook to send notification after user has been logged in
+					do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' is logged in' );							
+				}
 
 				// Redirect to the service url.
 				WP_Cassify_Utils::wp_cassify_redirect_url( $service_url );
@@ -364,6 +373,24 @@ class WP_Cassify_Plugin {
 			$wp_cassify_redirect_url_after_logout = get_home_url();
 		}
 
+		// Send logout notification if rule is matched.		
+		if ( isset(	$_SESSION['wp_cassify_cas_user_datas'] ) ) {
+
+			$cas_user_datas = $_SESSION['wp_cassify_cas_user_datas'];
+			
+			$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
+	 		
+			$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+				$cas_user_datas, 
+				$wp_cassify_notification_rules, 
+				'after_user_logout'
+			);
+			
+			if ( $notification_rule_matched ) {
+				do_action( 'wp_cassify_send_notification', 'User account has been logged out :' . $cas_user_datas[ 'cas_user_id' ] );							
+			}			
+		}		
+
 		// Destroy wordpress session;
 		session_destroy();
 		
@@ -403,27 +430,28 @@ class WP_Cassify_Plugin {
 	 */ 
 	public function wp_cassify_populate_attributes_into_session( $cas_user_datas, $wp_cassify_attributes_list ) {
 
+		$cas_user_datas_filtered = array();
+		
+		// cas_user_id is populated by default.
+		$cas_user_datas_filtered[ 'cas_user_id' ] = $cas_user_datas[ 'cas_user_id' ];
+
 		if (! empty( $wp_cassify_attributes_list ) ) {
 			$cas_user_attributes_names = explode( ',', $wp_cassify_attributes_list );
 
 			if ( is_array( $cas_user_attributes_names ) ) {
 				
-				$cas_user_datas_filtered = array();
-				
-				// cas_user_id is populated by default.
-				$cas_user_datas_filtered[ 'cas_user_id' ] = $cas_user_datas[ 'cas_user_id' ];
 				
 				foreach( $cas_user_attributes_names as $cas_user_attributes_name ) {
 					$cas_user_datas_filtered[ $cas_user_attributes_name ] = $cas_user_datas[ $cas_user_attributes_name ];
 				}
-				
-				if( session_id() == '' ) {
-    				session_start();
-				}
-				
-				$_SESSION['wp_cassify_cas_user_datas'] = $cas_user_datas_filtered;
 			}
 		}
+		
+		if( session_id() == '' ) {
+			session_start();
+		}
+		
+		$_SESSION['wp_cassify_cas_user_datas'] = $cas_user_datas_filtered;
 	}
 	
 	/**

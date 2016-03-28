@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.4.2
-Stable tag: 1.6.1
+Stable tag: 1.6.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,8 +29,9 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New Feature !) Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication. ( Screencast available )
-* (New Feature !) Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
+* (New feature !) Receive email notifications when trigger is fired (after user account creation, after user login/logout).
+* (New feature !) Define notifications rules based on user attributes values.
+
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
 * Synchronize Wordpress User metas with CAS User attributes
@@ -42,6 +43,8 @@ https://wpcassify.wordpress.com/
 * Manage URL White List to bypass CAS Authentication on certain pages
 * Network activation allowed
 * You can set Service Logout URL (Needs to have CAS Server with followServiceRedirects option configured).
+* Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication. ( Screencast available )
+* Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
 
 == Installation ==
 
@@ -61,6 +64,8 @@ e.g.
 4. This is the authorization rule editor.
 5. You can set wordpress role to user according to CAS attributes values.
 6. Synchronize Wordpress User metas with CAS User attributes.
+7. This is the email notifications settings.
+8. Define email notifications based on triggers and user attributes.
 
 == Frequently Asked Questions ==
 
@@ -78,51 +83,53 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
 
-= 1.0 =
-* First version.
+= 1.6.2 =
+* Send email notifications when trigger is fired (after user account creation, after user login/logout).
 
-= 1.2 =
-* Multisite configuration possible if network activated.
-
-= 1.5 =
-* User Role Rule Editor : set user wordpress role according to CAS Attributes values.
-
-= 1.5.1 =
-* Synchronize Wordpress User metas with CAS User attributes
-
-= 1.5.2 =
-* Some bug fixes.
-
-= 1.5.3 =
-* Some bug fixes. Security fixes.
-
-= 1.5.4 =
-* Add custom GET parameter (?wp_cassify_bypass=bypass) to bypass CAS Authentication on certain urls. See online documentation for more infos. Bug fixes on Authorization rule editor.
-
-= 1.5.5 =
-* Some bug fixes.
-
-= 1.5.6 =
-* (New Feature !) Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication
-* (New Feature !) Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
-
-= 1.5.7 =
-* Replace cURL function with wp_remote_get function. Now plugin does not require php5-curl.
-* Add notice message on admin screen.
-
-= 1.5.8 =
-* Fix SSL Certificate probleme. Reintroduce cURL function instead of wp_remote_get function.
-* Add SSL Configuration option : SSL Check Certificate wich turn on/off CURLOPT_SSL_VERIFYPEER option.
-
-= 1.5.9 =
-* Fix Bug on synchronization between CAS User attributes and Wordpress User metas
+= 1.6.1 =
+* Email notifications when user account is created.
 
 = 1.6.0 =
 * New admin interface with metaboxes.
 * Fix Bug multi-select fields if network activated.
 
-= 1.6.1 =
-* Email notifications when user account is created.
+= 1.5.9 =
+* Fix Bug on synchronization between CAS User attributes and Wordpress User metas
 
+= 1.5.8 =
+* Fix SSL Certificate probleme. Reintroduce cURL function instead of wp_remote_get function.
+* Add SSL Configuration option : SSL Check Certificate wich turn on/off CURLOPT_SSL_VERIFYPEER option.
+
+= 1.5.7 =
+* Replace cURL function with wp_remote_get function. Now plugin does not require php5-curl.
+* Add notice message on admin screen.
+
+= 1.5.6 =
+* (New Feature !) Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication
+* (New Feature !) Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
+
+= 1.5.5 =
+* Some bug fixes.
+
+= 1.5.4 =
+* Add custom GET parameter (?wp_cassify_bypass=bypass) to bypass CAS Authentication on certain urls. See online documentation for more infos. Bug fixes on Authorization rule editor.
+
+= 1.5.3 =
+* Some bug fixes. Security fixes.
+
+= 1.5.2 =
+* Some bug fixes.
+
+= 1.5.1 =
+* Synchronize Wordpress User metas with CAS User attributes
+
+= 1.5 =
+* User Role Rule Editor : set user wordpress role according to CAS Attributes values.
+
+= 1.2 =
+* Multisite configuration possible if network activated.
+
+= 1.0 =
+* First version.
 
 == Upgrade Notice ==
