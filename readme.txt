@@ -4,8 +4,8 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 4.4.2
-Stable tag: 1.6.2
+Tested up to: 4.5
+Stable tag: 1.6.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -82,6 +82,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.6.3 =
+* Fix bug on javascript control UI.
 
 = 1.6.2 =
 * Send email notifications when trigger is fired (after user account creation, after user login/logout).

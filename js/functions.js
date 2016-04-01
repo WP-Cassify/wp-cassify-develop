@@ -169,8 +169,6 @@ jQuery( '#wp_cassify_wordpress_user_meta_list' ).change( function ( evt ) {
 
 jQuery( '#wp_cassify_notifications_smtp_auth' ).change(function() {
     
-    console.log('ok');
-    
     if( this.checked ) {
         jQuery( '#wp_cassify_notifications_encryption_type' ).prop('disabled', false);
     }
@@ -231,11 +229,12 @@ jQuery( '[data-style="wp_cassify_save_options"]' ).click( function ( evt ) {
 		return false;
 	}
 
-	if ( jQuery.inArray( jQuery( '#wp_cassify_notifications_salt' ).val().length, [ 16, 24, 32 ] ) ) {
-		alert( 'Salt error : only keys of sizes 16, 24 or 32 supported');
-		
-		evt.preventDefault();
-		return false;
-	}	
-	
+	if ( evt.target.id == 'wp_cassify_save_options_notifications_settings' ) {
+		if ( jQuery.inArray( jQuery( '#wp_cassify_notifications_salt' ).val().length, [ 16, 24, 32 ] ) ) {
+			alert( 'Salt error : only keys of sizes 16, 24 or 32 supported');
+			
+			evt.preventDefault();
+			return false;
+		}	
+	}
 });
