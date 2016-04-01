@@ -100,12 +100,12 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_notifications_priority',
 	'wp_cassify_notifications_smtp_from',
 	'wp_cassify_notifications_smtp_to',
-	'wp_cassify_notifications_subject_prefix',
+	'wp_cassify_notifications_smtp_subject_prefix',
 	'wp_cassify_notifications_send_to_test',
 	
 	'wp_cassify_notifications_rules',
 	'wp_cassify_notifications_actions',
-	'wp_cassify_user_notification_rules'
+	'wp_cassify_notification_rules'
 );
 
 $wp_cassify_wordpress_user_meta_list = array(
