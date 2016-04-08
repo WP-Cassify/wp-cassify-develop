@@ -64,8 +64,15 @@ class WP_Cassify_Utils {
 	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port, $wp_cassify_default_wordpress_blog_https_port ) {
 		
 		$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ) ? 'https://' : 'http://';
-		$current_url .= $_SERVER[ 'SERVER_NAME' ];
-	 
+		
+		// If cassified application is hosted behind reverse proxy.
+		if ( isset( $_SERVER[ 'HTTP_X_FORWARDED_HOST' ] ) ) {
+			$current_url .= $_SERVER[ 'HTTP_X_FORWARDED_HOST' ];
+		}
+		else {
+			$current_url .= $_SERVER[ 'SERVER_NAME' ];
+		}
+		
 		if( ( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
 			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
 			$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];

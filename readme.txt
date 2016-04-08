@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.6.4
+Stable tag: 1.6.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,8 +29,7 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New feature) : add custom shortcode to generate CAS login link into your blog. (See online documentation)
-* (New feature) : custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
+* Add support for web application hosted behind a reverse proxy. (Thanks to franck86)
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -46,6 +45,9 @@ https://wpcassify.wordpress.com/
 * Network activation allowed
 * You can set Service Logout URL (Needs to have CAS Server with followServiceRedirects option configured).
 * Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication. (See online documentation, Screencast available)
+* Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
+* Custom shortcode to generate CAS login link into your blog. (See online documentation)
+
 
 == Installation ==
 
@@ -83,6 +85,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.6.5 =
+* Add support for web application hosted behind a reverse proxy. (Thanks to franck86).
 
 = 1.6.4 =
 * Add shortcode to generate login CAS link with redirect.
