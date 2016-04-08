@@ -237,9 +237,11 @@ class WP_Cassify_Plugin {
 				// Parse CAS Server response and store into associative array.
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
 				
-				// Define custom plugin hook to build your custom parsing function
-				do_action( 'wp_cassify_custom_parsing_cas_xml_response', $cas_server_xml_response );
-				
+				// Define custom plugin filter to build your custom parsing function
+				if( has_filter( 'wp_cassify_custom_parsing_cas_xml_response' ) ) {
+					$cas_user_datas = apply_filters( 'wp_cassify_custom_parsing_cas_xml_response', $cas_server_xml_response, $cas_user_datas );
+				}
+
 				// Evaluate authorization rules
 				if ( count( $wp_cassify_autorization_rules ) > 0 ) {
 					$this->wp_cassify_separate_rules( $wp_cassify_autorization_rules );

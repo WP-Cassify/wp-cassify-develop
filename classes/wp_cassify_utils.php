@@ -3,8 +3,6 @@ namespace wp_cassify;
 
 class WP_Cassify_Utils {
 
-
-
 	/**
 	 * Perform an SSL web request to retrieve xml response containing 
 	 * cas-user id and cas-user attributes.
