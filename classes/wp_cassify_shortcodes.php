@@ -3,6 +3,8 @@ namespace wp_cassify;
 
 class WP_Cassify_Shortcodes {
 	
+	public $wp_cassify_network_activated;
+	
 	public $wp_cassify_base_url;
 	public $wp_cassify_default_redirect_parameter_name;
 	public $wp_cassify_default_service_service_parameter_name;
@@ -20,6 +22,7 @@ class WP_Cassify_Shortcodes {
 	/**
 	 * Initialize the plugin with parameters
 	 * 
+	 * param string wp_cassify_network_activated
 	 * param string $wp_cassify_default_redirect_parameter_name,
 	 * param string $wp_cassify_default_service_service_parameter_name,
 	 * param string $wp_cassify_default_wordpress_blog_http_port,
@@ -28,6 +31,7 @@ class WP_Cassify_Shortcodes {
 	 * param string $wp_cassify_default_logout_servlet,
 	 */ 
 	public function init_parameters(
+		$wp_cassify_network_activated,
 		$wp_cassify_default_redirect_parameter_name,
 		$wp_cassify_default_service_service_parameter_name,
 		$wp_cassify_default_wordpress_blog_http_port,
@@ -36,6 +40,7 @@ class WP_Cassify_Shortcodes {
 		$wp_cassify_default_logout_servlet
 	) {
 		
+		$this->wp_cassify_network_activated = $wp_cassify_network_activated;
 		$this->wp_cassify_default_redirect_parameter_name = $wp_cassify_default_redirect_parameter_name;
 		$this->wp_cassify_default_service_service_parameter_name = $wp_cassify_default_service_service_parameter_name;	
 		$this->wp_cassify_default_wordpress_blog_http_port = $wp_cassify_default_wordpress_blog_http_port;
