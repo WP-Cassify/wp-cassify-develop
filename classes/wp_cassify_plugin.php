@@ -293,6 +293,9 @@ class WP_Cassify_Plugin {
 					$wp_cassify_user_attributes_mapping_list
 				);
 				
+				// Custom hook to perform action before wordpress authentication.
+				do_action( 'wp_cassify_before_auth_user_wordpress', $cas_user_datas );
+				
 				// Auth user into wordpress
 				WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
 
