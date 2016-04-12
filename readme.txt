@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.6.6
+Stable tag: 1.6.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,7 +29,9 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
+* Suscriber role is pushed by default when user is successfully authenticated by CAS.
 * Add support for web application hosted behind a reverse proxy. (Thanks to franck86)
+
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -86,7 +88,10 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
 
-= 1.6.5 =
+= 1.6.7 =
+* Suscriber role is pushed by default when user is successfully authenticated by CAS.
+
+= 1.6.6 =
 * Bug fix
 * Add custom hook : wp_cassify_before_auth_user_wordpress
 
