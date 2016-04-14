@@ -745,6 +745,13 @@ class WP_Cassify_Admin_Page {
         if (! empty( $wp_cassify_notifications_priority ) ) {
             $wp_cassify_notifications_priority_selected = $wp_cassify_notifications_priority;
         }
+        
+        $wp_cassify_notifications_encryption_type_selected = $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_encryption_type' ][ 'tls' ];
+        $wp_cassify_notifications_encryption_type = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_encryption_type' );
+        
+        if (! empty( $wp_cassify_notifications_encryption_type ) ) {
+            $wp_cassify_notifications_encryption_type_selected = $wp_cassify_notifications_encryption_type;
+        }    
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
