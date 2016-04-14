@@ -253,7 +253,7 @@ class WP_Cassify_Plugin {
 				}
 				
 				// Define custom plugin hook after cas authentication. 
-				// For example, for two factor authentication, you can plug another authentication plugin to fired custom action here.
+				// For example, for two factor authentication, you can plug another authentication plugin to fired custom action here.			
 				do_action( 'wp_cassify_after_cas_authentication', $cas_user_datas );
 
 				// Populate selected attributes into session
@@ -323,6 +323,8 @@ class WP_Cassify_Plugin {
 	 * Perform a redirection to cas server to obtain service ticket.
 	 */ 
 	public function wp_cassify_redirect() {
+		
+		do_action( 'wp_cassify_before_redirect' );
 
 		$service_url = NULL;	
 		$service_ticket = NULL;
@@ -347,6 +349,8 @@ class WP_Cassify_Plugin {
 		$service_url = $this->wp_cassify_get_service_callback_url();
 		$service_ticket = $this->wp_cassify_get_service_ticket();
 		
+		$current_user = NULL;
+		
 		if ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) {	
 			if (! $this->wp_cassify_is_in_while_list( $service_url ) ) {	
 				if ( empty( $service_url ) ) {
@@ -361,6 +365,11 @@ class WP_Cassify_Plugin {
 				}
 			}
 		}
+		else {
+			$current_user = wp_get_current_user();
+		}
+
+		do_action( 'wp_cassify_after_redirect', $current_user->user_login );
 	}	
 	
 	/**

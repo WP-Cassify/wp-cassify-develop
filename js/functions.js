@@ -221,13 +221,6 @@ jQuery( '[data-style="wp_cassify_save_options"]' ).click( function ( evt ) {
 	jQuery( '#wp_cassify_user_role_rules option' ).prop( 'selected', true );
 	jQuery( '#wp_cassify_user_attributes_mapping_list option' ).prop( 'selected', true );
 	jQuery( '#wp_cassify_notification_rules option' ).prop( 'selected', true );
-	
-	if ( jQuery( '#wp_cassify_notifications_smtp_password' ).val() != jQuery( '#wp_cassify_notifications_smtp_confirm_password' ).val() ) {
-		alert( 'SMPT Password does not macth confirmation !');
-		
-		evt.preventDefault();
-		return false;
-	}
 
 	if ( evt.target.id == 'wp_cassify_save_options_notifications_settings' ) {
 		if ( jQuery.inArray( jQuery( '#wp_cassify_notifications_salt' ).val().length, [ 16, 24, 32 ] ) ) {
@@ -235,6 +228,13 @@ jQuery( '[data-style="wp_cassify_save_options"]' ).click( function ( evt ) {
 			
 			evt.preventDefault();
 			return false;
-		}	
+		}
+		
+		if ( jQuery( '#wp_cassify_notifications_smtp_password' ).val() != jQuery( '#wp_cassify_notifications_smtp_confirm_password' ).val() ) {
+			alert( 'SMTP Password does not macth confirmation !');
+			
+			evt.preventDefault();
+			return false;
+		}		
 	}
 });
