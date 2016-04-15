@@ -166,6 +166,7 @@ class WP_Cassify_Plugin {
 		
 		$service_url = NULL;	
 		$service_ticket = NULL;
+		$wordpress_user_account_created = FALSE;
 			
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 		$wp_cassify_create_user_if_not_exist = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' );
@@ -263,8 +264,10 @@ class WP_Cassify_Plugin {
 				if ( $wp_cassify_create_user_if_not_exist == 'create_user_if_not_exist' ) {
 					if ( WP_Cassify_Utils::wp_cassify_is_wordpress_user_exist( $cas_user_datas[ 'cas_user_id' ] ) == FALSE ) {
 						$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], NULL );
-						
+
 						if ( $wordpress_user_id > 0 ) {
+							$wordpress_user_account_created = TRUE;
+							
 							$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
 								$cas_user_datas, 
 								$wp_cassify_notification_rules, 
@@ -283,7 +286,9 @@ class WP_Cassify_Plugin {
 				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
 				
 				// Suscriber role is pushed by default to successfully authenticated user.
-				array_push( $roles_to_push, 'suscriber' );
+				if ( $wordpress_user_account_created == TRUE ) {
+					array_push( $roles_to_push, 'suscriber' );
+				}
 
 				foreach ( $roles_to_push as $role ) {
 					WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
