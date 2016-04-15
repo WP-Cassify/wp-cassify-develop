@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, central, centralized, integration, ldap, Cassif
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,7 +29,8 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New features !) Add custom hooks : wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
+* (New feature !) Much simpler bypass authentication with post method provided by Susan Boland (See online documentation). Create wordpress authentication form with redirect attribute like this :
+'redirect' => site_url( '/?wp_cassify_bypass=bypass' )
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -46,6 +47,7 @@ https://wpcassify.wordpress.com/
 * You can set Service Logout URL (Needs to have CAS Server with followServiceRedirects option configured).
 * Add support for web application hosted behind a reverse proxy. (Thanks to franck86)
 * Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication. (See online documentation, Screencast available)
+* Add custom hooks : wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
 * Custom shortcode to generate CAS login link into your blog. (See online documentation)
 
