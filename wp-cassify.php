@@ -77,6 +77,7 @@ $wp_cassify_admin_page->init_parameters(
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
 		$wp_cassify_default_notifications_options,
+		$wp_cassify_default_expirations_options,
 		$wp_cassify_default_allow_deny_order,
 		$wp_cassify_wordpress_user_meta_list
 );

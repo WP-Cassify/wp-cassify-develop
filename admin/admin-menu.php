@@ -16,6 +16,7 @@ class WP_Cassify_Admin_Page {
 	public $wp_cassify_default_xpath_query_to_extact_cas_user;
 	public $wp_cassify_default_xpath_query_to_extact_cas_attributes;
 	public $wp_cassify_default_notifications_options;
+	public $wp_cassify_default_expirations_options;
 	public $wp_cassify_default_allow_deny_order;
 	public $wp_cassify_wordpress_user_meta_list;
         
@@ -44,6 +45,7 @@ class WP_Cassify_Admin_Page {
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
 		$wp_cassify_default_notifications_options,
+		$wp_cassify_default_expirations_options,
 		$wp_cassify_default_allow_deny_order,
 		$wp_cassify_wordpress_user_meta_list
 	) {
@@ -60,6 +62,7 @@ class WP_Cassify_Admin_Page {
 		$this->wp_cassify_default_xpath_query_to_extact_cas_user = $wp_cassify_default_xpath_query_to_extact_cas_user;
 		$this->wp_cassify_default_xpath_query_to_extact_cas_attributes = $wp_cassify_default_xpath_query_to_extact_cas_attributes;
 		$this->wp_cassify_default_notifications_options = $wp_cassify_default_notifications_options;
+		$this->wp_cassify_default_expirations_options = $wp_cassify_default_expirations_options;
 		$this->wp_cassify_default_allow_deny_order = $wp_cassify_default_allow_deny_order;
 		$this->wp_cassify_wordpress_user_meta_list = $wp_cassify_wordpress_user_meta_list;
 		
@@ -153,6 +156,10 @@ class WP_Cassify_Admin_Page {
         
         wp_localize_script( 'wp_cassify_custom_js', 'wp_cassify_screen_data', $this->wp_cassify_get_screen_data() );
         wp_enqueue_script( 'wp_cassify_custom_js' );
+        
+        // Add jQuery Datepicker control
+        // wp_enqueue_script( 'jquery-ui-datepicker' );
+		// wp_enqueue_style( 'jquery-style', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/themes/smoothness/jquery-ui.css' );
 	}	
 	
 	/**
@@ -256,6 +263,15 @@ class WP_Cassify_Admin_Page {
 			'wp_cassify_metabox_notifications_rules_settings', 
 			'Notifications Rules Settings', 
 			array( $this, 'wp_cassify_add_metabox_notifications_rules_settings' ), 
+			$this->wp_cassify_admin_page_hook, 
+			'normal', 
+			'high'
+		);	
+		
+		add_meta_box( 
+			'wp_cassify_metabox_expirations_rules_settings', 
+			'Expirations Rules Settings', 
+			array( $this, 'wp_cassify_add_metabox_expirations_rules_settings' ), 
 			$this->wp_cassify_admin_page_hook, 
 			'normal', 
 			'high'
@@ -867,17 +883,10 @@ class WP_Cassify_Admin_Page {
 <?php
 	}
 	
-/**
+	/**
 	 * Display html output for metabox Notifications rules Settings.
 	 */ 	
 	public function wp_cassify_add_metabox_notifications_rules_settings() {
-		
-        $wp_cassify_notifications_actions_selected = 'on_user_account_create';
-        $wp_cassify_notifications_actions = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_actions' );
-
-        if (! empty( $wp_cassify_notifications_actions ) ) {
-            $wp_cassify_notifications_actions_selected = $wp_cassify_notifications_actions;
-        }
         
         $wp_cassify_notification_rules = unserialize( 
             WP_Cassify_Utils::wp_cassify_get_option( 
@@ -894,7 +903,6 @@ class WP_Cassify_Admin_Page {
         else {
         	$wp_cassify_notification_rules_selected = array();
         }
-		
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
@@ -908,11 +916,7 @@ class WP_Cassify_Admin_Page {
 				<td>
 					<select id="wp_cassify_notifications_actions" name="wp_cassify_notifications_actions" class="post_form">
 						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_actions' ] as $wp_cassify_default_notifications_actions_key => $wp_cassify_default_notifications_actions_value ) { ?>
-							<?php if ( $wp_cassify_default_notifications_actions_key == $wp_cassify_notifications_actions_selected ) { ?>
-								<option value="<?php echo $wp_cassify_default_notifications_actions_key; ?>" selected><?php echo $wp_cassify_default_notifications_actions_value; ?></option>
-							<?php } else { ?>
 								<option value="<?php echo $wp_cassify_default_notifications_actions_key; ?>"><?php echo $wp_cassify_default_notifications_actions_value; ?></option>
-							<?php } ?>						
 						<?php } ?>
 					</select>
 					<input type="text" id="wp_cassify_notification_rule" name="wp_cassify_notification_rule" class="post_form" value="" size="60" class="regular-text" /><br />
@@ -940,6 +944,71 @@ class WP_Cassify_Admin_Page {
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_notifications_rules_settings', FALSE, array( 'id' => 'wp_cassify_save_options_notifications_rules_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
 <?php
 	}	
+	
+	/**
+	 * Display html output for metabox Expirations rules Settings.
+	 */ 	
+	public function wp_cassify_add_metabox_expirations_rules_settings() {
+		
+        $wp_cassify_expiration_rules = unserialize( 
+            WP_Cassify_Utils::wp_cassify_get_option( 
+                    $this->wp_cassify_network_activated, 
+                    'wp_cassify_expiration_rules' 
+            ) 
+        );
+
+        if ( ( is_array( $wp_cassify_expiration_rules ) ) && ( count( $wp_cassify_expiration_rules ) > 0 ) ) {
+            foreach ( $wp_cassify_expiration_rules as $rule_key => $rule_value ) {
+                $wp_cassify_expiration_rules_selected[ $rule_key ] = stripslashes( $rule_value );  
+            }
+        }
+        else {
+        	$wp_cassify_expiration_rules_selected = array();
+        }
+		
+?>
+		<table class="optiontable form-table">
+			<tr valign="top">
+				<th scope="row">Set Conditionnal Expirations Rules</th>
+				<td>
+					<span class="description">Example rule syntax (Refer to plugin documentation) : (CAS{cas_user_id} -EQ "m.brown") -AND (CAS{email} -CONTAINS "my-university.fr")</span>
+				</td>
+			</tr>				
+			<tr valign="top">
+				<th scope="row">Send mail notification if user match criteria</th>
+				<td>
+					<select id="wp_cassify_default_expirations_types" name="wp_cassify_default_expirations_types" class="post_form">
+						<?php foreach ( $this->wp_cassify_default_expirations_options[ 'wp_cassify_default_expirations_types' ] as $wp_cassify_default_expirations_types_key => $wp_cassify_default_expirations_types_value ) { ?>
+								<option value="<?php echo $wp_cassify_default_expirations_types_key; ?>"><?php echo $wp_cassify_default_expirations_types_value; ?></option>
+						<?php } ?>
+					</select>
+					<input type="text" id="wp_cassify_after_user_account_created_time_limit" name="wp_cassify_after_user_account_created_time_limit" class="post_form" value="" size="60" class="regular-text" />
+					<input type="text" id="wp_cassify_fixed_datetime_limit" name="wp_cassify_fixed_datetime_limit" class="post_form" value="" size="60" class="regular-text" />
+					<input type="text" id="wp_cassify_notification_rule" name="wp_cassify_notification_rule" class="post_form" value="" size="60" class="regular-text" /><br />
+					<br />
+					<select id="wp_cassify_notification_rules" name="wp_cassify_notification_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
+					<?php if ( ( is_array( $wp_cassify_notification_rules_selected )  ) && ( count( $wp_cassify_notification_rules_selected ) > 0 ) ) { ?>
+					<?php 	foreach ( $wp_cassify_notification_rules_selected as $wp_cassify_notification_rules_selected_key => $wp_cassify_notification_rules_selected_value ) { ?>
+					<?php 		echo "<option value='$wp_cassify_notification_rules_selected_value'>$wp_cassify_notification_rules_selected_value</option>"; ?>
+					<?php 	} ?>
+					<?php } ?>
+					</select>
+					<br />
+					<span class="description">(*) Theses triggers needs that users attributes presents in notification rule are populated into session to be fired. See "Attributes Extraction Settings" to populate attributes into session.</span>
+				</td>
+			</tr>
+			<tr valign="top">
+				<td></td>
+				<td>
+					<span class="description">Double click on rule in list to edit it.</span>
+					<?php submit_button( 'Add Notification Rule', 'secondary', 'wp_cassify_add_notification_rule', FALSE, array( 'id' => 'wp_cassify_add_notification_rule' ) ); ?>
+					<?php submit_button( 'Remove Notification Rule', 'secondary', 'wp_cassify_remove_notification_rule', FALSE, array( 'id' => 'wp_cassify_remove_notification_rule' ) ); ?>
+				</td>
+			</tr>	
+		</table>
+		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_expirations_rules_settings', FALSE, array( 'id' => 'wp_cassify_save_options_expirations_rules_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
+<?php
+	}		
 	
 	/**
 	 *  Register option into database.
