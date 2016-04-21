@@ -4,12 +4,11 @@ namespace wp_cassify;
 class WP_Cassify_Utils {
 
 	/**
-	 * Perform an SSL web request to retrieve xml response containing 
-	 * cas-user id and cas-user attributes.
-	 * @param string $url
-	 * @param string $ssl_cipher
-	 * @param string $ssl_check_certificate
-	 * @return string $response
+	 * Perform an SSL web request to retrieve xml response containing cas-user id and cas-user attributes.
+	 * @param 	string $url							Http url targeted by webrequest.
+	 * @param 	string $ssl_cipher					Cipher used to process webrequest on https.
+	 * @param 	string $ssl_check_certificate		Disable ssl certificate check.
+	 * @return 	string $response					HTTP response received from target.
 	 */ 
 	public static function wp_cassify_do_ssl_web_request( $url, $ssl_cipher, $ssl_check_certificate = 'disabled' ) {
 		
@@ -57,11 +56,11 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Return the current url with parameters.
-	 * @param string $wp_cassify_default_wordpress_blog_http_port
-	 * @param string $wp_cassify_default_wordpress_blog_https_port
-	 * @return string $current_url
+	 * @param 	string $wp_cassify_default_wordpress_blog_http_port		Port use for http communications. 80 By default.
+	 * @param 	string $wp_cassify_default_wordpress_blog_https_port	Port use for https communications. 443 By default.
+	 * @return 	string $current_url										Return current http url with parameters 
 	 */   
-	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port, $wp_cassify_default_wordpress_blog_https_port ) {
+	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port = 80, $wp_cassify_default_wordpress_blog_https_port = 443 ) {
 		
 		$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ) ? 'https://' : 'http://';
 		
@@ -85,9 +84,9 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Return value of a parameter passed in url with get method.
-	 * @param string $url
-	 * @param string $get_parameter_name
-	 * @return string $get_parameter_value
+	 * @param 	string $url						Http url from wich you extract GET parameters
+	 * @param 	string $get_parameter_name		GET parameter name
+	 * @return 	string $get_parameter_value		GET parameter value
 	 */ 
 	public static function wp_cassify_extract_get_parameter( $url , $get_parameter_name ) {
 		
@@ -106,8 +105,8 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Return the left part of an URI
-	 * @param string $url
-	 * @return string $left_part_uri
+	 * @param 	string $url				HTTP url from wich you want to extract left part.
+	 * @return 	string $left_part_uri	Left part of http url with fqdn.
 	 */ 
 	public static function wp_cassify_get_host_uri( $url ) {
 		
@@ -127,7 +126,7 @@ class WP_Cassify_Utils {
 	
 	/**
 	 *  Authenticate user into Wordpress
-	 *  @param $user_id
+	 *  @param $cas_user_id			Id of user provided by CAS Server response.
 	 */ 
 	public static function wp_cassify_auth_user_wordpress( $cas_user_id ) {
 		
@@ -146,9 +145,9 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Create wordpress user account if not exist.
-	 * @param string $cas_user_id
-	 * @param string $cas_user_email_attribute_value
-	 * @return object $wp_user_id
+	 * @param 	string $cas_user_id							Id of user provided by CAS Server response.
+	 * @param 	string $cas_user_email_attribute_value		CAS User email attribute provided by CAS Server response.
+	 * @return 	object $wp_user_id							Return Wordpress User ID or NULL if user account has not been created.
 	 */ 
 	public static function wp_cassify_create_wordpress_user( $cas_user_id, $cas_user_email_attribute_value ) {
 
@@ -169,8 +168,8 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Check if wordpress user account already exist
-	 * @param string $cas_user_id
-	 * @return bool $is_wordpress_user_exist
+	 * @param 	string	$cas_user_id				Id of user provided by CAS Server response.
+	 * @return 	bool 	$is_wordpress_user_exist	Return TRUE if wordpress user account exist.
 	 */ 
 	public static function wp_cassify_is_wordpress_user_exist( $cas_user_id ) {
 
@@ -185,9 +184,9 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Set role to an existing Wordpress user
-	 * @param string $wordpress_user_login
-	 * @param string $role_key
-	 * @return bool $wp_user_role_updated
+	 * @param	string 	$wordpress_user_login	Wordpress user login
+	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
+	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
 	 */ 
 	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
 		
@@ -204,7 +203,7 @@ class WP_Cassify_Utils {
 	
     /**
      * Return array with Wordpress user roles.
-     * @return array $wordpress_roles;
+     * @return array $wordpress_roles	Array of availables wordpress roles.
      */
     public static function wp_cassify_get_wordpress_roles_names() {
         
@@ -216,7 +215,7 @@ class WP_Cassify_Utils {
     	
 	/**
 	 * Process http redirection.
-	 * @param string redirect_url
+	 * @param string redirect_url	Http url targeted by redirection.
 	 */ 
 	public static function wp_cassify_redirect_url( $redirect_url ) {
 		
@@ -232,9 +231,9 @@ class WP_Cassify_Utils {
         
     /**
      * Get plugin option according to activation plugin level
-     * @param bool $network_activated
-     * @param string $option_name
-     * @return $wp_cassify_plugin_option;
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	string 	$option_name				Name of blog option or site option if network activated.
+     * @return 	string 	$wp_cassify_plugin_option	Return the option value.
      */
     public static function wp_cassify_get_option( $network_activated, $option_name ) {
         
@@ -252,9 +251,9 @@ class WP_Cassify_Utils {
     
     /**
      * Set plugin option according to activation plugin level
-     * @param bool $network_activated
-     * @param string $option_name
-     * @param string $option_value
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	string 	$option_name				Name of blog option or site option if network activated.
+     * @param 	string 	$option_value				The new option value.
      */
     public static function wp_cassify_update_option( $network_activated, $option_name, $option_value ) {
         
@@ -270,10 +269,10 @@ class WP_Cassify_Utils {
 
     /**
      * Save plugin options stored in form textfield into database.
-     * @param array $post_array
-     * @param string $field_name
-     * @param bool $do_not_check_empty
-     * @param bool $wp_cassify_network_activated
+     * @param array 	$post_array						$_POST array passed by reference
+     * @param string 	$field_name						Form field name.
+     * @param bool 		$do_not_check_empty				Empty values are accepted.
+     * @param bool 		$network_activated				TRUE if plugin is activated on network. FALSE if not.
      */
     public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = FALSE, $wp_cassify_network_activated ) {
 
@@ -368,7 +367,9 @@ class WP_Cassify_Utils {
     
 	/**
 	 * Function used to encrypt data
-	 * @return $encrypted_string
+	 * @param 	string	$text				Text to encrypt
+	 * @param	string	$salt				String to salt encrypted string
+	 * @return 	string	$encrypted_string	Text encrypted
 	 */ 
 	public static function wp_cassify_simple_encrypt( $text, $salt = "wp_cassify" ) {
 		
@@ -396,7 +397,9 @@ class WP_Cassify_Utils {
 
 	/**
 	 * Function used to decrypt data
-	 * @return $decrypted_string
+	 * @param 	string	$text				Text to decrypt
+	 * @param	string	$salt				String to salt encrypted string
+	 * @return 	string	$decrypted_string	Text decrypted
 	 */ 
 	public static function wp_cassify_simple_decrypt( $text, $salt = "wp_cassify" ) {
 		
@@ -423,15 +426,15 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Function used by plugin to send mail.
-	 * @param string $from
-	 * @param $string $to
-	 * @param $string $subject
-	 * @param $string $body
-	 * @param $string $smtp_host
-	 * @param $string $smtp_port
-	 * @param $string $smtp_auth
-	 * @param $string $smtp_password
-	 * @return $send_result
+	 * @param 	string	$from			Sender email address
+	 * @param 	string	$to				Recipient email address
+	 * @param 	string	$subject		Subject message
+	 * @param 	string	$body			Body message
+	 * @param 	string	$smtp_host		Ip or fqdn of smtp host
+	 * @param 	string	$smtp_port		Port used by smtp host
+	 * @param 	string	$smtp_auth		Cipher used if authentication
+	 * @param 	string	$smtp_password	Smtp password
+	 * @return 	bool	$send_result	Return TRUE if mail is sended correctly. FAIL if not.
 	 */ 
 	public static function wp_cassify_sendmail( $from, $to, $subject, $body, $priority, $smtp_host, $smtp_port = 25, $smtp_auth = false, $smtp_encryption_type, $smtp_user, $smtp_password ) {
 		

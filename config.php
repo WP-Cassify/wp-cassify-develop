@@ -65,6 +65,13 @@ $wp_cassify_default_notifications_options = array(
 		'after_user_login' => 'After user login',
 		'after_user_logout' => 'After user logout (*)',
 		//'when_user_account_expire' => 'When user account expire (NOT YET IMPLEMENTED)'
+	),
+);
+
+$wp_cassify_default_expirations_options = array(
+	'wp_cassify_default_expirations_types' => array(
+		'after_user_account_created_time_limit' => 'Time limit after user account creation (in days)',
+		'fixed_datetime_limit' => 'Expire after date'
 	)
 );
 
@@ -103,9 +110,10 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_notifications_smtp_subject_prefix',
 	'wp_cassify_notifications_send_to_test',
 	
-	'wp_cassify_notifications_rules',
 	'wp_cassify_notifications_actions',
-	'wp_cassify_notification_rules'
+	'wp_cassify_notification_rules',
+	
+	'wp_cassify_expiration_rules'
 );
 
 $wp_cassify_wordpress_user_meta_list = array(

@@ -1,4 +1,7 @@
 jQuery( document ).ready(function() {
+
+	// Some fields state initialization...
+	jQuery( '#wp_cassify_fixed_datetime_limit' ).datepicker();
     jQuery( '#wp_cassify_custom_user_meta' ).hide();
 
 	// for metaboxes

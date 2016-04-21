@@ -22,13 +22,13 @@ class WP_Cassify_Shortcodes {
 	/**
 	 * Initialize the plugin with parameters
 	 * 
-	 * param string wp_cassify_network_activated
-	 * param string $wp_cassify_default_redirect_parameter_name,
-	 * param string $wp_cassify_default_service_service_parameter_name,
-	 * param string $wp_cassify_default_wordpress_blog_http_port,
-	 * param string $wp_cassify_default_wordpress_blog_https_port,
-	 * param string $wp_cassify_default_login_servlet,
-	 * param string $wp_cassify_default_logout_servlet,
+	 * param string $wp_cassify_network_activated
+	 * param string $wp_cassify_default_redirect_parameter_name
+	 * param string $wp_cassify_default_service_service_parameter_name
+	 * param string $wp_cassify_default_wordpress_blog_http_port
+	 * param string $wp_cassify_default_wordpress_blog_https_port
+	 * param string $wp_cassify_default_login_servlet
+	 * param string $wp_cassify_default_logout_servlet
 	 */ 
 	public function init_parameters(
 		$wp_cassify_network_activated,
@@ -57,8 +57,8 @@ class WP_Cassify_Shortcodes {
 	/**
 	 * Function wich create shortcode like this [wp_cassify_login_with_redirect service_redirect_url='http://www.dev.lan/sandbox01/mypage/']
 	 * to generate link like this https://cas.dev.lan/cas/login?service=http://www.dev.lan/sandbox01/mypage/
-	 * @param array $shortcode_attributes
-	 * @return string $login_with_redirect_link
+	 * @param	array	$shortcode_attributes		Attributes of wordpress shortcode
+	 * @return	string	$login_with_redirect_link
 	 */ 
 	public function wp_cassify_login_with_redirect( $shortcode_attributes ) {
 
