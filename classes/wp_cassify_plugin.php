@@ -28,7 +28,10 @@ class WP_Cassify_Plugin {
 	public $wp_cassify_allowed_operators;
 	public $wp_cassify_operator_prefix;
 	public $wp_cassify_allowed_parenthesis;
+	
+	public $wp_cassify_allowed_get_parameters;
 	public $wp_cassify_error_messages;	
+	public $wp_cassify_user_error_codes;
 	
 	private $wp_cassify_allow_rules = array();
 	private $wp_cassify_deny_rules = array();
@@ -62,7 +65,9 @@ class WP_Cassify_Plugin {
 	 * param string $wp_cassify_allowed_operators,
 	 * param string $wp_cassify_operator_prefix,
 	 * param string $wp_cassify_allowed_parenthesis,
-	 * param string $wp_cassify_error_messages	
+	 * param array	$wp_cassify_allowed_get_parameters
+	 * param array 	$wp_cassify_error_messages	
+	 * param array	$wp_cassify_user_error_codes 
 	 */ 
 	public function init_parameters(
         $wp_cassify_network_activated,
@@ -85,7 +90,9 @@ class WP_Cassify_Plugin {
 		$wp_cassify_allowed_operators,
 		$wp_cassify_operator_prefix,
 		$wp_cassify_allowed_parenthesis,
-		$wp_cassify_error_messages	
+		$wp_cassify_allowed_get_parameters,
+		$wp_cassify_error_messages,
+		$wp_cassify_user_error_codes 
 	) {
 		$this->wp_cassify_network_activated = $wp_cassify_network_activated;
 		$this->wp_cassify_default_xpath_query_to_extact_cas_user = $wp_cassify_default_xpath_query_to_extact_cas_user;
@@ -107,7 +114,9 @@ class WP_Cassify_Plugin {
 		$this->wp_cassify_allowed_operators = $wp_cassify_allowed_operators;
 		$this->wp_cassify_operator_prefix = $wp_cassify_operator_prefix;
 		$this->wp_cassify_allowed_parenthesis = $wp_cassify_allowed_parenthesis;
+		$this->wp_cassify_allowed_get_parameters = $wp_cassify_allowed_get_parameters;
 		$this->wp_cassify_error_messages	= $wp_cassify_error_messages;
+		$this->wp_cassify_user_error_codes = $wp_cassify_user_error_codes;
 		
 		// Check if CAS Authentication must be bypassed.
 		if (! $this->wp_cassify_bypass() ) {
@@ -115,6 +124,7 @@ class WP_Cassify_Plugin {
 			// Add the filters
 			add_filter( 'query_vars', array( $this , 'add_custom_query_var' ) );
 			add_filter( 'login_url', array( $this, 'wp_cassify_clear_reauth' ) );
+			add_filter( 'the_content', array( $this, 'wp_cassify_display_message' ) );
 			
 			// Add the actions
 			add_action( 'init', array( $this , 'wp_cassify_session_start' ), 1 ); 
@@ -128,8 +138,8 @@ class WP_Cassify_Plugin {
 	
 	/**
 	 * Allow custom get parameters in url
-	 * @param array $vars
-	 * @return string
+	 * @param 	array 	$vars An array of GET allowed parameters
+	 * @return 	array	$vars An array of GET allowed parameters filled with extra parameters
 	 */
 	public function add_custom_query_var( $vars ){
 	  
@@ -137,8 +147,27 @@ class WP_Cassify_Plugin {
 	  $vars[] = $this->wp_cassify_default_service_service_parameter_name;
 	  $vars[] = $this->wp_cassify_default_bypass_parameter_name;
 	  
+	  foreach ( $this->wp_cassify_allowed_get_parameters as $allowed_get_parameter ) {
+			$vars[] = $allowed_get_parameter;
+	  }
+
 	  return $vars;
 	}	
+	
+	/**
+	 * Display information messages from plugin on front-ofice
+	 * @param string $content	Page content to replace by message to display
+	 */ 
+	public function wp_cassify_display_message( $content ) {
+		
+		$wp_cassify_message_parameter = get_query_var( 'wp-cassify-message' );
+		
+		if (! empty( $wp_cassify_message_parameter ) ) {
+			$content = '<h1>'. $this->wp_cassify_user_error_codes[ $wp_cassify_message_parameter ] . '</h1>';
+		}
+		
+		return $content;
+	}
 	
 	/**
 	 * Clear reauth parameter from login url to login directly from CAS server.
@@ -181,6 +210,7 @@ class WP_Cassify_Plugin {
         $wp_cassify_user_role_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_role_rules' ) );
         $wp_cassify_user_attributes_mapping_list = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_attributes_mapping_list' ) );
  		$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
+ 		$wp_cassify_expiration_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_expiration_rules' ) );		
  
 		if ( empty( $wp_cassify_login_servlet ) ) {
 			$wp_cassify_login_servlet = $this->wp_cassify_default_login_servlet;
@@ -249,9 +279,18 @@ class WP_Cassify_Plugin {
 					
 					// Force logout if user is not allowed.
 					if (! $this->wp_cassify_is_user_allowed( $cas_user_datas, $wp_cassify_allow_deny_order ) ) {
-						$this->wp_cassify_logout_if_not_allowed();
+						$this->wp_cassify_logout_if_not_allowed( 'user_is_not_allowed' );
 					}	
 				}
+				
+				// Evaluate expiration rules
+				if ( count( $wp_cassify_expiration_rules ) > 0 ) {
+					
+					// Force logout if user is not allowed.
+					if ( $this->wp_cassify_is_user_account_expired( $cas_user_datas, $wp_cassify_expiration_rules ) ) {
+						$this->wp_cassify_logout_if_not_allowed( 'user_account_expired' );
+					}
+				}				
 				
 				// Define custom plugin hook after cas authentication. 
 				// For example, for two factor authentication, you can plug another authentication plugin to fired custom action here.			
@@ -359,7 +398,7 @@ class WP_Cassify_Plugin {
 		if ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) {	
 			if (! $this->wp_cassify_is_in_while_list( $service_url ) ) {	
 				if ( empty( $service_url ) ) {
-					die( 'CAS Service URL not set !');
+					die( 'CAS Service URL not set !' );
 				}	
 				elseif ( empty( $service_ticket ) ) {	
 					$redirect_url = $wp_cassify_base_url .
@@ -461,8 +500,6 @@ class WP_Cassify_Plugin {
 			$cas_user_attributes_names = explode( ',', $wp_cassify_attributes_list );
 
 			if ( is_array( $cas_user_attributes_names ) ) {
-				
-				
 				foreach( $cas_user_attributes_names as $cas_user_attributes_name ) {
 					$cas_user_datas_filtered[ $cas_user_attributes_name ] = $cas_user_datas[ $cas_user_attributes_name ];
 				}
@@ -519,8 +556,9 @@ class WP_Cassify_Plugin {
 	
 	/**
 	 * Logout from CAS and Wordpress
+	 * @param string $wp_cassify_error_code	Error code passing by GET to display custom error messages after logout.	
 	 */ 
-	private function wp_cassify_logout_if_not_allowed() {
+	private function wp_cassify_logout_if_not_allowed( $wp_cassify_error_code = '' ) {
 
 		$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
@@ -533,6 +571,10 @@ class WP_Cassify_Plugin {
 		
 		if ( empty ( $wp_cassify_redirect_url_if_not_allowed ) ) {
 			$wp_cassify_redirect_url_if_not_allowed = get_home_url();
+			
+			if (! empty( $wp_cassify_error_code ) )	{
+				$wp_cassify_redirect_url_if_not_allowed .= '%3F' . 'wp-cassify-message=' . $wp_cassify_error_code;
+			}			
 		}
 
 		// Destroy wordpress session;
@@ -541,14 +583,14 @@ class WP_Cassify_Plugin {
 		$redirect_url = $wp_cassify_base_url .
 			$wp_cassify_logout_servlet . '?' .
 			$this->wp_cassify_default_service_service_parameter_name . '=' . $wp_cassify_redirect_url_if_not_allowed;
-		
+
 		// Redirect to the logout CAS end point.
 		WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );
 	}			
 
 	/**
 	 * Parse the CAS Server response
-	 * @param string $cas_server_xml_response
+	 * @param string $cas_server_xml_response	Xml response stream sent by CAS Server.
 	 * @return array $cas_user_datas
 	 */
 	 private function wp_cassify_parse_xml_response( $cas_server_xml_response ) {
@@ -651,8 +693,8 @@ class WP_Cassify_Plugin {
 	
 	/**
 	 * Check if url is in white list and don't be authenticated by CAS.
-	 * @param string $url
-	 * @return bool $is_in_while_list
+	 * @param 	string 	$url				Url of to test		
+	 * @return 	bool 	$is_in_while_list	Return true if user can acess this url without to be authenticated by CAS.
 	 */
 	 private function wp_cassify_is_in_while_list( $url ) {
 		 
@@ -674,9 +716,9 @@ class WP_Cassify_Plugin {
 
 	/**
 	 * Check if user is allow to connect according to autorization rules.
-	 * @param array $cas_user_datas
-	 * @param string $wp_cassify_allow_deny_order
-	 * @return bool $is_user_allowed
+	 * @param array $cas_user_datas					Associative array containing CAS userID and attributes
+	 * @param string $wp_cassify_allow_deny_order	Order to process authorization rules.
+	 * @return bool $is_user_allowed				Return true if user is allowed to connect. Return false on the other hand.
 	 */ 
 	private function wp_cassify_is_user_allowed( $cas_user_datas = array(), $wp_cassify_allow_deny_order ) {
 
@@ -751,9 +793,9 @@ class WP_Cassify_Plugin {
 	
 	/**
 	 * Check if user is matched by Conditionnal Rule
-	 * @param array $cas_user_datas
-	 * @param string $wp_cassify_rule
-	 * @return $rule_matched
+	 * @param 	array 	$cas_user_datas		Associative array containing CAS userID and attributes
+	 * @param 	string 	$wp_cassify_rule	WP Cassify rule
+	 * @return 	bool	$rule_matched		Return true if WP Cassify rule assertion is verified. Return false on the other hand.
 	 */ 
 	private function wp_cassify_rule_matched( $cas_user_datas = array(), $wp_cassify_rule ) {
 
@@ -775,10 +817,56 @@ class WP_Cassify_Plugin {
 		return $rule_matched;
 	}
 
+	/**
+	 * Test if user account has expired.
+	 * @param 	array 	$cas_user_datas							Associative array containing CAS userID and attributes
+	 * @param	array	$expiration_rules			Array of WP Cassify user account expiration rules
+	 * @result	bool	$is_user_account_expired		Return true if user account has expired. Return false on the other hand.	
+	 */ 
+	private function wp_cassify_is_user_account_expired( $cas_user_datas, $expiration_rules = array() ) {
+		
+		$is_user_account_expired = FALSE;
+		
+		foreach ( $expiration_rules as $expiration_rule ) {
+		
+			$expiration_rule_parts = explode( '|', $expiration_rule );
+			
+			if ( ( is_array( $expiration_rule_parts ) ) && ( count( $expiration_rule_parts ) == 3 ) ) {
+				$expiration_rule_type = $expiration_rule_parts[0];
+				$expiration_rule_type_value = $expiration_rule_parts[1];
+				$expiration_rule_value = stripslashes( $expiration_rule_parts[2] );
+				
+				if ( $this->wp_cassify_rule_matched( $cas_user_datas, $expiration_rule_value ) ) {
+					
+					switch( $expiration_rule_type )	{
+						case 'after_user_account_created_time_limit' :
+							$current_user = get_user_by( 'login', $cas_user_datas[ 'cas_user_id' ] );
+							$expiration_date = new \DateTime( $current_user->user_registered );
+
+							// Add expiration delay (in days) from user account registered date
+							$expiration_date->add( new \DateInterval( 'P'. $expiration_rule_type_value . 'D' ) );
+							break;
+							
+						case 'fixed_datetime_limit' :
+							$expiration_date = new \DateTime( $expiration_rule_type_value );
+							break;
+					}
+					
+					$now = new \DateTime( 'now' );
+					
+					if ( $expiration_date < $now ) {
+						$is_user_account_expired = TRUE;	
+					}
+				}
+			}
+		}
+		
+		return $is_user_account_expired;		
+	}
 
 	/**
 	 * Check if user is matched by Notification Rule
-	 * @param array $cas_user_datas
+	 * @param array $cas_user_datas		Associative array containing CAS userID and attributes
 	 * @param array $role_rules			Array containing all role rules
 	 * @return array $roles_to_push		Array containing roles to push to user
 	 */ 	
@@ -804,14 +892,12 @@ class WP_Cassify_Plugin {
 		return $roles_to_push;
 	}
 
-
-	
 	/**
 	 * Check if user is matched by Notification Rule
-	 * @param array $cas_user_datas
-	 * @param array $notification_rules			Array containing all notification rules
-	 * @param array $trigger_name				The name of the action wich fire the notification
-	 * @return $notification_rule_matched
+	 * @param	array 	$cas_user_datas				Associative array containing CAS userID and attributes
+	 * @param 	array 	$notification_rules			Array containing all notification rules
+	 * @param 	array 	$trigger_name				The name of the action wich fire the notification
+	 * @return 	boolean	$notification_rule_matched	Return true if notification rule assertion is verified. Return false on the other hand.
 	 */ 	
 	private function wp_cassify_notification_rule_matched( $cas_user_datas = array(), $notification_rules = array(), $trigger_name ) {
 		
@@ -839,9 +925,9 @@ class WP_Cassify_Plugin {
 
 	/**
 	 * Synchronize CAS User attributes values with Wordpress User metadatas. Create custom user_meta if not exist.
-	 * @param string $cas_user_id
-	 * @param array $cas_user_datas
-	 * @param array	$wp_cassify_user_attributes_mapping_list
+	 * @param 	string 	$cas_user_id								CAS userID
+	 * @param	array 	$cas_user_datas								Associative array containing CAS userID and attributes
+	 * @param 	array	$wp_cassify_user_attributes_mapping_list	Array containing mapping between CAS user attributes and Wordpress user attributes
 	 */ 
 	private function wp_cassify_sync_user_metadata( $cas_user_id, $cas_user_datas = array(), $wp_cassify_user_attributes_mapping_list = array() ) {
 		
@@ -896,7 +982,8 @@ class WP_Cassify_Plugin {
 	
 	/**
 	 * Send email notification
-	 * @param string $message
+	 * @param string $message		Body of email notification message.
+	 * @result boole $send_result	Return true if message is sent successfully. Return false on the other hand.
 	 */ 
 	public function wp_cassify_send_notification_message( $message ) {
 
@@ -949,6 +1036,8 @@ class WP_Cassify_Plugin {
 			$wp_cassify_notifications_smtp_user, 
 			$wp_cassify_notifications_smtp_password
 		);
+		
+		return $send_result;
 	}
 } 
 ?>

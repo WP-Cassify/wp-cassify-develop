@@ -129,6 +129,15 @@ $wp_cassify_wordpress_user_meta_list = array(
 	'custom_user_meta'
 );
 
+$wp_cassify_allowed_get_parameters = array(
+	'wp-cassify-message'
+); 
+
+$wp_cassify_user_error_codes = array(
+	'user_is_not_allowed' => 'User account not allowed on this website. Please contact your webmaster.',
+	'user_account_expired' => 'User account has expired. Please contact your webmaster.'	
+);	
+
 $wp_cassify_operator_prefix = '-';
 
 $wp_cassify_allowed_operators = array( 

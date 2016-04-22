@@ -28,8 +28,8 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Wrap operand with double quotes.
-	 * @param string $operand
-	 * @return $string
+	 * @param 	string 	$operand	A WP Cassify operand
+	 * @return 	$string	$operand	Return operand wrapped with double quotes
 	 */ 
 	private function wrap_operand_with_double_quotes( $operand ) {
 	
@@ -38,8 +38,8 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Strip double quotes from operand.
-	 * @param string $operand
-	 * @return $string
+	 * @param 	string 	$operand	A WP Cassify operand
+	 * @return 	$string	$operand	Return operand stripped from double quotes
 	 */ 
 	private function strip_double_quotes_from_operand( $operand ) {
 	
@@ -55,9 +55,9 @@ class wp_cassify_rule_solver {
 
 	/**
 	 * Match parenthesis group in security rule
-	 * @param array &$wp_cassify_rule_solver_item_array
-	 * @param string $wp_cassify_initial_rule
-	 * @param string $match_parenthesis_group_pattern
+	 * @param array 	&$wp_cassify_rule_solver_item_array		Array containing rules based on CAS User attributes values
+	 * @param string 	$wp_cassify_initial_rule				Initial rule based on CAS User attributes values
+	 * @param string 	$match_parenthesis_group_pattern		Array of patterns to match parenthesis groups in rule
 	 */
 	private function match_parenthesis_groups( 
 		&$wp_cassify_rule_solver_item_array,
@@ -84,8 +84,8 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Match variables from CAS Server (CAS Userid and attributes )
-	 * @param string $wp_cassify_rule_operand
-	 * @param string $match_cas_variable_pattern
+	 * @param string $wp_cassify_rule_operand		A WP Cassify operand
+	 * @param string $match_cas_variable_pattern	Pattern used to match a CAS variable in a rule
 	 */ 	
 	private function match_cas_variable( &$wp_cassify_rule_operand, $match_cas_variable_pattern ) {
 
@@ -101,9 +101,9 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Determine the operator of a parenthesis group and isolate it.
-	 * @param object $wp_cassify_rule_solver_item
-	 * @param array $allowed_operators
-	 * return bool $set_operator
+	 * @param object $wp_cassify_rule_solver_item	Object used to store rule and solve it.
+	 * @param array $allowed_operators				Array of allowed operators in WP Cassify rules.
+	 * return bool $set_operator					Return true if operator has been found and set in $wp_cassify_rule_solver_item. Return false if no operator has been found.
 	 */ 		
 	private function set_operator( &$wp_cassify_rule_solver_item, $allowed_operators = array() ) {
 
@@ -123,8 +123,8 @@ class wp_cassify_rule_solver {
 
 	/**
 	 * Determine the two operands (left and right) of a parenthesis group and isolate it.
-	 * @param object $wp_cassify_rule_solver_item
-	 * return bool $set_operator
+	 * @param object 	$wp_cassify_rule_solver_item	Object used to store rule and solve it.
+	 * return bool 		$set_operand					Return true if operands have been found and set in $wp_cassify_rule_solver_item. Return false on the other hand.
 	 */
 	private function set_operand( &$wp_cassify_rule_solver_item ) {
 
@@ -147,7 +147,7 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Solve equation in a parenthesis group
-	 * @param string $wp_cassify_rule_solver_item 
+	 * @param object $wp_cassify_rule_solver_ite	Object used to store rule and solve it. 
 	 */	
 	public function solve_item( &$wp_cassify_rule_solver_item ) {
 	
@@ -241,8 +241,8 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Check if string starts with another string.
-	 * @param string $haystack
-	 * @param string $needle
+	 * @param string $haystack	string to search in
+	 * @param string $needle	pattern to search
 	 */ 		
 	private function startsWith( $haystack, $needle ) {
 		
@@ -251,14 +251,18 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Check if string ends with another string.
-	 * @param string $haystack
-	 * @param string $needle
+	 * @param string $haystack	string to search in
+	 * @param string $needle	pattern to search
 	 */ 	
 	private function endsWith( $haystack, $needle ) {
 		
 		return $needle === "" || ( ( $temp = strlen( $haystack ) - strlen( $needle ) ) >= 0 && strpos( $haystack, $needle, $temp ) !== FALSE);
 	}
 	
+	/**
+	 * Check there is an error during solving rule process
+	 * @return bool $no_error	Return true if rule has been successfully computed. Return false on the other hand.
+	 */ 
 	private function check_if_no_error() {
 	
 		$no_error = TRUE;
@@ -276,7 +280,7 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Replace parenthesis groups with expression result in rule.
-	 * @return string
+	 * @return string	$wp_cassify_rule	This is the rule factorized.
 	 */ 
 	private function replace_groups_with_results() {
 	
@@ -360,8 +364,8 @@ class wp_cassify_rule_solver {
 	
 	/**
 	 * Solve the authentication rule. Check the rule assertion.
-	 * @param string $wp_cassify_rule
-	 * @return bool
+	 * @param 	string 	$wp_cassify_rule	WP Cassify rule.
+	 * @return 	bool	$result				Return true if rule assertion is verified. Return false on the other hand.
 	 */ 
 	public function solve( $wp_cassify_rule ) {
 		

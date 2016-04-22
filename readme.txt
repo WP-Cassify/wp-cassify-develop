@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,8 +29,7 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New feature !) Much simpler bypass authentication with post method provided by Susan Boland (See online documentation). Create wordpress authentication form with redirect attribute like this :
-'redirect' => site_url( '/?wp_cassify_bypass=bypass' )
+* (New Feature !) Define user account expiration rules bases on CAS User attributes !
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -41,6 +40,8 @@ https://wpcassify.wordpress.com/
 * Compatible with Wordpress Access Control Plugin
 * You can choose CAS User attributes you want to populate. Then you can access them via PHP Session
 * Manage URL White List to bypass CAS Authentication on certain pages
+* Much simpler bypass authentication with post method provided by Susan Boland (See online documentation). Create wordpress authentication form with redirect attribute like this :
+'redirect' => site_url( '/?wp_cassify_bypass=bypass' )
 * Receive email notifications when trigger is fired (after user account creation, after user login/logout).
 * Define notifications rules based on user attributes values.
 * Network activation allowed
@@ -50,7 +51,6 @@ https://wpcassify.wordpress.com/
 * Add custom hooks : wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
 * Custom shortcode to generate CAS login link into your blog. (See online documentation)
-
 
 == Installation ==
 
@@ -71,7 +71,8 @@ e.g.
 5. You can set wordpress role to user according to CAS attributes values.
 6. Synchronize Wordpress User metas with CAS User attributes.
 7. This is the email notifications settings.
-8. Define email notifications based on triggers and user attributes.
+8. Define user account expiration rules bases on CAS User attributes (after x days from user creation date).
+9. Define user account expiration rules bases on CAS User attributes (with fixed expiration date).
 
 == Frequently Asked Questions ==
 
@@ -88,6 +89,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.7.2 = 
+* (New Feature !) Define user account expiration rules bases on CAS User attributes !
 
 = 1.7.0 =
 * Bug fix : Suscriber role overwrite all other roles. Suscriber role is pushed only if user account is recently created.

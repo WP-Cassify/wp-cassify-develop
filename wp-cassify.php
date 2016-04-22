@@ -4,7 +4,7 @@
  * Plugin Name: WP Cassify
  * Plugin URI: https://wpcassify.wordpress.com/
  * Description: CAS Authentication Client for Wordpress. Also, it handle custom authorizations rules from cas user attributes.
- * Version: 1.7.1
+ * Version: 1.7.2
  * Author: Alain-Aymerick FRANCOIS
  * Author URI: https://wpcassify.wordpress.com/a-propos/
  * License: GPLv2
@@ -104,7 +104,9 @@ $GLOBALS['wp-cassify']->init_parameters(
 		$wp_cassify_allowed_operators,
 		$wp_cassify_operator_prefix,
 		$wp_cassify_allowed_parenthesis,
-		$wp_cassify_error_messages
+		$wp_cassify_allowed_get_parameters,
+		$wp_cassify_error_messages,
+		$wp_cassify_user_error_codes
 );
 
 $wp_cassify_shortcodes = new \wp_cassify\WP_Cassify_Shortcodes();

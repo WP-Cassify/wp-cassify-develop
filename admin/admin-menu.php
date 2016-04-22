@@ -158,8 +158,8 @@ class WP_Cassify_Admin_Page {
         wp_enqueue_script( 'wp_cassify_custom_js' );
         
         // Add jQuery Datepicker control
-        // wp_enqueue_script( 'jquery-ui-datepicker' );
-		// wp_enqueue_style( 'jquery-style', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/themes/smoothness/jquery-ui.css' );
+        wp_enqueue_script( 'jquery-ui-datepicker', false, array( 'jquery' ) );
+		wp_enqueue_style( 'jquery-ui-style', $this->wp_cassify_plugin_directory . 'css/jquery-ui.min.css' );
 	}	
 	
 	/**
@@ -972,10 +972,11 @@ class WP_Cassify_Admin_Page {
 				<th scope="row">Set Conditionnal Expirations Rules</th>
 				<td>
 					<span class="description">Example rule syntax (Refer to plugin documentation) : (CAS{cas_user_id} -EQ "m.brown") -AND (CAS{email} -CONTAINS "my-university.fr")</span>
+					<input type="text" id="wp_cassify_expiration_rule" name="wp_cassify_expiration_rule" class="post_form" value="" size="60" class="regular-text" />
 				</td>
 			</tr>				
 			<tr valign="top">
-				<th scope="row">Send mail notification if user match criteria</th>
+				<th scope="row">Expire user account if user match criteria</th>
 				<td>
 					<select id="wp_cassify_default_expirations_types" name="wp_cassify_default_expirations_types" class="post_form">
 						<?php foreach ( $this->wp_cassify_default_expirations_options[ 'wp_cassify_default_expirations_types' ] as $wp_cassify_default_expirations_types_key => $wp_cassify_default_expirations_types_value ) { ?>
@@ -983,26 +984,25 @@ class WP_Cassify_Admin_Page {
 						<?php } ?>
 					</select>
 					<input type="text" id="wp_cassify_after_user_account_created_time_limit" name="wp_cassify_after_user_account_created_time_limit" class="post_form" value="" size="60" class="regular-text" />
-					<input type="text" id="wp_cassify_fixed_datetime_limit" name="wp_cassify_fixed_datetime_limit" class="post_form" value="" size="60" class="regular-text" />
-					<input type="text" id="wp_cassify_notification_rule" name="wp_cassify_notification_rule" class="post_form" value="" size="60" class="regular-text" /><br />
+					<input type="text" id="wp_cassify_fixed_datetime_limit" name="wp_cassify_fixed_datetime_limit" class="post_form" value="" size="60" class="regular-text" /><br />
+					
 					<br />
-					<select id="wp_cassify_notification_rules" name="wp_cassify_notification_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
-					<?php if ( ( is_array( $wp_cassify_notification_rules_selected )  ) && ( count( $wp_cassify_notification_rules_selected ) > 0 ) ) { ?>
-					<?php 	foreach ( $wp_cassify_notification_rules_selected as $wp_cassify_notification_rules_selected_key => $wp_cassify_notification_rules_selected_value ) { ?>
-					<?php 		echo "<option value='$wp_cassify_notification_rules_selected_value'>$wp_cassify_notification_rules_selected_value</option>"; ?>
+					<select id="wp_cassify_expiration_rules" name="wp_cassify_expiration_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
+					<?php if ( ( is_array( $wp_cassify_expiration_rules_selected )  ) && ( count( $wp_cassify_expiration_rules_selected ) > 0 ) ) { ?>
+					<?php 	foreach ( $wp_cassify_expiration_rules_selected as $wp_cassify_expiration_rules_selected_key => $wp_cassify_expiration_rules_selected_value ) { ?>
+					<?php 		echo "<option value='$wp_cassify_expiration_rules_selected_value'>$wp_cassify_expiration_rules_selected_value</option>"; ?>
 					<?php 	} ?>
 					<?php } ?>
 					</select>
 					<br />
-					<span class="description">(*) Theses triggers needs that users attributes presents in notification rule are populated into session to be fired. See "Attributes Extraction Settings" to populate attributes into session.</span>
 				</td>
 			</tr>
 			<tr valign="top">
 				<td></td>
 				<td>
 					<span class="description">Double click on rule in list to edit it.</span>
-					<?php submit_button( 'Add Notification Rule', 'secondary', 'wp_cassify_add_notification_rule', FALSE, array( 'id' => 'wp_cassify_add_notification_rule' ) ); ?>
-					<?php submit_button( 'Remove Notification Rule', 'secondary', 'wp_cassify_remove_notification_rule', FALSE, array( 'id' => 'wp_cassify_remove_notification_rule' ) ); ?>
+					<?php submit_button( 'Add Expiration Rule', 'secondary', 'wp_cassify_add_expiration_rule', FALSE, array( 'id' => 'wp_cassify_add_expiration_rule' ) ); ?>
+					<?php submit_button( 'Remove Expiration Rule', 'secondary', 'wp_cassify_remove_expiration_rule', FALSE, array( 'id' => 'wp_cassify_remove_expiration_rule' ) ); ?>
 				</td>
 			</tr>	
 		</table>
@@ -1120,6 +1120,9 @@ class WP_Cassify_Admin_Page {
 
 				// Notifications rules settings
 				WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_notification_rules', $this->wp_cassify_network_activated ); 
+				
+				// Expirations rules settings
+				WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_expiration_rules', $this->wp_cassify_network_activated ); 				
 
 				// Send test notification message.
 				if (! empty( $_POST['wp_cassify_send_notification_test_message'] ) ){
