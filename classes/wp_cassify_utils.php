@@ -4,16 +4,22 @@ namespace wp_cassify;
 class WP_Cassify_Utils {
 
 	/**
-	 * Perform an SSL web request to retrieve xml response containing 
-	 * cas-user id and cas-user attributes.
-	 * @param string $url
-	 * @param string $ssl_cipher
-	 * @return string $response
+	 * Perform an SSL web request to retrieve xml response containing cas-user id and cas-user attributes.
+	 * @param 	string $url							Http url targeted by webrequest.
+	 * @param 	string $ssl_cipher					Cipher used to process webrequest on https.
+	 * @param 	string $ssl_check_certificate		Disable ssl certificate check.
+	 * @return 	string $response					HTTP response received from target.
 	 */ 
-	public static function wp_cassify_do_ssl_web_request( $url, $ssl_cipher ) {
+	public static function wp_cassify_do_ssl_web_request( $url, $ssl_cipher, $ssl_check_certificate = 'disabled' ) {
 		
 		if (! function_exists ( 'curl_init' ) ) {
 			die( 'Please install php cURL library !');
+		}
+
+		$curlopt_ssl_verify_peer = 0;
+		
+		if ( $ssl_check_certificate == 'enabled' ) {
+			$curlopt_ssl_verify_peer = 1;
 		}
 
 		$ch = curl_init();
@@ -21,8 +27,8 @@ class WP_Cassify_Utils {
 		curl_setopt( $ch, CURLOPT_HEADER, false );
 		curl_setopt( $ch, CURLOPT_URL, $url ) ;
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 1);
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 1);
+		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 2);
+		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, $curlopt_ssl_verify_peer );
 		
 		//curl_setopt( $ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13' );
 		curl_setopt( $ch, CURLOPT_SSLVERSION, $ssl_cipher );
@@ -50,15 +56,22 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Return the current url with parameters.
-	 * @param string $wp_cassify_default_wordpress_blog_http_port
-	 * @param string $wp_cassify_default_wordpress_blog_https_port
-	 * @return string $current_url
+	 * @param 	string $wp_cassify_default_wordpress_blog_http_port		Port use for http communications. 80 By default.
+	 * @param 	string $wp_cassify_default_wordpress_blog_https_port	Port use for https communications. 443 By default.
+	 * @return 	string $current_url										Return current http url with parameters 
 	 */   
-	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port, $wp_cassify_default_wordpress_blog_https_port ) {
+	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port = 80, $wp_cassify_default_wordpress_blog_https_port = 443 ) {
 		
 		$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ) ? 'https://' : 'http://';
-		$current_url .= $_SERVER[ 'SERVER_NAME' ];
-	 
+		
+		// If cassified application is hosted behind reverse proxy.
+		if ( isset( $_SERVER[ 'HTTP_X_FORWARDED_HOST' ] ) ) {
+			$current_url .= $_SERVER[ 'HTTP_X_FORWARDED_HOST' ];
+		}
+		else {
+			$current_url .= $_SERVER[ 'SERVER_NAME' ];
+		}
+		
 		if( ( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
 			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
 			$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
@@ -71,9 +84,9 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Return value of a parameter passed in url with get method.
-	 * @param string $url
-	 * @param string $get_parameter_name
-	 * @return string $get_parameter_value
+	 * @param 	string $url						Http url from wich you extract GET parameters
+	 * @param 	string $get_parameter_name		GET parameter name
+	 * @return 	string $get_parameter_value		GET parameter value
 	 */ 
 	public static function wp_cassify_extract_get_parameter( $url , $get_parameter_name ) {
 		
@@ -92,8 +105,8 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Return the left part of an URI
-	 * @param string $url
-	 * @return string $left_part_uri
+	 * @param 	string $url				HTTP url from wich you want to extract left part.
+	 * @return 	string $left_part_uri	Left part of http url with fqdn.
 	 */ 
 	public static function wp_cassify_get_host_uri( $url ) {
 		
@@ -113,7 +126,7 @@ class WP_Cassify_Utils {
 	
 	/**
 	 *  Authenticate user into Wordpress
-	 *  @param $user_id
+	 *  @param $cas_user_id			Id of user provided by CAS Server response.
 	 */ 
 	public static function wp_cassify_auth_user_wordpress( $cas_user_id ) {
 		
@@ -132,9 +145,9 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Create wordpress user account if not exist.
-	 * @param string $cas_user_id
-	 * @param string $cas_user_email_attribute_value
-	 * @return object $wp_user_id
+	 * @param 	string $cas_user_id							Id of user provided by CAS Server response.
+	 * @param 	string $cas_user_email_attribute_value		CAS User email attribute provided by CAS Server response.
+	 * @return 	object $wp_user_id							Return Wordpress User ID or NULL if user account has not been created.
 	 */ 
 	public static function wp_cassify_create_wordpress_user( $cas_user_id, $cas_user_email_attribute_value ) {
 
@@ -154,10 +167,26 @@ class WP_Cassify_Utils {
 	}
 	
 	/**
+	 * Check if wordpress user account already exist
+	 * @param 	string	$cas_user_id				Id of user provided by CAS Server response.
+	 * @return 	bool 	$is_wordpress_user_exist	Return TRUE if wordpress user account exist.
+	 */ 
+	public static function wp_cassify_is_wordpress_user_exist( $cas_user_id ) {
+
+		$is_wordpress_user_exist = TRUE;
+
+		if (! username_exists( $cas_user_id ) ) {
+			$is_wordpress_user_exist = FALSE;
+		}
+		
+		return $is_wordpress_user_exist;
+	}	
+	
+	/**
 	 * Set role to an existing Wordpress user
-	 * @param string $wordpress_user_login
-	 * @param string $role_key
-	 * @return bool $wp_user_role_updated
+	 * @param	string 	$wordpress_user_login	Wordpress user login
+	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
+	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
 	 */ 
 	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
 		
@@ -174,7 +203,7 @@ class WP_Cassify_Utils {
 	
     /**
      * Return array with Wordpress user roles.
-     * @return array $wordpress_roles;
+     * @return array $wordpress_roles	Array of availables wordpress roles.
      */
     public static function wp_cassify_get_wordpress_roles_names() {
         
@@ -186,7 +215,7 @@ class WP_Cassify_Utils {
     	
 	/**
 	 * Process http redirection.
-	 * @param string redirect_url
+	 * @param string redirect_url	Http url targeted by redirection.
 	 */ 
 	public static function wp_cassify_redirect_url( $redirect_url ) {
 		
@@ -202,9 +231,9 @@ class WP_Cassify_Utils {
         
     /**
      * Get plugin option according to activation plugin level
-     * @param bool $network_activated
-     * @param string $option_name
-     * @return $wp_cassify_plugin_option;
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	string 	$option_name				Name of blog option or site option if network activated.
+     * @return 	string 	$wp_cassify_plugin_option	Return the option value.
      */
     public static function wp_cassify_get_option( $network_activated, $option_name ) {
         
@@ -219,6 +248,232 @@ class WP_Cassify_Utils {
         
         return $wp_cassify_plugin_option;
     }
+    
+    /**
+     * Set plugin option according to activation plugin level
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	string 	$option_name				Name of blog option or site option if network activated.
+     * @param 	string 	$option_value				The new option value.
+     */
+    public static function wp_cassify_update_option( $network_activated, $option_name, $option_value ) {
+        
+        $wp_cassify_plugin_option = '';
+        
+        if ( $network_activated ) {
+            update_site_option( $option_name , sanitize_text_field( $option_value ) );
+        }
+        else {
+            update_option( $option_name , sanitize_text_field( $option_value ) );
+        }
+    }    
+
+    /**
+     * Save plugin options stored in form textfield into database.
+     * @param array 	$post_array						$_POST array passed by reference
+     * @param string 	$field_name						Form field name.
+     * @param bool 		$do_not_check_empty				Empty values are accepted.
+     * @param bool 		$network_activated				TRUE if plugin is activated on network. FALSE if not.
+     */
+    public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = FALSE, $wp_cassify_network_activated ) {
+
+		$field_value = '';
+		
+		if (! $do_not_check_empty ) {
+			if(! empty( $post_array[ $field_name ] ) ) {
+	        	$field_value = $post_array[ $field_name ];
+	        }
+		}
+		else {
+			$field_value = $post_array[ $field_name ];
+		}
+		
+        if ( $wp_cassify_network_activated ) {
+            update_site_option( $field_name , sanitize_text_field( $field_value ) );
+        }
+        else {
+            update_option( $field_name , sanitize_text_field( $field_value ) );
+        }                
+    }
+    
+    /**
+     * Save plugin options stored in form textfield into database.
+     * @param string $field_value
+     * @param string $field_name
+     * @param bool $wp_cassify_network_activated
+     */
+    public static function wp_cassify_update_textfield_manual( $field_value, $field_name, $wp_cassify_network_activated ) {
+
+        if( isset( $field_value ) ) {
+            if ( $wp_cassify_network_activated ) {
+                update_site_option( $field_name , sanitize_text_field( $field_value ) );
+            }
+            else {
+                update_option( $field_name , sanitize_text_field( $field_value ) );
+            }                
+        }
+    }    
+        
+    /**
+     * Save plugin options stored in form checkbox into database.
+     * @param array $post_array
+     * @param string $field_name
+     * @param bool $wp_cassify_network_activated
+     */
+    public static function wp_cassify_update_checkbox( &$post_array, $field_name, $checked_value_name, $wp_cassify_network_activated ) {
+
+        if ( (! empty( $post_array[ $field_name ] ) ) && ( $post_array[ $field_name ] == $checked_value_name ) ) {
+            if ( $wp_cassify_network_activated ) {
+                update_site_option( $field_name , $post_array[ $field_name ] );
+            }
+            else {
+                update_option( $field_name , $post_array[ $field_name ] );
+            }      
+        }
+        else {
+            if ( $wp_cassify_network_activated ) {
+                update_site_option( $field_name , '' );
+            }
+            else {
+                update_option( $field_name , '' );
+            }
+        }	            
+    } 
+    
+    /**
+     * Save plugin options stored in form multiple select into database.
+     * @param array $post_array
+     * @param string $field_name
+	 * @param bool $wp_cassify_network_activated
+     */
+    public static function wp_cassify_update_multiple_select( &$post_array, $field_name, $wp_cassify_network_activated  ) {
+        
+		$field_value = '';
+
+        if(! empty( $post_array[ $field_name ] ) ) {
+        	$field_value = $post_array[ $field_name ];
+        	
+            if( !is_serialized( $field_value ) ) {
+                $field_value = serialize( $field_value );
+            }
+        }
+        
+        if ( $wp_cassify_network_activated ) {
+            update_site_option( $field_name , sanitize_text_field( $field_value ) );
+        }
+        else {
+            update_option( $field_name , sanitize_text_field( $field_value ) );
+        }        
+    }      
+    
+	/**
+	 * Function used to encrypt data
+	 * @param 	string	$text				Text to encrypt
+	 * @param	string	$salt				String to salt encrypted string
+	 * @return 	string	$encrypted_string	Text encrypted
+	 */ 
+	public static function wp_cassify_simple_encrypt( $text, $salt = "wp_cassify" ) {
+		
+		if (! function_exists ( 'mcrypt_encrypt' ) ) {
+			die( 'Please install php mcrypt library !');
+		}		
+		
+		$encrypted_string = trim( 
+			base64_encode( 
+				mcrypt_encrypt( 
+					MCRYPT_RIJNDAEL_256, 
+					$salt, 
+					$text, 
+					MCRYPT_MODE_ECB, 
+					mcrypt_create_iv( 
+						mcrypt_get_iv_size( MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB ), 
+						MCRYPT_RAND 
+					) 
+				)
+			)
+		);
+		
+		return $encrypted_string;
+	}
+
+	/**
+	 * Function used to decrypt data
+	 * @param 	string	$text				Text to decrypt
+	 * @param	string	$salt				String to salt encrypted string
+	 * @return 	string	$decrypted_string	Text decrypted
+	 */ 
+	public static function wp_cassify_simple_decrypt( $text, $salt = "wp_cassify_12345" ) {
+		
+		if (! function_exists ( 'mcrypt_decrypt' ) ) {
+			die( 'Please install php mcrypt library !');
+		}
+		
+		$decrypted_string = mcrypt_decrypt(
+			MCRYPT_RIJNDAEL_256, 
+			$salt, 
+			base64_decode( $text ), 
+			MCRYPT_MODE_ECB, 
+			mcrypt_create_iv( 
+				mcrypt_get_iv_size( 
+					MCRYPT_RIJNDAEL_256, 
+					MCRYPT_MODE_ECB
+				), 
+				MCRYPT_RAND
+			)
+		);
+		
+		return $decrypted_string;
+	}    
+	
+	/**
+	 * Function used by plugin to send mail.
+	 * @param 	string	$from			Sender email address
+	 * @param 	string	$to				Recipient email address
+	 * @param 	string	$subject		Subject message
+	 * @param 	string	$body			Body message
+	 * @param 	string	$smtp_host		Ip or fqdn of smtp host
+	 * @param 	string	$smtp_port		Port used by smtp host
+	 * @param 	string	$smtp_auth		Cipher used if authentication
+	 * @param 	string	$smtp_password	Smtp password
+	 * @return 	bool	$send_result	Return TRUE if mail is sended correctly. FAIL if not.
+	 */ 
+	public static function wp_cassify_sendmail( $from, $to, $subject, $body, $priority, $smtp_host, $smtp_port = 25, $smtp_auth = false, $smtp_encryption_type, $smtp_user, $smtp_password ) {
+		
+		// Create the Transport
+		$transport = \Swift_SmtpTransport::newInstance( $smtp_host, $smtp_port )
+			->setUsername( $smtp_user )
+			->setPassword( $smtp_password );
+			
+		if ( $smtp_auth == TRUE ) {
+			$transport->setEncryption( $smtp_encryption_type );
+			// $transport->setStreamOptions( array( $smtp_encryption_type => array( 'allow_self_signed' => true, 'verify_peer' => false ) ) );
+		}
+		
+		// Create the Mailer using your created Transport
+		$mailer = \Swift_Mailer::newInstance( $transport );			
+		
+		error_log( "FROM " . $from );
+		error_log( "TO " . $to );
+		
+		// Create the message
+		$message = \Swift_Message::newInstance()
+			->setSubject( $subject )
+			->setFrom( array( $from => $from ) )
+			->setTo( array( $to ) )
+			->setBody( $body )
+			->setContentType( 'text/html; charset=UTF-8')
+			->setReturnPath( $from )
+			->setPriority( $priority );
+			
+		// Send the message
+		if (! $mailer->send( $message, $failures ) ) {
+			$send_result = $failures;
+		}
+		else {
+			$send_result = TRUE;
+		}
+		
+		return $send_result;
+	}
 }
 
 ?>
