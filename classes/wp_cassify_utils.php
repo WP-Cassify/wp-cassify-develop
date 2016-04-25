@@ -131,12 +131,12 @@ class WP_Cassify_Utils {
 	public static function wp_cassify_auth_user_wordpress( $cas_user_id ) {
 		
 		if ( username_exists( $cas_user_id ) ) {
-			$user = get_userdatabylogin( $cas_user_id );
+			$user = get_user_by( 'login', $cas_user_id );
 
 			wp_set_current_user( $user->ID, $user->user_login );
 			wp_set_auth_cookie( $user->ID );
 			
-			do_action( 'wp_login', $user_login );
+			do_action( 'wp_login', $user->user_login );
 		}
 		else {
 			die( 'User account does not exists in Wordpress database !');
@@ -450,10 +450,7 @@ class WP_Cassify_Utils {
 		
 		// Create the Mailer using your created Transport
 		$mailer = \Swift_Mailer::newInstance( $transport );			
-		
-		error_log( "FROM " . $from );
-		error_log( "TO " . $to );
-		
+
 		// Create the message
 		$message = \Swift_Message::newInstance()
 			->setSubject( $subject )
