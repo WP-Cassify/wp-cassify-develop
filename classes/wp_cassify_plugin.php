@@ -285,9 +285,20 @@ class WP_Cassify_Plugin {
 				
 				// Evaluate expiration rules
 				if ( count( $wp_cassify_expiration_rules ) > 0 ) {
-					
-					// Force logout if user is not allowed.
 					if ( $this->wp_cassify_is_user_account_expired( $cas_user_datas, $wp_cassify_expiration_rules ) ) {
+						
+						$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+							$cas_user_datas, 
+							$wp_cassify_notification_rules, 
+							'when_user_account_expire'
+						);
+						
+						if ( $notification_rule_matched ) {
+							// Define custom plugin hook to send notification after user account has expired.
+							do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' : user account has expired.' );								
+						}						
+						
+						// Force logout if user account has expired.
 						$this->wp_cassify_logout_if_not_allowed( 'user_account_expired' );
 					}
 				}				
@@ -987,13 +998,23 @@ class WP_Cassify_Plugin {
 	 */ 
 	public function wp_cassify_send_notification_message( $message ) {
 
-		$wp_cassify_notifications_smtp_to = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_subject_prefix' ) );
+		$wp_cassify_notifications_smtp_to = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_to' ) );
 		$wp_cassify_notifications_subject_prefix = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_subject_prefix' ) );
-		$wp_cassify_send_notification_subject =  $this->wp_cassify_default_notifications_options[ 'wp_cassify_send_notification_default_subject' ];
-		$wp_cassify_send_notification_message = $this->wp_cassify_default_notifications_options[ 'wp_cassify_send_notification_default_message' ];
+
+		if ( empty( $message ) ) {
+			$wp_cassify_send_notification_subject = $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_subject' ];
+			$wp_cassify_send_notification_message = $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_message' ];
+		}
+		else {
+			$wp_cassify_send_notification_subject = $message;
+			$wp_cassify_send_notification_message = $message;
+		}
 	
-		if (! empty( $wp_cassify_notifications_subject_prefix ) ) {
-			$wp_cassify_send_notification_subject = $wp_cassify_notifications_subject_prefix . $wp_cassify_send_notification_subject;
+		if ( empty( $wp_cassify_notifications_subject_prefix ) ) {
+			$wp_cassify_send_notification_subject = $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_subject_prefix' ] . $wp_cassify_send_notification_subject;
+		}
+		else {
+			$wp_cassify_send_notification_subject = $wp_cassify_notifications_subject_prefix  . $wp_cassify_send_notification_subject;			
 		}
 
 		$wp_cassify_notifications_smtp_auth = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_auth' ) );
@@ -1010,6 +1031,8 @@ class WP_Cassify_Plugin {
 
 		$wp_cassify_notifications_smtp_user = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_user' ) );
 		$wp_cassify_notifications_smtp_password = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_password' ) );
+		
+		$wp_cassify_notifications_salt = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_salt' ) );
 		
 		if (! empty( $wp_cassify_notifications_salt ) ) {
 			$wp_cassify_notifications_smtp_password = WP_Cassify_Utils::wp_cassify_simple_decrypt( 

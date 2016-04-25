@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.7.3
+Stable tag: 1.7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,8 +71,9 @@ e.g.
 5. You can set wordpress role to user according to CAS attributes values.
 6. Synchronize Wordpress User metas with CAS User attributes.
 7. This is the email notifications settings.
-8. Define user account expiration rules bases on CAS User attributes (after x days from user creation date).
-9. Define user account expiration rules bases on CAS User attributes (with fixed expiration date).
+8. Define notifications rules based on events and CAS User attributes
+9. Define user account expiration rules bases on CAS User attributes (after x days from user creation date).
+10. Define user account expiration rules bases on CAS User attributes (with fixed expiration date).
 
 == Frequently Asked Questions ==
 
@@ -89,6 +90,10 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.7.4 = 
+* Bug fixes on notifications configuration settings.
+* Bug fixes on notification message sending.
 
 = 1.7.2 = 
 * (New Feature !) Define user account expiration rules bases on CAS User attributes !
