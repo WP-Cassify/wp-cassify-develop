@@ -401,11 +401,11 @@ class WP_Cassify_Utils {
 	 * @param	string	$salt				String to salt encrypted string
 	 * @return 	string	$decrypted_string	Text decrypted
 	 */ 
-	public static function wp_cassify_simple_decrypt( $text, $salt = "wp_cassify" ) {
+	public static function wp_cassify_simple_decrypt( $text, $salt = "wp_cassify_12345" ) {
 		
 		if (! function_exists ( 'mcrypt_decrypt' ) ) {
 			die( 'Please install php mcrypt library !');
-		}			
+		}
 		
 		$decrypted_string = mcrypt_decrypt(
 			MCRYPT_RIJNDAEL_256, 
@@ -450,6 +450,9 @@ class WP_Cassify_Utils {
 		
 		// Create the Mailer using your created Transport
 		$mailer = \Swift_Mailer::newInstance( $transport );			
+		
+		error_log( "FROM " . $from );
+		error_log( "TO " . $to );
 		
 		// Create the message
 		$message = \Swift_Message::newInstance()
