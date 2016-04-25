@@ -264,7 +264,7 @@ class WP_Cassify_Plugin {
 					$wp_cassify_ssl_cipher_selected,
 					$wp_cassify_ssl_check_certificate
 				);
-
+				
 				// Parse CAS Server response and store into associative array.
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
 				
@@ -274,7 +274,7 @@ class WP_Cassify_Plugin {
 				}
 
 				// Evaluate authorization rules
-				if ( count( $wp_cassify_autorization_rules ) > 0 ) {
+				if ( ( is_array( $wp_cassify_autorization_rules ) ) &&  ( count( $wp_cassify_autorization_rules ) > 0 ) ) {
 					$this->wp_cassify_separate_rules( $wp_cassify_autorization_rules );
 					
 					// Force logout if user is not allowed.
@@ -284,7 +284,7 @@ class WP_Cassify_Plugin {
 				}
 				
 				// Evaluate expiration rules
-				if ( count( $wp_cassify_expiration_rules ) > 0 ) {
+				if ( ( is_array( $wp_cassify_expiration_rules ) ) &&  ( count( $wp_cassify_expiration_rules ) > 0 ) ) {					
 					if ( $this->wp_cassify_is_user_account_expired( $cas_user_datas, $wp_cassify_expiration_rules ) ) {
 						
 						$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
