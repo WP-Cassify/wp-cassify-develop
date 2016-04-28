@@ -336,10 +336,10 @@ class WP_Cassify_Plugin {
 				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
 				
 				// Suscriber role is pushed by default to successfully authenticated user.
-				if ( $wordpress_user_account_created == TRUE ) {
+				if (! in_array( 'suscriber', $roles_to_push ) ) {
 					array_push( $roles_to_push, 'suscriber' );
 				}
-
+				
 				foreach ( $roles_to_push as $role ) {
 					WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
 				}
