@@ -335,13 +335,14 @@ class WP_Cassify_Plugin {
 				// Set wordpress user roles if defined in plugin admin settings
 				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
 				
-				// Suscriber role is pushed by default to successfully authenticated user.
-				if (! in_array( 'suscriber', $roles_to_push ) ) {
-					array_push( $roles_to_push, 'suscriber' );
+				// Suscriber role is pushed by default to successfully authenticated user
+				if ( count( $roles_to_push ) == 0 ) {
+					array_push( $roles_to_push, 'subscriber' );
 				}
-				
-				foreach ( $roles_to_push as $role ) {
-					WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
+				else {
+					foreach ( $roles_to_push as $role ) {
+						WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
+					}
 				}
 				
 				// Sync CAS User attributes with Wordpress User meta
