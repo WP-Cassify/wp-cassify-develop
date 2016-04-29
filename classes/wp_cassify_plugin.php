@@ -339,10 +339,9 @@ class WP_Cassify_Plugin {
 				if ( count( $roles_to_push ) == 0 ) {
 					array_push( $roles_to_push, 'subscriber' );
 				}
-				else {
-					foreach ( $roles_to_push as $role ) {
-						WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
-					}
+				
+				foreach ( $roles_to_push as $role ) {
+					WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
 				}
 				
 				// Sync CAS User attributes with Wordpress User meta
