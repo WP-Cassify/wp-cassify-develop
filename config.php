@@ -33,7 +33,15 @@ $wp_cassify_default_ssl_check_certificate = 'disabled';
 $wp_cassify_default_redirect_parameter_name = 'redirect_to';
 $wp_cassify_default_service_ticket_parameter_name = 'ticket';
 $wp_cassify_default_service_service_parameter_name = 'service';
+$wp_cassify_default_gateway_parameter_name = 'gateway';
 $wp_cassify_default_bypass_parameter_name = 'wp_cassify_bypass';
+
+// 	Set the times authentication will be cached before really accessing the
+//	CAS server in gateway mode:
+//	- -1: check only once, and then never again (until you pree login)
+//	- 0: always check
+//	- n: check every "n" time
+$wp_cassify_default_cachetimes_for_authrecheck = '0';
 
 $wp_cassify_default_allow_deny_order = array(
 	'allow, deny',
