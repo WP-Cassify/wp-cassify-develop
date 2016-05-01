@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.7.8
+Stable tag: 1.7.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,26 +29,53 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New Feature !) Define user account expiration rules bases on CAS User attributes !
-
+* (New feature !) : Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
+your index.php or in another template file inside your theme (It use CAS gateway mode) :
+`
+if ( isset($GLOBALS['wp-cassify']) ) {
+	$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
+} 
+`
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
-* Synchronize Wordpress User metas with CAS User attributes
-* Set up Wordpress Roles to User according to CAS User attributes
-* Authorization rule editor
-* Automatic user creation if not exist in Wordpress database
-* Compatible with Wordpress Access Control Plugin
-* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session
-* Manage URL White List to bypass CAS Authentication on certain pages
+* Automatic user creation if not exist in Wordpress database.
+* Synchronize Wordpress User metas with CAS User attributes.
+* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
+* Set up Wordpress Roles to User according to CAS User attributes.
+* Authorization rule editor.
+* Compatible with Wordpress Access Control Plugin.
+* Manage URL White List to bypass CAS Authentication on certain pages.
 * Much simpler bypass authentication with post method provided by Susan Boland (See online documentation). Create wordpress authentication form with redirect attribute like this :
-'redirect' => site_url( '/?wp_cassify_bypass=bypass' )
+`
+    <?php
+         
+        $args = array(
+            'echo'           => true,
+            'remember'       => true,
+            'redirect' => site_url( '/?wp_cassify_bypass=bypass' ),
+            'form_id'        => 'loginform',
+            'id_username'    => 'user_login',
+            'id_password'    => 'user_pass',
+            'id_remember'    => 'rememberme',
+            'id_submit'      => 'wp-submit',
+            'label_username' => __( 'Username' ),
+            'label_password' => __( 'Password' ),
+            'label_remember' => __( 'Remember Me' ),
+            'label_log_in'   => __( 'Log In' ),
+            'value_username' => '',
+            'value_remember' => false
+        );
+         
+        wp_login_form( $args ); 
+    ?>
+`
 * Receive email notifications when trigger is fired (after user account creation, after user login/logout).
 * Define notifications rules based on user attributes values.
+* Define user account expiration rules bases on CAS User attributes.
 * Network activation allowed
 * You can set Service Logout URL (Needs to have CAS Server with followServiceRedirects option configured).
 * Add support for web application hosted behind a reverse proxy. (Thanks to franck86)
-* Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication. (See online documentation, Screencast available)
-* Add custom hooks : wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
+* Add custom hooks : wp_cassify_after_cas_authentication, wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
 * Custom shortcode to generate CAS login link into your blog. (See online documentation)
 
@@ -91,12 +118,21 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
 
+= 1.7.9 =
+* Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
+your index.php or in another template file inside your theme (It use CAS gateway mode) :
+`
+if ( isset($GLOBALS['wp-cassify']) ) {
+	$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
+} 
+`
+
 = 1.7.4 = 
 * Bug fixes on notifications configuration settings.
 * Bug fixes on notification message sending.
 
 = 1.7.2 = 
-* (New Feature !) Define user account expiration rules bases on CAS User attributes !
+* Define user account expiration rules bases on CAS User attributes !
 
 = 1.7.0 =
 * Bug fix : Suscriber role overwrite all other roles. Suscriber role is pushed only if user account is recently created.
@@ -146,8 +182,8 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 * Add notice message on admin screen.
 
 = 1.5.6 =
-* (New Feature !) Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication
-* (New Feature !) Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
+* Custom hook to perform actions just after cas authentication. Hook name : wp_cassify_after_cas_authentication
+* Custom hook to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response
 
 = 1.5.5 =
 * Some bug fixes.
