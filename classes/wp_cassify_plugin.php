@@ -249,8 +249,6 @@ class WP_Cassify_Plugin {
 	 */ 
 	public function wp_cassify_grab_service_ticket() {
 
-		error_log( 'wp_cassify_grab_service_ticket()' );
-
 		$service_url = null;	
 		$service_ticket = null;
 		$wordpress_user_account_created = false;
@@ -490,9 +488,7 @@ class WP_Cassify_Plugin {
 					if ( $gateway_mode ) {
 						$redirect_url .= '&gateway=true';
 					}
-					
-					error_log( 'wp_cassify_after_redirect =>' . $redirect_url );
-					
+
 					WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );	
 				}
 			}
@@ -583,45 +579,32 @@ class WP_Cassify_Plugin {
 		
 		$this->wp_cassify_session_start();
 		
-		error_log( 'entering wp_cassify_check_authentication()');
 		$auth = false;
-		
-		error_log( 'cache_times_for_auth_recheck => ');
-		$recheck = $this->wp_cassify_get_cache_times_for_auth_recheck();
-		error_log( $recheck );
 		
 		if ( $this->wp_cassify_is_authenticated() ) {
 			$auth = true;
 		}
 		else if ( isset( $_SESSION['wp_cassify']['auth_checked'] ) ) {
-			error_log( 'entering wp_cassify_check_authentication() => (1)');
-			
         	// the previous request has redirected the client to the CAS server with gateway=true				
 			unset( $_SESSION['wp_cassify']['auth_checked'] );
 			$auth = false;
 		}
 		else {
-			error_log( 'entering wp_cassify_check_authentication() => (2)');
-			
 			// avoid a check against CAS on every request
             if ( !isset( $_SESSION['wp_cassify']['unauth_count'] ) ) {
-                error_log( 'entering wp_cassify_check_authentication() => (3)');
-                $_SESSION['wp_cassify']['unauth_count'] = -2; // uninitialized
+                $_SESSION['wp_cassify']['unauth_count'] = -2;
             }				
 			
             if ( ( ( $_SESSION['wp_cassify']['unauth_count'] != -2 ) && ( $this->wp_cassify_get_cache_times_for_auth_recheck() == -1 ) ) || 
             	 ( $_SESSION['wp_cassify']['unauth_count'] >= 0  && $_SESSION['wp_cassify']['unauth_count'] < $this->_cache_times_for_auth_recheck )
             ) {
-            	error_log( 'entering wp_cassify_check_authentication() => (4)');
-                $auth = false;
+				$auth = false;
 
                 if ( $this->_cache_times_for_auth_recheck != -1 ) {
-                	error_log( 'entering wp_cassify_check_authentication() => (5)');
                     $_SESSION['wp_cassify']['unauth_count']++;;
                 }
             }
 			else {
-				error_log( 'entering wp_cassify_check_authentication() => (6)');
                 $_SESSION['wp_cassify']['unauth_count'] = 0;
                 $_SESSION['wp_cassify']['auth_checked'] = true;
                 
@@ -813,9 +796,6 @@ class WP_Cassify_Plugin {
 				$this->wp_cassify_default_wordpress_blog_https_port	
 			);			
 		}
-		
-		error_log( 'wp_cassify_is_gateway_request' );
-		error_log( $callback_service_url );
 		
 		$gateway = WP_Cassify_Utils::wp_cassify_extract_get_parameter( 
 				rawurldecode( $callback_service_url ), 

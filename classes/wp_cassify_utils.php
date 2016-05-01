@@ -90,7 +90,7 @@ class WP_Cassify_Utils {
 	 */ 
 	public static function wp_cassify_extract_get_parameter( $url , $get_parameter_name ) {
 		
-		$get_parameter_value = NULL;
+		$get_parameter_value = null;
 		
 		$query = parse_url( $url , PHP_URL_QUERY );
 		
@@ -110,7 +110,7 @@ class WP_Cassify_Utils {
 	 */ 
 	public static function wp_cassify_get_host_uri( $url ) {
 		
-		$left_part_uri = NULL;
+		$left_part_uri = null;
 		
 		$query = parse_url( $url );
 
@@ -147,11 +147,11 @@ class WP_Cassify_Utils {
 	 * Create wordpress user account if not exist.
 	 * @param 	string $cas_user_id							Id of user provided by CAS Server response.
 	 * @param 	string $cas_user_email_attribute_value		CAS User email attribute provided by CAS Server response.
-	 * @return 	object $wp_user_id							Return Wordpress User ID or NULL if user account has not been created.
+	 * @return 	object $wp_user_id							Return Wordpress User ID or null if user account has not been created.
 	 */ 
 	public static function wp_cassify_create_wordpress_user( $cas_user_id, $cas_user_email_attribute_value ) {
 
-		$user_email = NULL;
+		$user_email = null;
 		$wp_user_id = 0;
 
 		if (! username_exists( $cas_user_id ) ) {
