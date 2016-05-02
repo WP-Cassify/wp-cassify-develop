@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.7.9
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -118,6 +118,9 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
 
+= 1.8.0 =
+* Bug fix on service url with querystring parameter.
+
 = 1.7.9 =
 * Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
 your index.php or in another template file inside your theme (It use CAS gateway mode) :
@@ -126,7 +129,6 @@ if ( isset($GLOBALS['wp-cassify']) ) {
 	$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
 } 
 `
-
 = 1.7.4 = 
 * Bug fixes on notifications configuration settings.
 * Bug fixes on notification message sending.

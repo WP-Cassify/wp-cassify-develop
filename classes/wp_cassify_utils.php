@@ -104,6 +104,74 @@ class WP_Cassify_Utils {
 	}
 	
 	/**
+	 * Return url without get parameter
+	 * @param 	string $url						Http url from wich you want to strip GET parameter
+	 * @param 	string $get_parameter_name		GET parameter name
+	 * @return 	string $stripped_url			Url without stripped value
+	 */ 
+	public static function wp_cassify_strip_get_parameter( $url , $get_parameter_name ) {
+		
+		$stripped_url = null;
+		
+		$parsed_url = parse_url( $url );
+		
+		$scheme   	= isset( $parsed_url['scheme'] ) ? $parsed_url['scheme'] . '://' : ''; 
+		$host     	= isset( $parsed_url['host'] ) ? $parsed_url['host'] : ''; 
+		$port     	= isset( $parsed_url['port'] ) ? ':' . $parsed_url['port'] : ''; 
+		$user     	= isset( $parsed_url['user'] ) ? $parsed_url['user'] : ''; 
+		$pass     	= isset( $parsed_url['pass'] ) ? ':' . $parsed_url['pass']  : ''; 
+		$pass     	= ( $user || $pass ) ? "$pass@" : ''; 
+		$path     	= isset( $parsed_url['path'] ) ? $parsed_url['path'] : ''; 
+		$fragment	= isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : ''; 		
+		
+		$query 		= parse_url( $url , PHP_URL_QUERY );
+
+		parse_str( $query, $url_params );
+		unset( $url_params[ $get_parameter_name ] );
+
+		$query 		= http_build_query( $url_params );
+
+		if (! empty( $query ) ) {
+			$query = '?' . $query;
+		}
+
+		$stripped_url = "$scheme$user$pass$host$port$path$query$fragment"; 
+
+		return $stripped_url;
+	}	
+	
+	/**
+	 * Return url with query parameters encoded
+	 * @param 	string $url						Http url from wich you want to strip GET parameter
+	 * @return 	string $query_encoded_url		Url with query parameters encoded
+	 */ 
+	public static function wp_cassify_encode_query_in_url( $url ) {
+		
+		$query_encoded_url = null;
+		
+		$parsed_url = parse_url( $url );
+		
+		$scheme   	= isset( $parsed_url['scheme'] ) ? $parsed_url['scheme'] . '://' : ''; 
+		$host     	= isset( $parsed_url['host'] ) ? $parsed_url['host'] : ''; 
+		$port     	= isset( $parsed_url['port'] ) ? ':' . $parsed_url['port'] : ''; 
+		$user     	= isset( $parsed_url['user'] ) ? $parsed_url['user'] : ''; 
+		$pass     	= isset( $parsed_url['pass'] ) ? ':' . $parsed_url['pass']  : ''; 
+		$pass     	= ( $user || $pass ) ? "$pass@" : ''; 
+		$path     	= isset( $parsed_url['path'] ) ? $parsed_url['path'] : ''; 
+		$fragment	= isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : ''; 		
+		
+		$query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
+
+		parse_str( $query, $url_params );
+
+		$query 		= '?' . http_build_query( $url_params, PHP_QUERY_RFC3986 );
+
+		$query_encoded_url = "$scheme$user$pass$host$port$path$query$fragment"; 
+
+		return $query_encoded_url;
+	}	
+	
+	/**
 	 * Return the left part of an URI
 	 * @param 	string $url				HTTP url from wich you want to extract left part.
 	 * @return 	string $left_part_uri	Left part of http url with fqdn.
@@ -183,7 +251,7 @@ class WP_Cassify_Utils {
 	}	
 	
 	/**
-	 * Set role to an existing Wordpress user
+	 * Set role to an existing Wordpress user and remove all other roles
 	 * @param	string 	$wordpress_user_login	Wordpress user login
 	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
 	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
@@ -200,6 +268,25 @@ class WP_Cassify_Utils {
 
 		return $wp_user_role_updated;
 	}
+	
+	/**
+	 * Add role to an existing Wordpress user
+	 * @param	string 	$wordpress_user_login	Wordpress user login
+	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
+	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
+	 */ 
+	public static function wp_cassify_add_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
+		
+		$wp_user_role_updated = FALSE;
+		$wp_user = get_user_by( 'login', $wordpress_user_login );
+		
+		if ( $wp_user != FALSE ) {
+			$wp_user->add_role( $role_key );
+			$wp_user_role_updated = TRUE;
+		}
+
+		return $wp_user_role_updated;
+	}	
 	
     /**
      * Return array with Wordpress user roles.
