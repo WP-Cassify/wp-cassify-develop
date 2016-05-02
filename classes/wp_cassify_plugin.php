@@ -324,7 +324,7 @@ class WP_Cassify_Plugin {
 
 				// Parse CAS Server response and store into associative array.
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
-				
+
 				if ( empty( $cas_user_datas['cas_user_id'] ) ) {
 					die( 'CAS Authentication failed ! ');
 				}
@@ -402,15 +402,15 @@ class WP_Cassify_Plugin {
 					// Set wordpress user roles if defined in plugin admin settings
 					$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
 					
-					// Suscriber role is pushed by default to successfully authenticated user
-					if ( count( $roles_to_push ) == 0 ) {
+					// Suscriber role is pushed by default if wordpress user account has been created.
+					if ( $wordpress_user_account_created ) {
 						array_push( $roles_to_push, 'subscriber' );
 					}
-					
+
 					foreach ( $roles_to_push as $role ) {
-						WP_Cassify_Utils::wp_cassify_set_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
+						WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
 					}
-					
+
 					// Sync CAS User attributes with Wordpress User meta
 					$this->wp_cassify_sync_user_metadata( 
 						$cas_user_datas[ 'cas_user_id' ], 
@@ -434,7 +434,7 @@ class WP_Cassify_Plugin {
 						// Define custom plugin hook to send notification after user has been logged in
 						do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' is logged in' );							
 					}
-	
+
 					// Redirect to the service url.
 					WP_Cassify_Utils::wp_cassify_redirect_url( $service_url );
 				}
@@ -481,6 +481,11 @@ class WP_Cassify_Plugin {
 					die( 'CAS Service URL not set !' );
 				}	
 				elseif ( empty( $service_ticket ) ) {	
+					
+					if ( parse_url( $service_url, PHP_URL_QUERY) ) {
+						$service_url = WP_Cassify_Utils::wp_cassify_encode_query_in_url( $service_url );
+					}
+					
 					$redirect_url = $wp_cassify_base_url .
 						$wp_cassify_login_servlet . '?' .
 						$this->wp_cassify_default_service_service_parameter_name . '=' . $service_url;
@@ -488,6 +493,8 @@ class WP_Cassify_Plugin {
 					if ( $gateway_mode ) {
 						$redirect_url .= '&gateway=true';
 					}
+
+					error_log( $redirect_url );
 
 					WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );	
 				}
@@ -654,31 +661,32 @@ class WP_Cassify_Plugin {
 		
 		$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_get_current_url(
 				$this->wp_cassify_default_wordpress_blog_http_port,
-				$this->wp_cassify_default_wordpress_blog_https_port	
-			);
+				$this->wp_cassify_default_wordpress_blog_https_port	);
 
 		// Check if request use gateway mode.
 		$gateway_mode = false;
+		
 		if ( $this->wp_cassify_is_gateway_request( $wp_cassify_callback_service_url ) ) {
 			$gateway_mode = true;
 		}
 		
-		if ( strpos( $wp_cassify_callback_service_url, $this->wp_cassify_default_redirect_parameter_name . '=' ) !== false ) {
-
+		$wp_cassify_redirect_parameter = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $wp_cassify_callback_service_url , $this->wp_cassify_default_redirect_parameter_name );
+		$wp_cassify_service_ticket_parameter = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $wp_cassify_callback_service_url , $this->wp_cassify_default_service_ticket_parameter_name );
+		
+		if ( !empty( $wp_cassify_redirect_parameter ) ) {
 			$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_extract_get_parameter( 
-				rawurldecode( $wp_cassify_callback_service_url ), 
-				$this->wp_cassify_default_redirect_parameter_name );
+				$wp_cassify_callback_service_url, 
+				$this->wp_cassify_default_redirect_parameter_name 
+			);
 
 			// Append home_url if url contains only /my-slug-page/. callback service url must be fully qualified.
 			if ( strrpos( $wp_cassify_callback_service_url, '/', -strlen( $wp_cassify_callback_service_url ) ) !== false ) {
-				$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_get_host_uri( home_url() ) .
+				$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_get_host_uri( home_url() ) . 
 					$wp_cassify_callback_service_url;
 			}
 		}
-		else if ( strpos( $wp_cassify_callback_service_url, '?' . $this->wp_cassify_default_service_ticket_parameter_name . '=' ) !== false ) {
-
-			$wp_cassify_callback_service_url = explode( '?' . $this->wp_cassify_default_service_ticket_parameter_name . '=' , $wp_cassify_callback_service_url );
-			$wp_cassify_callback_service_url = $wp_cassify_callback_service_url[0];
+		else if ( !empty( $wp_cassify_service_ticket_parameter ) ) {
+			$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_strip_get_parameter( $wp_cassify_callback_service_url , $this->wp_cassify_default_service_ticket_parameter_name );
 			
 			// Append home_url if url contains only /my-slug-page/. callback service url must be fully qualified.
 			if ( strrpos( $wp_cassify_callback_service_url, '/', -strlen( $wp_cassify_callback_service_url ) ) !== false ) {
@@ -1059,7 +1067,7 @@ class WP_Cassify_Plugin {
 				}
 			}
 		}
-		
+
 		return $roles_to_push;
 	}
 
