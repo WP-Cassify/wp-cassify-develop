@@ -332,7 +332,7 @@ class WP_Cassify_Plugin {
 					$this->wp_cassify_set_authenticated( true );
 				}
 				
-				// Check if request use gateway mode.
+							// Check if request use gateway mode.
 				if (! $gateway_mode ) {
 
 					// Define custom plugin filter to build your custom parsing function
@@ -512,46 +512,49 @@ class WP_Cassify_Plugin {
 	 */ 
 	function wp_cassify_logout() {
 
-		$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
-		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
-		$wp_cassify_redirect_url_after_logout = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' );
+		if ( $this->wp_cassify_is_authenticated() ) {
 		
-		// Define default values if options values empty.
-		if ( empty( $wp_cassify_logout_servlet ) ) {
-			$wp_cassify_logout_servlet = $this->wp_cassify_default_logout_servlet;
-		}
+			$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
+			$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
+			$wp_cassify_redirect_url_after_logout = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' );
 		
-		if ( empty ( $wp_cassify_redirect_url_after_logout ) ) {
-			$wp_cassify_redirect_url_after_logout = get_home_url();
-		}
+			// Define default values if options values empty.
+			if ( empty( $wp_cassify_logout_servlet ) ) {
+				$wp_cassify_logout_servlet = $this->wp_cassify_default_logout_servlet;
+			}
+		
+			if ( empty ( $wp_cassify_redirect_url_after_logout ) ) {
+				$wp_cassify_redirect_url_after_logout = get_home_url();
+			}
 
-		// Send logout notification if rule is matched.		
-		if ( isset(	$_SESSION['wp_cassify_cas_user_datas'] ) ) {
+			// Send logout notification if rule is matched.		
+			if ( isset(	$_SESSION['wp_cassify_cas_user_datas'] ) ) {
 
-			$cas_user_datas = $_SESSION['wp_cassify_cas_user_datas'];
+				$cas_user_datas = $_SESSION['wp_cassify_cas_user_datas'];
 			
-			$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
+				$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
 	 		
-			$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
-				$cas_user_datas, 
-				$wp_cassify_notification_rules, 
-				'after_user_logout'
-			);
+				$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+					$cas_user_datas, 
+					$wp_cassify_notification_rules, 
+					'after_user_logout'
+				);
 			
-			if ( $notification_rule_matched ) {
-				do_action( 'wp_cassify_send_notification', 'User account has been logged out :' . $cas_user_datas[ 'cas_user_id' ] );							
-			}			
-		}		
+				if ( $notification_rule_matched ) {
+					do_action( 'wp_cassify_send_notification', 'User account has been logged out :' . $cas_user_datas[ 'cas_user_id' ] );							
+				}			
+			}		
 
-		// Destroy wordpress session;
-		session_destroy();
+			// Destroy wordpress session;
+			session_destroy();
 		
-		$redirect_url = $wp_cassify_base_url .
-			$wp_cassify_logout_servlet . '?' .
-			$this->wp_cassify_default_service_service_parameter_name . '=' . $wp_cassify_redirect_url_after_logout;
+			$redirect_url = $wp_cassify_base_url .
+				$wp_cassify_logout_servlet . '?' .
+				$this->wp_cassify_default_service_service_parameter_name . '=' . $wp_cassify_redirect_url_after_logout;
 		
-		// Redirect to the logout CAS end point.
-		WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );
+			// Redirect to the logout CAS end point.
+			WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );
+		}
 	}
 
 	/**
