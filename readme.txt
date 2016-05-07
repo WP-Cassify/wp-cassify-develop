@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,7 +18,7 @@ You can build custom authorization rules according to cas user attributes popula
 database, it can be created automatically. There are many features. You can customize everything : CAS servlets URL, 
 XPath Query to parse cas server xml response, user attributes you want to populate.
 
-[youtube https://youtu.be/hDCOf8HVkW8]
+https://www.youtube.com/watch?v=hDCOf8HVkW8
 
 = Website =
 
@@ -122,6 +122,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.8.2 =
+* Add youtube video in plugin description.
 
 = 1.8.1 =
 * Bug fix on logout from local wordpress auth.
