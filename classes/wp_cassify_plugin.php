@@ -408,9 +408,12 @@ class WP_Cassify_Plugin {
 					$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
 					
 					// Suscriber role is pushed by default if wordpress user account has been created.
-					if ( $wordpress_user_account_created ) {
-						array_push( $roles_to_push, 'subscriber' );
-					}
+                    $wordpress_user_id = get_current_user_id();
+                    $blog_id = get_current_blog_id();
+
+                    if ( ( $wordpress_user_account_created ) || (! is_user_member_of_blog( $wordpress_user_id, $blog_id ) ) ) {
+                            array_push( $roles_to_push, 'subscriber' );
+                    }
 
 					foreach ( $roles_to_push as $role ) {
 						WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
