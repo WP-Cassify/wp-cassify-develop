@@ -595,6 +595,29 @@ class WP_Cassify_Plugin {
 		return $wp_cassify_service_ticket;
 	}
 	
+    /**
+     * Force user to be at least subscriber of this blog
+     */
+    public function force_user_member_of_blog() {
+
+        $roles_to_push = array();
+
+        $current_user = wp_get_current_user();
+        if ( $current_user != 0 ) {
+            if (! is_user_member_of_blog( $current_user->ID, $this->wp_cassify_current_blog_id ) ) {
+                array_push( $roles_to_push, 'subscriber' );
+
+                foreach ( $roles_to_push as $role ) {
+                        WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $current_user->user_login, $role );
+                }
+
+                WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $current_user->user_login );
+                WP_Cassify_Utils::wp_cassify_redirect_url( home_url() );
+            }
+        }
+    }
+	
+	
 	/**
 	 * Function used to detect if user has previously been authenticated by CAS.
 	 * Performs redirection to cas server programmactically.
@@ -609,11 +632,15 @@ class WP_Cassify_Plugin {
 		$auth = false;
 		
 		if ( $this->wp_cassify_is_authenticated() ) {
+	        // Must force user to be at least member of current blog if not.
+	        $this->force_user_member_of_blog();
+			
 			$auth = true;
 		}
 		else if ( isset( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['auth_checked'] ) ) {
         	// the previous request has redirected the client to the CAS server with gateway=true				
 			unset( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['auth_checked'] );
+			
 			$auth = false;
 		}
 		else {
