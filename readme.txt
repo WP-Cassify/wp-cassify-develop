@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.8.3
+Stable tag: 1.8.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,13 @@ https://wpcassify.wordpress.com/
 * Require at least PHP CURL package (for example, 'apt-get install php5-curl' if you're using php5 on debian systems).
 
 = Features included =
+
+* Be careful, to access to CAS User Attributes from session :
+Before 1.8.4 :
+`$_SESSION['wp_cassify_cas_user_datas']`
+From 1.8.4 :
+`$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas']`
+
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
