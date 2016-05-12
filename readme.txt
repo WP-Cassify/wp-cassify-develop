@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.8.6
+Stable tag: 1.8.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
