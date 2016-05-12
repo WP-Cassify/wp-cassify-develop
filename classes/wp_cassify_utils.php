@@ -309,7 +309,7 @@ class WP_Cassify_Utils {
 		// Perform redirection only if url is valid.
 		if ( filter_var( $redirect_url, FILTER_VALIDATE_URL ) ) {
 			wp_redirect( $redirect_url ); 
-			exit;
+			exit();
 		}
 		else {
 			die( 'Redirect URL is not valid !');
