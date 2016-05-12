@@ -337,7 +337,7 @@ class WP_Cassify_Plugin {
 
 		$gateway_mode = $this->wp_cassify_is_gateway_request( null );
 
-		if (! is_user_logged_in() ) {	
+		if ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) {		
 			if (! empty( $service_ticket ) ) {
 				$service_validate_url = $wp_cassify_base_url .
 					$wp_cassify_service_validate_servlet . '?' .
@@ -505,7 +505,7 @@ class WP_Cassify_Plugin {
 		
 		$current_user = null;
 		
-		if ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) {	
+		if ( ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) || ( $gateway_mode == TRUE ) )  {	
 			if (! $this->wp_cassify_is_in_while_list( $service_url ) ) {	
 				if ( empty( $service_url ) ) {
 					die( 'CAS Service URL not set !' );
