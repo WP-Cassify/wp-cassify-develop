@@ -239,6 +239,23 @@ class WP_Cassify_Plugin {
 	}
 	
 	/**
+	 * This function return cas user attributes populated into php session by plugin.
+	 * @return array	$cas_user_datas Associative array containing user attributes and id. Use print_r to expect variable.
+	 */ 
+	public function wp_cassify_get_cas_user_datas() {
+		
+		$this->wp_cassify_session_start();
+		
+		$cas_user_datas = false;
+		
+		if ( isset( $_SESSION['wp_cassify'] ) ) {
+			$cas_user_datas = $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'];
+		}
+		
+		return $cas_user_datas;
+	}
+	
+	/**
 	 * Get the times authentication will be cached before really accessing 
 	 * the CAS server in gateway mode.
 	 * 
@@ -595,29 +612,6 @@ class WP_Cassify_Plugin {
 		return $wp_cassify_service_ticket;
 	}
 	
-    /**
-     * Force user to be at least subscriber of this blog
-     */
-    public function force_user_member_of_blog() {
-
-        $roles_to_push = array();
-
-        $current_user = wp_get_current_user();
-        if ( $current_user != 0 ) {
-            if (! is_user_member_of_blog( $current_user->ID, $this->wp_cassify_current_blog_id ) ) {
-                array_push( $roles_to_push, 'subscriber' );
-
-                foreach ( $roles_to_push as $role ) {
-                        WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $current_user->user_login, $role );
-                }
-
-                WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $current_user->user_login );
-                WP_Cassify_Utils::wp_cassify_redirect_url( home_url() );
-            }
-        }
-    }
-	
-	
 	/**
 	 * Function used to detect if user has previously been authenticated by CAS.
 	 * Performs redirection to cas server programmactically.
@@ -631,10 +625,7 @@ class WP_Cassify_Plugin {
 		
 		$auth = false;
 		
-		if ( $this->wp_cassify_is_authenticated() ) {
-	        // Must force user to be at least member of current blog if not.
-	        $this->force_user_member_of_blog();
-			
+		if ( $this->wp_cassify_is_authenticated() ) {	
 			$auth = true;
 		}
 		else if ( isset( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['auth_checked'] ) ) {
@@ -695,7 +686,6 @@ class WP_Cassify_Plugin {
 		}
 		
 		$this->wp_cassify_session_start();
-		
 		
 		$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'] = $cas_user_datas_filtered;
 	}
