@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.8.5
+Stable tag: 1.8.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,12 +31,14 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* Be careful, to access to CAS User Attributes from session :
-Before 1.8.4 :
-`$_SESSION['wp_cassify_cas_user_datas']`
-From 1.8.4 :
-`$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas']`
-
+* Be careful, to access to CAS User Attributes from your theme file (from 1.8.4), use code below :
+`
+	<?php
+		if ( isset($GLOBALS['wp-cassify']) ) {
+			print_r( $GLOBALS['wp-cassify']->wp_cassify_get_cas_user_datas() );
+		}
+	?>
+`
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -88,8 +90,12 @@ if ( (! is_user_logged_in() ) && (! get_query_var( 'wp_cassify_bypass' ) ) ){
 		$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
 	}
 }
+else if ( ! is_user_member_of_blog() ) {
+	if ( isset($GLOBALS['wp-cassify']) ) {
+		$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
+	}	
+}
 `
-
 
 == Installation ==
 
@@ -129,6 +135,11 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.8.6 =
+* Test multisite support in subdomain configuration.
+* Fix bug on gateway mode.
+* Remove function force_user_member_of_blog.
 
 = 1.8.5 =
 * Add function force_user_member_of_blog.
