@@ -37,6 +37,8 @@ class WP_Cassify_Plugin {
 	
 	private $wp_cassify_allow_rules = array();
 	private $wp_cassify_deny_rules = array();
+	
+	private $wp_cassify_current_blog_id;
 
 	/**
 	 * Constructor
@@ -144,6 +146,9 @@ class WP_Cassify_Plugin {
 			
 			add_action( 'wp_cassify_send_notification', array( $this, 'wp_cassify_send_notification_message' ), 1, 1 ); 
 		}
+		
+		// Get current blog id to store information session in $_SESSION['wp_cassify'][$blogid]
+		$this->wp_cassify_current_blog_id = get_current_blog_id();
 	}
 	
 	/**
@@ -205,11 +210,13 @@ class WP_Cassify_Plugin {
 	 */
 	public function wp_cassify_set_authenticated( $is_authenticated ) {
 		
+		$this->wp_cassify_session_start();
+		
 		if ( $is_authenticated ) {
-			$_SESSION['wp_cassify']['user_auth'] = true;
+			$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['user_auth'] = true;
 		}
 		else {
-			$_SESSION['wp_cassify']['user_auth'] = false;
+			$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['user_auth'] = false;
 		}
 	}
 	
@@ -220,11 +227,32 @@ class WP_Cassify_Plugin {
 		
 		$is_authenticated = false;
 		
-		if ( $_SESSION['wp_cassify']['user_auth'] == true ) {
-			$is_authenticated = true;
+		$this->wp_cassify_session_start();
+		
+		if ( isset( $_SESSION['wp_cassify'] ) ) {
+			if ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['user_auth'] == true ) {
+				$is_authenticated = true;
+			}
 		}
 		
 		return $is_authenticated;
+	}
+	
+	/**
+	 * This function return cas user attributes populated into php session by plugin.
+	 * @return array	$cas_user_datas Associative array containing user attributes and id. Use print_r to expect variable.
+	 */ 
+	public function wp_cassify_get_cas_user_datas() {
+		
+		$this->wp_cassify_session_start();
+		
+		$cas_user_datas = false;
+		
+		if ( isset( $_SESSION['wp_cassify'] ) ) {
+			$cas_user_datas = $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'];
+		}
+		
+		return $cas_user_datas;
 	}
 	
 	/**
@@ -309,7 +337,7 @@ class WP_Cassify_Plugin {
 
 		$gateway_mode = $this->wp_cassify_is_gateway_request( null );
 
-		if (! is_user_logged_in() ) {	
+		if ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) {		
 			if (! empty( $service_ticket ) ) {
 				$service_validate_url = $wp_cassify_base_url .
 					$wp_cassify_service_validate_servlet . '?' .
@@ -332,112 +360,111 @@ class WP_Cassify_Plugin {
 					$this->wp_cassify_set_authenticated( true );
 				}
 				
-							// Check if request use gateway mode.
-				if (! $gateway_mode ) {
+				// Define custom plugin filter to build your custom parsing function
+				if( has_filter( 'wp_cassify_custom_parsing_cas_xml_response' ) ) {
+					$cas_user_datas = apply_filters( 'wp_cassify_custom_parsing_cas_xml_response', $cas_server_xml_response, $cas_user_datas );
+				}
 
-					// Define custom plugin filter to build your custom parsing function
-					if( has_filter( 'wp_cassify_custom_parsing_cas_xml_response' ) ) {
-						$cas_user_datas = apply_filters( 'wp_cassify_custom_parsing_cas_xml_response', $cas_server_xml_response, $cas_user_datas );
-					}
-	
-					// Evaluate authorization rules
-					if ( ( is_array( $wp_cassify_autorization_rules ) ) &&  ( count( $wp_cassify_autorization_rules ) > 0 ) ) {
-						$this->wp_cassify_separate_rules( $wp_cassify_autorization_rules );
-						
-						// Force logout if user is not allowed.
-						if (! $this->wp_cassify_is_user_allowed( $cas_user_datas, $wp_cassify_allow_deny_order ) ) {
-							$this->wp_cassify_logout_if_not_allowed( 'user_is_not_allowed' );
-						}	
-					}
+				// Evaluate authorization rules
+				if ( ( is_array( $wp_cassify_autorization_rules ) ) &&  ( count( $wp_cassify_autorization_rules ) > 0 ) ) {
+					$this->wp_cassify_separate_rules( $wp_cassify_autorization_rules );
 					
-					// Evaluate expiration rules
-					if ( ( is_array( $wp_cassify_expiration_rules ) ) &&  ( count( $wp_cassify_expiration_rules ) > 0 ) ) {					
-						if ( $this->wp_cassify_is_user_account_expired( $cas_user_datas, $wp_cassify_expiration_rules ) ) {
+					// Force logout if user is not allowed.
+					if (! $this->wp_cassify_is_user_allowed( $cas_user_datas, $wp_cassify_allow_deny_order ) ) {
+						$this->wp_cassify_logout_if_not_allowed( 'user_is_not_allowed' );
+					}	
+				}
+				
+				// Evaluate expiration rules
+				if ( ( is_array( $wp_cassify_expiration_rules ) ) &&  ( count( $wp_cassify_expiration_rules ) > 0 ) ) {					
+					if ( $this->wp_cassify_is_user_account_expired( $cas_user_datas, $wp_cassify_expiration_rules ) ) {
+						
+						$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+							$cas_user_datas, 
+							$wp_cassify_notification_rules, 
+							'when_user_account_expire'
+						);
+						
+						if ( $notification_rule_matched ) {
+							// Define custom plugin hook to send notification after user account has expired.
+							do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' : user account has expired.' );								
+						}						
+						
+						// Force logout if user account has expired.
+						$this->wp_cassify_logout_if_not_allowed( 'user_account_expired' );
+					}
+				}				
+				
+				// Define custom plugin hook after cas authentication. 
+				// For example, for two factor authentication, you can plug another authentication plugin to fired custom action here.			
+				do_action( 'wp_cassify_after_cas_authentication', $cas_user_datas );
+
+				// Populate selected attributes into session
+				$this->wp_cassify_populate_attributes_into_session( $cas_user_datas, $wp_cassify_attributes_list );
+
+				// Create wordpress user account if not exist
+				if ( $wp_cassify_create_user_if_not_exist == 'create_user_if_not_exist' ) {
+					if ( WP_Cassify_Utils::wp_cassify_is_wordpress_user_exist( $cas_user_datas[ 'cas_user_id' ] ) == false ) {
+						$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], null );
+
+						if ( $wordpress_user_id > 0 ) {
+							$wordpress_user_account_created = true;
 							
 							$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
 								$cas_user_datas, 
 								$wp_cassify_notification_rules, 
-								'when_user_account_expire'
+								'after_user_account_created'
 							);
 							
 							if ( $notification_rule_matched ) {
-								// Define custom plugin hook to send notification after user account has expired.
-								do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' : user account has expired.' );								
-							}						
-							
-							// Force logout if user account has expired.
-							$this->wp_cassify_logout_if_not_allowed( 'user_account_expired' );
-						}
-					}				
-					
-					// Define custom plugin hook after cas authentication. 
-					// For example, for two factor authentication, you can plug another authentication plugin to fired custom action here.			
-					do_action( 'wp_cassify_after_cas_authentication', $cas_user_datas );
-	
-					// Populate selected attributes into session
-					$this->wp_cassify_populate_attributes_into_session( $cas_user_datas, $wp_cassify_attributes_list );
-	
-					// Create wordpress user account if not exist
-					if ( $wp_cassify_create_user_if_not_exist == 'create_user_if_not_exist' ) {
-						if ( WP_Cassify_Utils::wp_cassify_is_wordpress_user_exist( $cas_user_datas[ 'cas_user_id' ] ) == false ) {
-							$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], null );
-	
-							if ( $wordpress_user_id > 0 ) {
-								$wordpress_user_account_created = true;
-								
-								$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
-									$cas_user_datas, 
-									$wp_cassify_notification_rules, 
-									'after_user_account_created'
-								);
-								
-								if ( $notification_rule_matched ) {
-									// Define custom plugin hook to send notification after user account has been created.
-									do_action( 'wp_cassify_send_notification', 'User account has been created :' . $cas_user_datas[ 'cas_user_id' ] );							
-								}
+								// Define custom plugin hook to send notification after user account has been created.
+								do_action( 'wp_cassify_send_notification', 'User account has been created :' . $cas_user_datas[ 'cas_user_id' ] );							
 							}
 						}
 					}
-					
-					// Set wordpress user roles if defined in plugin admin settings
-					$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
-					
-					// Suscriber role is pushed by default if wordpress user account has been created.
-					if ( $wordpress_user_account_created ) {
-						array_push( $roles_to_push, 'subscriber' );
-					}
-
-					foreach ( $roles_to_push as $role ) {
-						WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
-					}
-
-					// Sync CAS User attributes with Wordpress User meta
-					$this->wp_cassify_sync_user_metadata( 
-						$cas_user_datas[ 'cas_user_id' ], 
-						$cas_user_datas, 
-						$wp_cassify_user_attributes_mapping_list
-					);
-					
-					// Custom hook to perform action before wordpress authentication.
-					do_action( 'wp_cassify_before_auth_user_wordpress', $cas_user_datas );
-					
-					// Auth user into wordpress
-					WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
-	
-					$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
-						$cas_user_datas, 
-						$wp_cassify_notification_rules, 
-						'after_user_login'
-					);
-					
-					if ( $notification_rule_matched ) {
-						// Define custom plugin hook to send notification after user has been logged in
-						do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' is logged in' );							
-					}
-
-					// Redirect to the service url.
-					WP_Cassify_Utils::wp_cassify_redirect_url( $service_url );
 				}
+				
+				// Set wordpress user roles if defined in plugin admin settings
+				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
+				
+				// Suscriber role is pushed by default if wordpress user account has been created.
+                $wordpress_user_id = get_current_user_id();
+                $blog_id = $this->wp_cassify_current_blog_id;
+
+                if ( ( $wordpress_user_account_created ) || (! is_user_member_of_blog( $wordpress_user_id, $blog_id ) ) ) {
+                        array_push( $roles_to_push, 'subscriber' );
+                }
+
+				foreach ( $roles_to_push as $role ) {
+					WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role, $this->wp_cassify_network_activated );		
+				}
+
+				// Sync CAS User attributes with Wordpress User meta
+				$this->wp_cassify_sync_user_metadata( 
+					$cas_user_datas[ 'cas_user_id' ], 
+					$cas_user_datas, 
+					$wp_cassify_user_attributes_mapping_list
+				);
+				
+				// Custom hook to perform action before wordpress authentication.
+				do_action( 'wp_cassify_before_auth_user_wordpress', $cas_user_datas );
+				
+				// Auth user into wordpress
+				WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
+
+				$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+					$cas_user_datas, 
+					$wp_cassify_notification_rules, 
+					'after_user_login'
+				);
+				
+				if ( $notification_rule_matched ) {
+					// Define custom plugin hook to send notification after user has been logged in
+					do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' is logged in' );							
+				}
+
+				// Redirect to the service url.
+				WP_Cassify_Utils::wp_cassify_redirect_url( $service_url );
 			}
 		}
 	}		
@@ -475,15 +502,31 @@ class WP_Cassify_Plugin {
 		
 		$current_user = null;
 		
-		if ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) {	
+		if ( ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) || ( $gateway_mode == TRUE ) )  {	
 			if (! $this->wp_cassify_is_in_while_list( $service_url ) ) {	
 				if ( empty( $service_url ) ) {
 					die( 'CAS Service URL not set !' );
 				}	
 				elseif ( empty( $service_ticket ) ) {	
-					
+
 					if ( parse_url( $service_url, PHP_URL_QUERY) ) {
 						$service_url = WP_Cassify_Utils::wp_cassify_encode_query_in_url( $service_url );
+					}					
+					
+					// Test if service url must be overriden by plugin options.
+					$wp_cassify_override_service_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_override_service_url' );
+					
+					if (! empty( $wp_cassify_override_service_url ) ) {
+						if ( strpos( $wp_cassify_override_service_url, "{WP_CASSIFY_CURRENT_SERVICE_URL}" ) !== FALSE ) {
+							$wp_cassify_override_service_url = str_replace( "{WP_CASSIFY_CURRENT_SERVICE_URL}" , $service_url, $wp_cassify_override_service_url );
+						}
+
+						$service_url = $wp_cassify_override_service_url;
+					}
+					
+					// Define custom plugin filter to build service url with your own value.
+					if( has_filter( 'wp_cassify_redirect_service_url_filter' ) ) {
+						$service_url = apply_filters( 'wp_cassify_redirect_service_url_filter', $service_url );
 					}
 					
 					$redirect_url = $wp_cassify_base_url .
@@ -493,8 +536,6 @@ class WP_Cassify_Plugin {
 					if ( $gateway_mode ) {
 						$redirect_url .= '&gateway=true';
 					}
-
-					error_log( $redirect_url );
 
 					WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );	
 				}
@@ -511,50 +552,56 @@ class WP_Cassify_Plugin {
 	 * Logout from CAS and Wordpress
 	 */ 
 	function wp_cassify_logout() {
-
-		if ( $this->wp_cassify_is_authenticated() ) {
 		
-			$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
-			$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
-			$wp_cassify_redirect_url_after_logout = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' );
-		
-			// Define default values if options values empty.
-			if ( empty( $wp_cassify_logout_servlet ) ) {
-				$wp_cassify_logout_servlet = $this->wp_cassify_default_logout_servlet;
-			}
-		
-			if ( empty ( $wp_cassify_redirect_url_after_logout ) ) {
-				$wp_cassify_redirect_url_after_logout = get_home_url();
-			}
+		$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
+		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
+		$wp_cassify_redirect_url_after_logout = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' );
+	
+		// Define default values if options values empty.
+		if ( empty( $wp_cassify_logout_servlet ) ) {
+			$wp_cassify_logout_servlet = $this->wp_cassify_default_logout_servlet;
+		}
+	
+		if ( empty ( $wp_cassify_redirect_url_after_logout ) ) {
+			$wp_cassify_redirect_url_after_logout = get_home_url();
+		}
 
-			// Send logout notification if rule is matched.		
-			if ( isset(	$_SESSION['wp_cassify_cas_user_datas'] ) ) {
+		// Send logout notification if rule is matched.		
+		if ( isset(	$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'] ) ) {
 
-				$cas_user_datas = $_SESSION['wp_cassify_cas_user_datas'];
-			
-				$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
-	 		
-				$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
-					$cas_user_datas, 
-					$wp_cassify_notification_rules, 
-					'after_user_logout'
-				);
-			
-				if ( $notification_rule_matched ) {
-					do_action( 'wp_cassify_send_notification', 'User account has been logged out :' . $cas_user_datas[ 'cas_user_id' ] );							
-				}			
-			}		
-
-			// Destroy wordpress session;
-			session_destroy();
+			$cas_user_datas = $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'];
 		
+			$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
+ 		
+			$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+				$cas_user_datas, 
+				$wp_cassify_notification_rules, 
+				'after_user_logout'
+			);
+		
+			if ( $notification_rule_matched ) {
+				do_action( 'wp_cassify_send_notification', 'User account has been logged out :' . $cas_user_datas[ 'cas_user_id' ] );							
+			}			
+		}		
+
+		// Detect if user has been authenticated using CAS.
+		$authenticated_by_cas = $this->wp_cassify_is_authenticated();
+
+		// Destroy wordpress session;
+		session_destroy();
+
+		if ( $authenticated_by_cas ) {
+			// Redirect to the logout CAS end point.
 			$redirect_url = $wp_cassify_base_url .
 				$wp_cassify_logout_servlet . '?' .
 				$this->wp_cassify_default_service_service_parameter_name . '=' . $wp_cassify_redirect_url_after_logout;
-		
-			// Redirect to the logout CAS end point.
-			WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );
 		}
+		else {
+			// If user not authenticated by CAS redirect to home_url and bypass wp_cassify.
+			$redirect_url = home_url() . '/?wp_cassify_bypass=true';
+		}
+		
+		WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );
 	}
 
 	/**
@@ -591,32 +638,33 @@ class WP_Cassify_Plugin {
 		
 		$auth = false;
 		
-		if ( $this->wp_cassify_is_authenticated() ) {
+		if ( $this->wp_cassify_is_authenticated() ) {	
 			$auth = true;
 		}
-		else if ( isset( $_SESSION['wp_cassify']['auth_checked'] ) ) {
+		else if ( isset( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['auth_checked'] ) ) {
         	// the previous request has redirected the client to the CAS server with gateway=true				
-			unset( $_SESSION['wp_cassify']['auth_checked'] );
+			unset( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['auth_checked'] );
+			
 			$auth = false;
 		}
 		else {
 			// avoid a check against CAS on every request
-            if ( !isset( $_SESSION['wp_cassify']['unauth_count'] ) ) {
-                $_SESSION['wp_cassify']['unauth_count'] = -2;
+            if ( !isset( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] ) ) {
+                $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] = -2;
             }				
 			
-            if ( ( ( $_SESSION['wp_cassify']['unauth_count'] != -2 ) && ( $this->wp_cassify_get_cache_times_for_auth_recheck() == -1 ) ) || 
-            	 ( $_SESSION['wp_cassify']['unauth_count'] >= 0  && $_SESSION['wp_cassify']['unauth_count'] < $this->_cache_times_for_auth_recheck )
+            if ( ( ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] != -2 ) && ( $this->wp_cassify_get_cache_times_for_auth_recheck() == -1 ) ) || 
+            	 ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] >= 0  && $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] < $this->_cache_times_for_auth_recheck )
             ) {
 				$auth = false;
 
                 if ( $this->_cache_times_for_auth_recheck != -1 ) {
-                    $_SESSION['wp_cassify']['unauth_count']++;;
+                    $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count']++;;
                 }
             }
 			else {
-                $_SESSION['wp_cassify']['unauth_count'] = 0;
-                $_SESSION['wp_cassify']['auth_checked'] = true;
+                $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] = 0;
+                $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['auth_checked'] = true;
                 
 				$this->wp_cassify_redirect( true );	                
                 
@@ -652,8 +700,7 @@ class WP_Cassify_Plugin {
 		
 		$this->wp_cassify_session_start();
 		
-		
-		$_SESSION['wp_cassify_cas_user_datas'] = $cas_user_datas_filtered;
+		$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'] = $cas_user_datas_filtered;
 	}
 	
 	/**
