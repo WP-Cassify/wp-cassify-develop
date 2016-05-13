@@ -452,7 +452,16 @@ class WP_Cassify_Admin_Page {
 					<input type="text" id="wp_cassify_redirect_url_after_logout" name="wp_cassify_redirect_url_after_logout" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' ) ); ?>" size="40" class="regular-text post_form" />
 					<br /><span class="description">The blog home url is used when this option is not set .Url where the CAS Server redirect after logout. CAS Server must be configured correctly (see : followServiceRedirects option in JASIG documentation) </span>
 				</td>
-			</tr>								
+			</tr>
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_override_service_url">Override service callback url</label></th>
+				<td>
+					<input type="text" id="wp_cassify_override_service_url" name="wp_cassify_override_service_url" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_override_service_url' ) ); ?>" size="40" class="regular-text post_form" />
+					<br /><span class="description">In multisite context, use this option if you want override service url parameter before beeing redirected to CAS. For example : https://my-current-domain.org?site={WP_CASSIFY_CURRENT_SERVICE_URL}. 
+						Then when you try to access to https://blog1.my-current-domain.org/wp-admin/, you will be redirected to https://my-cas-server.org/cas/login?service=https://my-current-domain.org?site=https://blog1.my-current-domain.org/wp-admin/
+					</span>
+				</td>
+			</tr>			
 			<tr valign="top">
 				<td colspan="2">Update servlets name only if you have customized your CAS Server.</td>
 			</tr>
@@ -1046,6 +1055,7 @@ class WP_Cassify_Admin_Page {
 
 				// Url settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_override_service_url', FALSE, $this->wp_cassify_network_activated ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet', FALSE, $this->wp_cassify_network_activated ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_logout_servlet', FALSE, $this->wp_cassify_network_activated );
                 
