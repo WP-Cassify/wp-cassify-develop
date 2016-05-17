@@ -182,7 +182,7 @@ class WP_Cassify_Utils {
 		
 		$query = parse_url( $url );
 
-		if ( $query != FALSE ) {
+		if ( $query != false ) {
 			$left_part_uri = $query[ 'scheme' ] . '://' . $query[ 'host' ];
 			if (! empty( $query[ 'port' ] ) ) {
 				$left_part_uri .= ':' . $query[ 'port' ]; 
@@ -223,7 +223,7 @@ class WP_Cassify_Utils {
 		$wp_user_id = 0;
 
 		if (! username_exists( $cas_user_id ) ) {
-			if ( (! empty( $cas_user_email_attribute_value ) ) && ( email_exists( $cas_user_email_attribute_value ) == FALSE ) ) {
+			if ( (! empty( $cas_user_email_attribute_value ) ) && ( email_exists( $cas_user_email_attribute_value ) == false ) ) {
 				$user_email = $cas_user_email_attribute_value;
 			}
 			
@@ -244,7 +244,7 @@ class WP_Cassify_Utils {
 		$is_wordpress_user_exist = TRUE;
 
 		if (! username_exists( $cas_user_id ) ) {
-			$is_wordpress_user_exist = FALSE;
+			$is_wordpress_user_exist = false;
 		}
 		
 		return $is_wordpress_user_exist;
@@ -252,17 +252,36 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Set role to an existing Wordpress user and remove all other roles
-	 * @param	string 	$wordpress_user_login	Wordpress user login
-	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
-	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
+	 * @param	string 	$wordpress_user_login			Wordpress user login
+	 * @param 	string 	$role_key						Role key used in Wordpress. For example, "author" for "Author".
+	 * @param	bool	$wp_cassify_network_activated	TRUE if plugin is activated accross the network
+	 * @return 	bool 	$wp_user_role_updated			Return TRUE if wordpress user account has been updated. false if not.
 	 */ 
-	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
+	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key, $wp_cassify_network_activated = false ) {
 		
-		$wp_user_role_updated = FALSE;
+		$wp_user_role_updated = false;
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
-		if ( $wp_user != FALSE ) {
-			$wp_user->set_role( $role_key );
+		if ( $wp_user != false ) {
+			if ( $wp_cassify_network_activated ) {
+                $blogs = wp_get_sites();
+                $initial_blog_id = get_current_blog_id();
+
+                for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
+
+                        switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
+
+                        $wp_user = get_user_by( 'login', $wordpress_user_login );
+                        $wp_user->set_role( $role_key );
+                }
+
+                // Restore initial context.
+                switch_to_blog( $initial_blog_id );
+			}
+			else {
+				$wp_user->set_role( $role_key );
+			}
+			
 			$wp_user_role_updated = TRUE;
 		}
 
@@ -273,15 +292,34 @@ class WP_Cassify_Utils {
 	 * Add role to an existing Wordpress user
 	 * @param	string 	$wordpress_user_login	Wordpress user login
 	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
-	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
+	 * @param	bool	$wp_cassify_network_activated	TRUE if plugin is activated accross the network
+	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. false if not.
 	 */ 
-	public static function wp_cassify_add_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
+	public static function wp_cassify_add_role_to_wordpress_user( $wordpress_user_login, $role_key, $wp_cassify_network_activated = false ) {
 		
-		$wp_user_role_updated = FALSE;
+		$wp_user_role_updated = false;
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
-		if ( $wp_user != FALSE ) {
-			$wp_user->add_role( $role_key );
+		if ( $wp_user != false ) {
+			if ( $wp_cassify_network_activated ) {
+                $blogs = wp_get_sites();
+                $initial_blog_id = get_current_blog_id();
+
+                for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
+
+                        switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
+
+                        $wp_user = get_user_by( 'login', $wordpress_user_login );
+                        $wp_user->add_role( $role_key );
+                }
+
+                // Restore initial context.
+                switch_to_blog( $initial_blog_id );
+			}
+			else {
+				$wp_user->add_role( $role_key );
+			}
+			
 			$wp_user_role_updated = TRUE;
 		}
 
@@ -309,7 +347,7 @@ class WP_Cassify_Utils {
 		// Perform redirection only if url is valid.
 		if ( filter_var( $redirect_url, FILTER_VALIDATE_URL ) ) {
 			wp_redirect( $redirect_url ); 
-			exit;
+			exit();
 		}
 		else {
 			die( 'Redirect URL is not valid !');
@@ -318,7 +356,7 @@ class WP_Cassify_Utils {
         
     /**
      * Get plugin option according to activation plugin level
-     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. false if not.
      * @param 	string 	$option_name				Name of blog option or site option if network activated.
      * @return 	string 	$wp_cassify_plugin_option	Return the option value.
      */
@@ -338,7 +376,7 @@ class WP_Cassify_Utils {
     
     /**
      * Set plugin option according to activation plugin level
-     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. false if not.
      * @param 	string 	$option_name				Name of blog option or site option if network activated.
      * @param 	string 	$option_value				The new option value.
      */
@@ -359,9 +397,9 @@ class WP_Cassify_Utils {
      * @param array 	$post_array						$_POST array passed by reference
      * @param string 	$field_name						Form field name.
      * @param bool 		$do_not_check_empty				Empty values are accepted.
-     * @param bool 		$network_activated				TRUE if plugin is activated on network. FALSE if not.
+     * @param bool 		$network_activated				TRUE if plugin is activated on network. false if not.
      */
-    public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = FALSE, $wp_cassify_network_activated ) {
+    public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = false, $wp_cassify_network_activated ) {
 
 		$field_value = '';
 		
