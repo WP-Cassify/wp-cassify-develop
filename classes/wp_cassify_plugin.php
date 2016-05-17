@@ -130,20 +130,18 @@ class WP_Cassify_Plugin {
 		
 		// Check if CAS Authentication must be bypassed.
 		if (! $this->wp_cassify_bypass() ) {
-		
+			
 			// Add the filters
 			add_filter( 'query_vars', array( $this , 'add_custom_query_var' ) );
 			add_filter( 'login_url', array( $this, 'wp_cassify_clear_reauth' ) );
-			add_filter( 'the_content', array( $this, 'wp_cassify_display_message' ) );
+			add_filter( 'the_content', array( $this, 'wp_cassify_display_message' ) );			
 			
 			// Add the actions
 			add_action( 'init', array( $this , 'wp_cassify_session_start' ), 1 ); 
 			add_action( 'init', array( $this , 'wp_cassify_grab_service_ticket' ) , 2 );
 			
 			add_action( 'wp_authenticate', array( $this , 'wp_cassify_redirect' ) , 1 ); 
-			
 			add_action( 'wp_logout', array( $this , 'wp_cassify_logout' ) , 10 ); 
-			
 			add_action( 'wp_cassify_send_notification', array( $this, 'wp_cassify_send_notification_message' ), 1, 1 ); 
 		}
 		
@@ -598,7 +596,7 @@ class WP_Cassify_Plugin {
 		}
 		else {
 			// If user not authenticated by CAS redirect to home_url and bypass wp_cassify.
-			$redirect_url = home_url() . '/?wp_cassify_bypass=true';
+			$redirect_url = home_url() . '/?wp_cassify_bypass=bypass';
 		}
 		
 		WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );
@@ -897,6 +895,7 @@ class WP_Cassify_Plugin {
 	 	
 	 	$wp_cassify_bypass_by_referrer = '';
 	 	$wp_cassify_bypass_by_post = '';
+	 	$wp_cassify_bypass_by_get = '';
 	 	
 	 	$wp_cassify_disable_authentication = '';
 	 	
@@ -913,7 +912,13 @@ class WP_Cassify_Plugin {
 		// 3- Or check if bypass has been defined in admin panel.
 		$wp_cassify_disable_authentication = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_disable_authentication' );
 		
-		if ( ( $wp_cassify_bypass_by_referrer == 'bypass' ) || ( $wp_cassify_bypass_by_post == 'bypass' ) || ( $wp_cassify_disable_authentication == 'disabled' ) ) {
+		// 4- Check $_GET['wp_cassify_bypass'] value
+		if ( isset( $_GET[ $this->wp_cassify_default_bypass_parameter_name ] ) ) {
+			// Can't use get_query_var function because 'query_vars' filter has not yet fired. I use $_GET instead. 
+			$wp_cassify_bypass_by_get = $_GET[ $this->wp_cassify_default_bypass_parameter_name ];
+		}
+
+		if ( ( $wp_cassify_bypass_by_referrer == 'bypass' ) || ( $wp_cassify_bypass_by_post == 'bypass' ) || ( $wp_cassify_bypass_by_get == 'bypass' ) || ( $wp_cassify_disable_authentication == 'disabled' ) ) {
 			$wp_cassify_bypass = true;
 		}
 
