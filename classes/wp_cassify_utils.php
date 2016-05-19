@@ -263,24 +263,24 @@ class WP_Cassify_Utils {
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
 		if ( $wp_user != false ) {
-			if ( $wp_cassify_network_activated ) {
-                $blogs = wp_get_sites();
-                $initial_blog_id = get_current_blog_id();
-
-                for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
-
-                        switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
-
-                        $wp_user = get_user_by( 'login', $wordpress_user_login );
-                        $wp_user->set_role( $role_key );
-                }
-
+			// if ( $wp_cassify_network_activated ) {
+            //    $blogs = wp_get_sites();
+            //    $initial_blog_id = get_current_blog_id();
+			//
+            //    for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
+			//
+            //            switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
+			//
+            //            $wp_user = get_user_by( 'login', $wordpress_user_login );
+            //            $wp_user->set_role( $role_key );
+        	//     }
+			//		
                 // Restore initial context.
-                switch_to_blog( $initial_blog_id );
-			}
-			else {
+			//  switch_to_blog( $initial_blog_id );
+			//}
+			//else {
 				$wp_user->set_role( $role_key );
-			}
+			//}
 			
 			$wp_user_role_updated = TRUE;
 		}
@@ -301,24 +301,24 @@ class WP_Cassify_Utils {
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
 		if ( $wp_user != false ) {
-			if ( $wp_cassify_network_activated ) {
-                $blogs = wp_get_sites();
-                $initial_blog_id = get_current_blog_id();
-
-                for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
-
-                        switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
-
-                        $wp_user = get_user_by( 'login', $wordpress_user_login );
-                        $wp_user->add_role( $role_key );
-                }
+			// if ( $wp_cassify_network_activated ) {
+            //    $blogs = wp_get_sites();
+            //    $initial_blog_id = get_current_blog_id();
+			//
+            //    for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
+			//
+            //            switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
+			//
+            //            $wp_user = get_user_by( 'login', $wordpress_user_login );
+            //            $wp_user->add_role( $role_key );
+            //    }
 
                 // Restore initial context.
-                switch_to_blog( $initial_blog_id );
-			}
-			else {
+            //    switch_to_blog( $initial_blog_id );
+			//}
+			//else {
 				$wp_user->add_role( $role_key );
-			}
+			//}
 			
 			$wp_user_role_updated = TRUE;
 		}
