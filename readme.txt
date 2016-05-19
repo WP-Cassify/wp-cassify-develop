@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,8 @@ You can build custom authorization rules according to cas user attributes popula
 database, it can be created automatically. There are many features. You can customize everything : CAS servlets URL, 
 XPath Query to parse cas server xml response, user attributes you want to populate.
 
+https://www.youtube.com/watch?v=hDCOf8HVkW8
+
 = Website =
 
 https://wpcassify.wordpress.com/
@@ -29,13 +31,15 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New feature !) : Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
-your index.php or in another template file inside your theme (It use CAS gateway mode) :
+* Be careful, to access to CAS User Attributes from your theme file (from 1.8.4), use code below :
 `
-if ( isset($GLOBALS['wp-cassify']) ) {
-	$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
-} 
+	<?php
+		if ( isset($GLOBALS['wp-cassify']) ) {
+			print_r( $GLOBALS['wp-cassify']->wp_cassify_get_cas_user_datas() );
+		}
+	?>
 `
+
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
 * Automatic user creation if not exist in Wordpress database.
@@ -78,6 +82,20 @@ if ( isset($GLOBALS['wp-cassify']) ) {
 * Add custom hooks : wp_cassify_after_cas_authentication, wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
 * Custom shortcode to generate CAS login link into your blog. (See online documentation)
+* Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
+your index.php or in another template file inside your theme (It use CAS gateway mode) :
+`
+if ( (! is_user_logged_in() ) && (! get_query_var( 'wp_cassify_bypass' ) ) ){	
+	if ( isset($GLOBALS['wp-cassify']) ) {
+		$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
+	}
+}
+else if ( ! is_user_member_of_blog() ) {
+	if ( isset($GLOBALS['wp-cassify']) ) {
+		$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
+	}	
+}
+`
 
 == Installation ==
 
@@ -117,6 +135,33 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.9.0 =
+* Security fix.
+
+= 1.8.9 =
+* Bug fix on local logout.
+
+= 1.8.8 =
+* In multisite support in subdomain configuration, add an option to override service url.
+* Add filter wp_cassify_redirect_service_url_filter
+
+= 1.8.6 =
+* Test multisite support in subdomain configuration.
+* Fix bug on gateway mode.
+* Remove function force_user_member_of_blog.
+
+= 1.8.5 =
+* Add function force_user_member_of_blog.
+
+= 1.8.3 =
+* Bug fix on user automatic creation.
+
+= 1.8.2 =
+* Add youtube video in plugin description.
+
+= 1.8.1 =
+* Bug fix on logout from local wordpress auth.
 
 = 1.8.0 =
 * Bug fix on service url with querystring parameter.
