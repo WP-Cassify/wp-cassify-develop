@@ -452,7 +452,16 @@ class WP_Cassify_Admin_Page {
 					<input type="text" id="wp_cassify_redirect_url_after_logout" name="wp_cassify_redirect_url_after_logout" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' ) ); ?>" size="40" class="regular-text post_form" />
 					<br /><span class="description">The blog home url is used when this option is not set .Url where the CAS Server redirect after logout. CAS Server must be configured correctly (see : followServiceRedirects option in JASIG documentation) </span>
 				</td>
-			</tr>								
+			</tr>
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_override_service_url">Override service callback url</label></th>
+				<td>
+					<input type="text" id="wp_cassify_override_service_url" name="wp_cassify_override_service_url" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_override_service_url' ) ); ?>" size="40" class="regular-text post_form" />
+					<br /><span class="description">In multisite context, use this option if you want override service url parameter before beeing redirected to CAS. For example : https://my-current-domain.org?site={WP_CASSIFY_CURRENT_SERVICE_URL}. 
+						Then when you try to access to https://blog1.my-current-domain.org/wp-admin/, you will be redirected to https://my-cas-server.org/cas/login?service=https://my-current-domain.org?site=https://blog1.my-current-domain.org/wp-admin/
+					</span>
+				</td>
+			</tr>			
 			<tr valign="top">
 				<td colspan="2">Update servlets name only if you have customized your CAS Server.</td>
 			</tr>
@@ -566,7 +575,7 @@ class WP_Cassify_Admin_Page {
 					<select id="wp_cassify_rule_type" name="wp_cassify_rule_type">
 						<option value="ALLOW">Allow</option>
 						<option value="DENY">Deny</option>
-					</select>
+					</select>					
 					<input type="text" id="wp_cassify_autorization_rule" name="wp_cassify_autorization_rules" class="post_form" value="" size="68" class="regular-text" /><br />
 					<select id="wp_cassify_autorization_rules" name="wp_cassify_autorization_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
 					<?php if ( ( is_array( $wp_cassify_autorization_rules_selected )  ) && ( count( $wp_cassify_autorization_rules_selected ) > 0 ) ) { ?>
@@ -641,6 +650,15 @@ class WP_Cassify_Admin_Page {
 					<?php 		echo "<option value='$wp_cassify_wordpress_role_key'>$wp_cassify_wordpress_role_value</option>"; ?>
 					<?php } ?>
 					</select>
+					<?php if ( $this->wp_cassify_network_activated ) { ?>
+					<?php $blogs = wp_get_sites();?>	
+					<select id="wp_cassify_user_role_blog_id" name="wp_cassify_user_role_blog_id" class="post_form">
+					<?php		echo '<option value="0">(0)&nbsp;ALL BLOGS</option>';	?>		
+					<?php for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) { ?>
+					<?php		echo '<option value="' . $blogs[ $i ][ 'blog_id' ] . '">(' . $blogs[ $i ][ 'blog_id' ] . ')&nbsp;' . $blogs[ $i ][ 'domain' ] . $blogs[ $i ][ 'path' ] . '</option>';	?>	
+					<?php } ?>							
+					</select>
+					<?php } ?>
 					<input type="text" id="wp_cassify_user_role_rule" name="wp_cassify_user_role_rule" class="post_form" value="" size="60" class="regular-text" /><br />
 					<br />
 					<select id="wp_cassify_user_role_rules" name="wp_cassify_user_role_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
@@ -1046,6 +1064,7 @@ class WP_Cassify_Admin_Page {
 
 				// Url settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_override_service_url', FALSE, $this->wp_cassify_network_activated ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet', FALSE, $this->wp_cassify_network_activated ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_logout_servlet', FALSE, $this->wp_cassify_network_activated );
                 
@@ -1218,6 +1237,14 @@ class WP_Cassify_Admin_Page {
 			<?php wp_nonce_field( 'admin_form', 'wp_cassify_admin_form' ); // Set security token ?>
 			<?php settings_fields( 'wp-cassify-settings-group' ); ?>
 			<?php do_settings_sections( 'wp-cassify-settings-group' ); ?>
+			
+			<?php if ( $this->wp_cassify_network_activated ) { ?>
+				<input type="hidden" id="wp_cassify_network_activated" name="wp_cassify_network_activated" value="enabled" />
+			<?php } else { ?>
+				<input type="hidden" id="wp_cassify_network_activated" name="wp_cassify_network_activated" value="disabled" />
+			<?php } ?>
+
+			
 			<div id="poststuff" class="metabox-holder columns-2">
 				<div id="side-info-column" class="inner-sidebar">
 					<?php do_meta_boxes( $this->wp_cassify_admin_page_hook, 'side', array() ); ?>
