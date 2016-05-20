@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,8 +18,6 @@ You can build custom authorization rules according to cas user attributes popula
 database, it can be created automatically. There are many features. You can customize everything : CAS servlets URL, 
 XPath Query to parse cas server xml response, user attributes you want to populate.
 
-https://www.youtube.com/watch?v=hDCOf8HVkW8
-
 = Website =
 
 https://wpcassify.wordpress.com/
@@ -31,6 +29,13 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
+* (New feature !) : If plugin is network activated, you can define User Role Rule scope by blog id.
+
+* Tested with CAS Server version 4.1.4
+* Compatible with CAS Protocol version 2 and 3
+* Automatic user creation if not exist in Wordpress database.
+* Synchronize Wordpress User metas with CAS User attributes.
+* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
 * Be careful, to access to CAS User Attributes from your theme file (from 1.8.4), use code below :
 `
 	<?php
@@ -39,12 +44,6 @@ https://wpcassify.wordpress.com/
 		}
 	?>
 `
-
-* Tested with CAS Server version 4.1.4
-* Compatible with CAS Protocol version 2 and 3
-* Automatic user creation if not exist in Wordpress database.
-* Synchronize Wordpress User metas with CAS User attributes.
-* You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
 * Set up Wordpress Roles to User according to CAS User attributes.
 * Authorization rule editor.
 * Compatible with Wordpress Access Control Plugin.
@@ -135,6 +134,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.9.1 = 
+* If plugin is network activated, you can define User Role Rule scope by blog id.
 
 = 1.9.0 =
 * Security fix.

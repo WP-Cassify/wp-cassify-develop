@@ -278,6 +278,7 @@ class WP_Cassify_Plugin {
 		$service_url = null;	
 		$service_ticket = null;
 		$wordpress_user_account_created = false;
+		$current_blog_id = get_current_blog_id();
 			
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 		$wp_cassify_create_user_if_not_exist = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' );
@@ -423,15 +424,7 @@ class WP_Cassify_Plugin {
 				}
 				
 				// Set wordpress user roles if defined in plugin admin settings
-				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules );
-				
-				// Suscriber role is pushed by default if wordpress user account has been created.
-                // $wordpress_user_id = get_current_user_id();
-                // $blog_id = $this->wp_cassify_current_blog_id;
-				//
-                // if ( ( $wordpress_user_account_created ) || (! is_user_member_of_blog( $wordpress_user_id, $blog_id ) ) ) {
-                //        array_push( $roles_to_push, 'subscriber' );
-                // }
+				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules, $this->wp_cassify_network_activated, $current_blog_id  );
                 
 				// Define custom plugin filter to override list roles to push.
 				if( has_filter( 'wp_cassify_grab_service_ticket_roles_to_push' ) ) {
@@ -439,7 +432,7 @@ class WP_Cassify_Plugin {
 				}                
                 
 				foreach ( $roles_to_push as $role ) {
-					WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role, $this->wp_cassify_network_activated );		
+					WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
 				}
 
 				// Sync CAS User attributes with Wordpress User meta
@@ -1105,11 +1098,13 @@ class WP_Cassify_Plugin {
 
 	/**
 	 * Check if user is matched by Notification Rule
-	 * @param array $cas_user_datas		Associative array containing CAS userID and attributes
-	 * @param array $role_rules			Array containing all role rules
-	 * @return array $roles_to_push		Array containing roles to push to user
+	 * @param array 	$cas_user_datas		Associative array containing CAS userID and attributes
+	 * @param array 	$role_rules			Array containing all role rules
+	 * @param bool		$network_activated	True if plugin is activated over the network
+	 * @param int		$current_blog_id	The id of the current blog
+	 * @return array 	$roles_to_push		Array containing roles to push to user
 	 */ 	
-	private function wp_cassify_get_roles_to_push( $cas_user_datas = array(), $role_rules = array() ) {
+	private function wp_cassify_get_roles_to_push( $cas_user_datas = array(), $role_rules = array(), $network_activated = false, $current_blog_id ) {
 		
 		$roles_to_push = array();
 
@@ -1117,13 +1112,30 @@ class WP_Cassify_Plugin {
 			foreach ( $role_rules as $role_rule ) {
 				$role_rule_parts = explode( '|', $role_rule );
 				
-				if ( ( is_array( $role_rule_parts ) ) && ( count( $role_rule_parts ) == 2 ) ) {
-					$role_rule_key = $role_rule_parts[0];
-					$role_rule_expression = stripslashes( $role_rule_parts[1] );
-	
-					if ( $this->wp_cassify_rule_matched( $cas_user_datas, $role_rule_expression ) ) {
-						array_push( $roles_to_push, $role_rule_key );
-					}
+				if ( $network_activated ) {
+					if ( ( is_array( $role_rule_parts ) ) && ( count( $role_rule_parts ) == 3 ) ) {
+						$role_rule_key = $role_rule_parts[0];
+						// Determine scope of the rule if network activated
+						$role_rule_blog_id = $role_rule_parts[1]; 
+						$role_rule_expression = stripslashes( $role_rule_parts[2] );
+						
+						// role_rule_blog_id == 0 match "ALL BLOGS"
+						if ( ( $role_rule_blog_id == $current_blog_id ) || ( $role_rule_blog_id == 0 ) ) {
+							if ( $this->wp_cassify_rule_matched( $cas_user_datas, $role_rule_expression ) ) {
+								array_push( $roles_to_push, $role_rule_key );
+							}
+						}
+					}						
+				}
+				else {
+					if ( ( is_array( $role_rule_parts ) ) && ( count( $role_rule_parts ) == 2 ) ) {
+						$role_rule_key = $role_rule_parts[0];
+						$role_rule_expression = stripslashes( $role_rule_parts[1] );
+		
+						if ( $this->wp_cassify_rule_matched( $cas_user_datas, $role_rule_expression ) ) {
+							array_push( $roles_to_push, $role_rule_key );
+						}
+					}					
 				}
 			}
 		}

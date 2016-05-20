@@ -575,7 +575,7 @@ class WP_Cassify_Admin_Page {
 					<select id="wp_cassify_rule_type" name="wp_cassify_rule_type">
 						<option value="ALLOW">Allow</option>
 						<option value="DENY">Deny</option>
-					</select>
+					</select>					
 					<input type="text" id="wp_cassify_autorization_rule" name="wp_cassify_autorization_rules" class="post_form" value="" size="68" class="regular-text" /><br />
 					<select id="wp_cassify_autorization_rules" name="wp_cassify_autorization_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
 					<?php if ( ( is_array( $wp_cassify_autorization_rules_selected )  ) && ( count( $wp_cassify_autorization_rules_selected ) > 0 ) ) { ?>
@@ -650,6 +650,15 @@ class WP_Cassify_Admin_Page {
 					<?php 		echo "<option value='$wp_cassify_wordpress_role_key'>$wp_cassify_wordpress_role_value</option>"; ?>
 					<?php } ?>
 					</select>
+					<?php if ( $this->wp_cassify_network_activated ) { ?>
+					<?php $blogs = wp_get_sites();?>	
+					<select id="wp_cassify_user_role_blog_id" name="wp_cassify_user_role_blog_id" class="post_form">
+					<?php		echo '<option value="0">(0)&nbsp;ALL BLOGS</option>';	?>		
+					<?php for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) { ?>
+					<?php		echo '<option value="' . $blogs[ $i ][ 'blog_id' ] . '">(' . $blogs[ $i ][ 'blog_id' ] . ')&nbsp;' . $blogs[ $i ][ 'domain' ] . $blogs[ $i ][ 'path' ] . '</option>';	?>	
+					<?php } ?>							
+					</select>
+					<?php } ?>
 					<input type="text" id="wp_cassify_user_role_rule" name="wp_cassify_user_role_rule" class="post_form" value="" size="60" class="regular-text" /><br />
 					<br />
 					<select id="wp_cassify_user_role_rules" name="wp_cassify_user_role_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
@@ -1228,6 +1237,14 @@ class WP_Cassify_Admin_Page {
 			<?php wp_nonce_field( 'admin_form', 'wp_cassify_admin_form' ); // Set security token ?>
 			<?php settings_fields( 'wp-cassify-settings-group' ); ?>
 			<?php do_settings_sections( 'wp-cassify-settings-group' ); ?>
+			
+			<?php if ( $this->wp_cassify_network_activated ) { ?>
+				<input type="hidden" id="wp_cassify_network_activated" name="wp_cassify_network_activated" value="enabled" />
+			<?php } else { ?>
+				<input type="hidden" id="wp_cassify_network_activated" name="wp_cassify_network_activated" value="disabled" />
+			<?php } ?>
+
+			
 			<div id="poststuff" class="metabox-holder columns-2">
 				<div id="side-info-column" class="inner-sidebar">
 					<?php do_meta_boxes( $this->wp_cassify_admin_page_hook, 'side', array() ); ?>
