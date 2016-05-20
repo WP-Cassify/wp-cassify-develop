@@ -83,16 +83,29 @@ jQuery( '#wp_cassify_add_user_role_rule' ).click( function ( evt ) {
 
 	var wp_cassify_user_role = jQuery( '#wp_cassify_default_user_roles option:selected' ).val();
 	var wp_cassify_user_role_rule = jQuery( '#wp_cassify_user_role_rule' ).val();
+	var wp_cassify_network_activated = jQuery( '#wp_cassify_network_activated' ).val();
 	
-	jQuery( '#wp_cassify_user_role_rules' )
-         .append(
-         	jQuery( '<option></option>' )
-         		.attr( 'value', wp_cassify_user_role + '|' + wp_cassify_user_role_rule ) 
-         		.text( wp_cassify_user_role + '|' + wp_cassify_user_role_rule )
-     		); 	
-
+	if (  wp_cassify_network_activated == 'enabled' ) {
+		var wp_cassify_user_role_blog_id = jQuery( '#wp_cassify_user_role_blog_id option:selected' ).val();
+		
+		jQuery( '#wp_cassify_user_role_rules' )
+			 .append(
+				jQuery( '<option></option>' )
+					.attr( 'value', wp_cassify_user_role + '|' +  wp_cassify_user_role_blog_id + '|' + wp_cassify_user_role_rule ) 
+					.text( wp_cassify_user_role + '|' +  wp_cassify_user_role_blog_id + '|' + wp_cassify_user_role_rule )
+				); 	
+	}
+	else { 
+		jQuery( '#wp_cassify_user_role_rules' )
+			 .append(
+				jQuery( '<option></option>' )
+					.attr( 'value', wp_cassify_user_role + '|' + wp_cassify_user_role_rule ) 
+					.text( wp_cassify_user_role + '|' + wp_cassify_user_role_rule )
+				); 				
+	}
+	
 	evt.preventDefault();
-	return false;
+	return false;		
 });
 
 jQuery( '#wp_cassify_remove_user_role_rule' ).click( function ( evt ) {
@@ -105,9 +118,19 @@ jQuery( '#wp_cassify_remove_user_role_rule' ).click( function ( evt ) {
 
 jQuery( '#wp_cassify_user_role_rules' ).dblclick( function ( evt ) {
 
-	jQuery( '#wp_cassify_user_role_rule' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 1 ] );
-	jQuery( '#wp_cassify_default_user_roles' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 0 ] );
-	jQuery( '#wp_cassify_user_role_rules option:selected' ).remove();
+	var wp_cassify_network_activated = jQuery( '#wp_cassify_network_activated' ).val();
+	
+	if (  wp_cassify_network_activated == 'enabled' ) {
+		jQuery( '#wp_cassify_user_role_rule' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 2 ] );
+		jQuery( '#wp_cassify_user_role_blog_id' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 1 ] );
+		jQuery( '#wp_cassify_default_user_roles' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 0 ] );
+		jQuery( '#wp_cassify_user_role_rules option:selected' ).remove();	
+	}
+	else {
+		jQuery( '#wp_cassify_user_role_rule' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 1 ] );
+		jQuery( '#wp_cassify_default_user_roles' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 0 ] );
+		jQuery( '#wp_cassify_user_role_rules option:selected' ).remove();	
+	}
 
 	evt.preventDefault();	
 	return false;

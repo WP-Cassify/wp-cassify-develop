@@ -254,34 +254,15 @@ class WP_Cassify_Utils {
 	 * Set role to an existing Wordpress user and remove all other roles
 	 * @param	string 	$wordpress_user_login			Wordpress user login
 	 * @param 	string 	$role_key						Role key used in Wordpress. For example, "author" for "Author".
-	 * @param	bool	$wp_cassify_network_activated	TRUE if plugin is activated accross the network
 	 * @return 	bool 	$wp_user_role_updated			Return TRUE if wordpress user account has been updated. false if not.
 	 */ 
-	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key, $wp_cassify_network_activated = false ) {
+	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
 		
 		$wp_user_role_updated = false;
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
 		if ( $wp_user != false ) {
-			// if ( $wp_cassify_network_activated ) {
-            //    $blogs = wp_get_sites();
-            //    $initial_blog_id = get_current_blog_id();
-			//
-            //    for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
-			//
-            //            switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
-			//
-            //            $wp_user = get_user_by( 'login', $wordpress_user_login );
-            //            $wp_user->set_role( $role_key );
-        	//     }
-			//		
-                // Restore initial context.
-			//  switch_to_blog( $initial_blog_id );
-			//}
-			//else {
-				$wp_user->set_role( $role_key );
-			//}
-			
+			$wp_user->set_role( $role_key );
 			$wp_user_role_updated = TRUE;
 		}
 
@@ -292,34 +273,15 @@ class WP_Cassify_Utils {
 	 * Add role to an existing Wordpress user
 	 * @param	string 	$wordpress_user_login	Wordpress user login
 	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
-	 * @param	bool	$wp_cassify_network_activated	TRUE if plugin is activated accross the network
 	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. false if not.
 	 */ 
-	public static function wp_cassify_add_role_to_wordpress_user( $wordpress_user_login, $role_key, $wp_cassify_network_activated = false ) {
+	public static function wp_cassify_add_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
 		
 		$wp_user_role_updated = false;
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
 		if ( $wp_user != false ) {
-			// if ( $wp_cassify_network_activated ) {
-            //    $blogs = wp_get_sites();
-            //    $initial_blog_id = get_current_blog_id();
-			//
-            //    for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
-			//
-            //            switch_to_blog( $blogs[ $i ][ 'blog_id' ] );
-			//
-            //            $wp_user = get_user_by( 'login', $wordpress_user_login );
-            //            $wp_user->add_role( $role_key );
-            //    }
-
-                // Restore initial context.
-            //    switch_to_blog( $initial_blog_id );
-			//}
-			//else {
-				$wp_user->add_role( $role_key );
-			//}
-			
+			$wp_user->add_role( $role_key );
 			$wp_user_role_updated = TRUE;
 		}
 
