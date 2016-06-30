@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.9.1
+Stable tag: 1.9.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,15 +84,17 @@ https://wpcassify.wordpress.com/
 * Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
 your index.php or in another template file inside your theme (It use CAS gateway mode) :
 `
-if ( (! is_user_logged_in() ) && (! get_query_var( 'wp_cassify_bypass' ) ) ){	
-	if ( isset($GLOBALS['wp-cassify']) ) {
-		$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
-	}
-}
-else if ( ! is_user_member_of_blog() ) {
-	if ( isset($GLOBALS['wp-cassify']) ) {
-		$GLOBALS['wp-cassify']->wp_cassify_check_authentication();
-	}	
+if (! isset( $_GET['wp_cassify_bypass'] ) ) {
+    if (! is_user_logged_in() ) {
+            if ( isset($GLOBALS['wp-cassify']) ) {
+                    $GLOBALS['wp-cassify']->wp_cassify_check_authentication();
+            }
+    }
+    else if (! is_user_member_of_blog() ) {
+            if ( isset($GLOBALS['wp-cassify']) ) {
+                    $GLOBALS['wp-cassify']->wp_cassify_check_authentication();
+            }
+    }
 }
 `
 
@@ -134,6 +136,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.9.2 = 
+* Bug fix on rule solver
 
 = 1.9.1 = 
 * If plugin is network activated, you can define User Role Rule scope by blog id.
