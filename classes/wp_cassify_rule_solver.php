@@ -67,12 +67,13 @@ class wp_cassify_rule_solver {
 		$matched_parenthesis_groups = FALSE;
 		$matches_parenthesis_groups = array();
 		
-		unset( $this->wp_cassify_rule_solver_item_array );
-		$this->wp_cassify_rule_solver_item_array = array();
-
 		preg_match_all( $match_parenthesis_group_pattern, $wp_cassify_initial_rule, $matches_parenthesis_groups );
 
 		if ( ( is_array( $matches_parenthesis_groups[1] ) ) && ( count( $matches_parenthesis_groups[1] ) > 0 ) ) {
+			unset( $this->wp_cassify_rule_solver_item_array );
+			$this->wp_cassify_rule_solver_item_array = array();
+
+			
 			foreach( $matches_parenthesis_groups[1] as $matches_parenthesis_group ) {
 				$wp_cassify_rule_solver_item = new wp_cassify_rule_solver_item();
 				$wp_cassify_rule_solver_item->parenthesis_group = $matches_parenthesis_group;
@@ -299,6 +300,25 @@ class wp_cassify_rule_solver {
 	}
 	
 	/**
+	 * Replace parenthesis groups with expression result in rule.
+	 * @return string	$wp_cassify_rule	This is the rule factorized.
+	 */ 
+	private function replace_groups_with_results_first() {
+	
+		$wp_cassify_rule = "FALSE";
+
+		if ( ( is_array( $this->wp_cassify_rule_solver_item_array ) ) && ( count( $this->wp_cassify_rule_solver_item_array ) > 0 ) ) {				
+			foreach ($this->wp_cassify_rule_solver_item_array as $wp_cassify_rule_solver_item) {
+				if ( $wp_cassify_rule_solver_item->result == "TRUE" ) {
+					$wp_cassify_rule = "TRUE";
+				}
+			}
+		}	
+		
+		return $wp_cassify_rule;
+	}	
+	
+	/**
 	 * Simplify the final expression. This function is recursive.
 	 */ 
 	private function reduce_expression() {
@@ -352,7 +372,7 @@ class wp_cassify_rule_solver {
 
 			$this->solve_item( $wp_cassify_rule_solver_item );
 			$this->wp_cassify_initial_rule = $wp_cassify_rule_solver_item->result;
-			
+
 			$operators_count = 0;
 		}	
 		
@@ -433,8 +453,8 @@ class wp_cassify_rule_solver {
 
 		// Step 6 : match first level parenthesis groups
 		if ( $this->check_if_no_error() ) {
-			$this->wp_cassify_initial_rule = $this->replace_groups_with_results();
-
+			$this->wp_cassify_initial_rule = $this->replace_groups_with_results_first();
+			
 			// Step 7 : strip parenthesis from rule
 			$this->strip_parenthesis_from_rule(); 
 
