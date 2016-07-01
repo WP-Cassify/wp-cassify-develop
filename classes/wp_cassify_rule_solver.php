@@ -167,7 +167,7 @@ class wp_cassify_rule_solver {
 				
 			case '-NEQ' :
 			
-				if ( $wp_cassify_rule_solver_item->left_operand != $wp_cassify_rule_solver_item->right_operand ) {
+				if ( $wp_cassify_rule_solver_item->left_operand != $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
@@ -305,12 +305,34 @@ class wp_cassify_rule_solver {
 	 */ 
 	private function replace_groups_with_results_first() {
 	
+		$contains_or_condition = false;
 		$wp_cassify_rule = "FALSE";
+
+		// If initial rule contains at least one OR condition, it's sufficient that at least one condition is TRUE
+		// and the rule condition result is TRUE.
+		// At reverse, if initial rule contains only AND conditions, it's sufficient that at least one condition is FALSE
+		// and the rule condition result is FALSE.
+		if ( strpos( $this->wp_cassify_initial_rule, "-OR"  ) !== FALSE ) {
+			$contains_or_condition = true;	
+			$wp_cassify_rule = "FALSE";
+		}
+		else
+		{
+			$wp_cassify_rule = "TRUE";
+		}
 
 		if ( ( is_array( $this->wp_cassify_rule_solver_item_array ) ) && ( count( $this->wp_cassify_rule_solver_item_array ) > 0 ) ) {				
 			foreach ($this->wp_cassify_rule_solver_item_array as $wp_cassify_rule_solver_item) {
-				if ( $wp_cassify_rule_solver_item->result == "TRUE" ) {
-					$wp_cassify_rule = "TRUE";
+				
+				if ( $contains_or_condition ) {
+					if ( $wp_cassify_rule_solver_item->result == "TRUE" ) {
+						$wp_cassify_rule = "TRUE";
+					}
+				}
+				else {
+					if ( $wp_cassify_rule_solver_item->result == "FALSE" ) {
+						$wp_cassify_rule = "FALSE";
+					}					
 				}
 			}
 		}	
