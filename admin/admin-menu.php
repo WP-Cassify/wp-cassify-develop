@@ -275,6 +275,15 @@ class WP_Cassify_Admin_Page {
 			$this->wp_cassify_admin_page_hook, 
 			'normal', 
 			'high'
+		);	
+		
+		add_meta_box( 
+			'wp_cassify_metabox_debug_settings', 
+			'Debug Settings', 
+			array( $this, 'wp_cassify_add_metabox_debug_settings' ), 
+			$this->wp_cassify_admin_page_hook, 
+			'normal', 
+			'high'
 		);			
 		
 		// Side boxes
@@ -1026,7 +1035,43 @@ class WP_Cassify_Admin_Page {
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_expirations_rules_settings', FALSE, array( 'id' => 'wp_cassify_save_options_expirations_rules_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
 <?php
-	}		
+	}
+	
+	/**
+	 * Display html output for metabox Debug Settings.
+	 */ 	
+	public function wp_cassify_add_metabox_debug_settings() {
+		
+        $is_enabled = FALSE;
+
+        if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) == 'enabled' ) {
+            $is_enabled = TRUE;
+        }
+        else {
+            $is_enabled = FALSE;
+        }
+?>
+		<table class="optiontable form-table">
+			<tr valign="top">
+				<th scope="row">Dump xml CAS server response</th>
+				<?php if ( $is_enabled ) { ?>
+				<td><input type="checkbox" id="wp_cassify_xml_response_dump" name="wp_cassify_xml_response_dump" class="post_form" value="enabled" checked /></td>
+				<?php } else { ?>
+				<td><input type="checkbox" id="wp_cassify_xml_response_dump" name="wp_cassify_xml_response_dump" class="post_form" value="enabled" /></td>
+				<?php }?>
+			</tr>	
+			<tr valign="top">
+				<th scope="row">Last XML CAS server response</th>
+				<td>
+					<textarea rows="4" cols="50" id="wp_cassify_xml_response_value" name="wp_cassify_xml_response_value" class="post_form" value="" class="regular-text">
+						<?php echo ltrim( esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_value' ) ) ); ?>
+					</textarea>
+				</td>
+			</tr>			
+		</table>
+		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_debug_settings', FALSE, array( 'id' => 'wp_cassify_save_options_debug_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
+<?php
+	}	
 	
 	/**
 	 *  Register option into database.
@@ -1143,6 +1188,9 @@ class WP_Cassify_Admin_Page {
 				// Expirations rules settings
 				WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_expiration_rules', $this->wp_cassify_network_activated ); 				
 
+				// Debug settings
+				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_xml_response_dump', 'enabled', $this->wp_cassify_network_activated );	
+                
 				// Send test notification message.
 				if (! empty( $_POST['wp_cassify_send_notification_test_message'] ) ){
 					

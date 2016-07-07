@@ -348,6 +348,16 @@ class WP_Cassify_Plugin {
 					$wp_cassify_ssl_cipher_selected,
 					$wp_cassify_ssl_check_certificate
 				);
+			
+				// Dump xml cas server response if debug option is enabled.	
+				if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) == 'enabled' ) {
+			        if ( $this->wp_cassify_network_activated ) {
+			            update_site_option( 'wp_cassify_xml_response_value' , $cas_server_xml_response );
+			        }
+			        else {
+			            update_option( 'wp_cassify_xml_response_value' , $cas_server_xml_response );
+			        }
+				}
 
 				// Parse CAS Server response and store into associative array.
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
