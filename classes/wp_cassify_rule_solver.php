@@ -67,12 +67,13 @@ class wp_cassify_rule_solver {
 		$matched_parenthesis_groups = FALSE;
 		$matches_parenthesis_groups = array();
 		
-		unset( $this->wp_cassify_rule_solver_item_array );
-		$this->wp_cassify_rule_solver_item_array = array();
-
 		preg_match_all( $match_parenthesis_group_pattern, $wp_cassify_initial_rule, $matches_parenthesis_groups );
 
 		if ( ( is_array( $matches_parenthesis_groups[1] ) ) && ( count( $matches_parenthesis_groups[1] ) > 0 ) ) {
+			unset( $this->wp_cassify_rule_solver_item_array );
+			$this->wp_cassify_rule_solver_item_array = array();
+
+			
 			foreach( $matches_parenthesis_groups[1] as $matches_parenthesis_group ) {
 				$wp_cassify_rule_solver_item = new wp_cassify_rule_solver_item();
 				$wp_cassify_rule_solver_item->parenthesis_group = $matches_parenthesis_group;
@@ -166,7 +167,7 @@ class wp_cassify_rule_solver {
 				
 			case '-NEQ' :
 			
-				if ( $wp_cassify_rule_solver_item->left_operand != $wp_cassify_rule_solver_item->right_operand ) {
+				if ( $wp_cassify_rule_solver_item->left_operand != $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
@@ -299,6 +300,47 @@ class wp_cassify_rule_solver {
 	}
 	
 	/**
+	 * Replace parenthesis groups with expression result in rule.
+	 * @return string	$wp_cassify_rule	This is the rule factorized.
+	 */ 
+	private function replace_groups_with_results_first() {
+	
+		$contains_or_condition = false;
+		$wp_cassify_rule = "FALSE";
+
+		// If initial rule contains at least one OR condition, it's sufficient that at least one condition is TRUE
+		// and the rule condition result is TRUE.
+		// At reverse, if initial rule contains only AND conditions, it's sufficient that at least one condition is FALSE
+		// and the rule condition result is FALSE.
+		if ( strpos( $this->wp_cassify_initial_rule, "-OR"  ) !== FALSE ) {
+			$contains_or_condition = true;	
+			$wp_cassify_rule = "FALSE";
+		}
+		else
+		{
+			$wp_cassify_rule = "TRUE";
+		}
+
+		if ( ( is_array( $this->wp_cassify_rule_solver_item_array ) ) && ( count( $this->wp_cassify_rule_solver_item_array ) > 0 ) ) {				
+			foreach ($this->wp_cassify_rule_solver_item_array as $wp_cassify_rule_solver_item) {
+				
+				if ( $contains_or_condition ) {
+					if ( $wp_cassify_rule_solver_item->result == "TRUE" ) {
+						$wp_cassify_rule = "TRUE";
+					}
+				}
+				else {
+					if ( $wp_cassify_rule_solver_item->result == "FALSE" ) {
+						$wp_cassify_rule = "FALSE";
+					}					
+				}
+			}
+		}	
+		
+		return $wp_cassify_rule;
+	}	
+	
+	/**
 	 * Simplify the final expression. This function is recursive.
 	 */ 
 	private function reduce_expression() {
@@ -352,7 +394,7 @@ class wp_cassify_rule_solver {
 
 			$this->solve_item( $wp_cassify_rule_solver_item );
 			$this->wp_cassify_initial_rule = $wp_cassify_rule_solver_item->result;
-			
+
 			$operators_count = 0;
 		}	
 		
@@ -433,8 +475,8 @@ class wp_cassify_rule_solver {
 
 		// Step 6 : match first level parenthesis groups
 		if ( $this->check_if_no_error() ) {
-			$this->wp_cassify_initial_rule = $this->replace_groups_with_results();
-
+			$this->wp_cassify_initial_rule = $this->replace_groups_with_results_first();
+			
 			// Step 7 : strip parenthesis from rule
 			$this->strip_parenthesis_from_rule(); 
 
