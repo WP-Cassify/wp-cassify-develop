@@ -603,8 +603,8 @@ class WP_Cassify_Plugin {
 				$this->wp_cassify_default_service_service_parameter_name . '=' . $wp_cassify_redirect_url_after_logout;
 		}
 		else {
-			// If user not authenticated by CAS redirect to home_url and bypass wp_cassify.
-			$redirect_url = home_url() . '/?wp_cassify_bypass=bypass';
+			// If user not authenticated by CAS redirect to home_url.
+			$redirect_url = home_url();
 		}
 		
 		WP_Cassify_Utils::wp_cassify_redirect_url( $redirect_url );
@@ -757,6 +757,19 @@ class WP_Cassify_Plugin {
 		if ( $gateway_mode ) {
 			$wp_cassify_callback_service_url .= '%3Fgateway=true';
 		}
+		
+		// Fix bug : slug is duplicate in return url
+		$blog_details = get_blog_details();
+		$blog_path = ltrim( $blog_details->path , '/');
+		$duplicate_path_to_remove = rtrim( $blog_path . $blog_path, '/' );
+		$duplicate_path_to_replace = rtrim( $blog_path, '/' );		
+		
+		if ( strpos( $wp_cassify_callback_service_url, $duplicate_path_to_remove ) !== false ) {
+			$wp_cassify_callback_service_url = str_replace( $duplicate_path_to_remove, $duplicate_path_to_replace , $wp_cassify_callback_service_url );
+		}
+		// End Fix bug		
+
+		error_log( $wp_cassify_callback_service_url );
 
 		return $wp_cassify_callback_service_url;
 	}
