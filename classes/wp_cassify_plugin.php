@@ -759,17 +759,17 @@ class WP_Cassify_Plugin {
 		}
 		
 		// Fix bug : slug is duplicate in return url
-		$blog_details = get_blog_details();
-		$blog_path = ltrim( $blog_details->path , '/');
-		$duplicate_path_to_remove = rtrim( $blog_path . $blog_path, '/' );
-		$duplicate_path_to_replace = rtrim( $blog_path, '/' );		
-		
-		if ( strpos( $wp_cassify_callback_service_url, $duplicate_path_to_remove ) !== false ) {
-			$wp_cassify_callback_service_url = str_replace( $duplicate_path_to_remove, $duplicate_path_to_replace , $wp_cassify_callback_service_url );
+		if( is_multisite() ) {
+			$blog_details = get_blog_details();
+			$blog_path = ltrim( $blog_details->path , '/');
+			$duplicate_path_to_remove = rtrim( $blog_path . $blog_path, '/' );
+			$duplicate_path_to_replace = rtrim( $blog_path, '/' );		
+			
+			if ( strpos( $wp_cassify_callback_service_url, $duplicate_path_to_remove ) !== false ) {
+				$wp_cassify_callback_service_url = str_replace( $duplicate_path_to_remove, $duplicate_path_to_replace , $wp_cassify_callback_service_url );
+			}			
 		}
 		// End Fix bug		
-
-		error_log( $wp_cassify_callback_service_url );
 
 		return $wp_cassify_callback_service_url;
 	}
