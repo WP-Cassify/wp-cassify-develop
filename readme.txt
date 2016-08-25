@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 1.9.6
+Stable tag: 1.9.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,7 +29,8 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New feature !) : Debug settings, dump last xml cas server response.
+* (New feature !) : Add support for multivaluate cas user fields. Now multivaluate fields can be serialized to be stored in
+custom WP User meta.
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -82,6 +83,7 @@ https://wpcassify.wordpress.com/
 * Add custom hooks : wp_cassify_after_cas_authentication, wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
 * Custom shortcode to generate CAS login link into your blog. (See online documentation)
+* Debug settings, dump last xml cas server response.
 * Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
 your index.php or in another template file inside your theme (It use CAS gateway mode) :
 `
@@ -137,6 +139,10 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.9.7 = 
+* Add support for multivaluated field in wp_cassify_parse_xml_response and in wp_cassify_sync_user_metadata.
+* Bug fix on duplicate path with php7. Thanks to Richard Tape.
 
 = 1.9.6 = 
 * Some bug fixes.
