@@ -76,7 +76,25 @@ class WP_Cassify_Utils {
 			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
 			$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
 		} 
-	 
+
+		// Specific use case configuration for Wordpress hosted on nginx behind AWS loadbalancer.
+		if ( 
+			isset( $_SERVER[ 'HTTP_HOST' ] ) && 
+			isset( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] ) && 
+			isset( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] ) ) {
+				
+			$current_url = $_SERVER[ 'HTTP_HOST' ];
+				
+			if( ( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
+				( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
+				$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
+			} 	
+			
+			if ( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] == 'https' ) {
+				$current_url = str_replace( "http", "https", $current_url );
+			}
+		}
+
 		$current_url .= $_SERVER[ 'REQUEST_URI' ];
 		
 		return $current_url;

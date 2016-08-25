@@ -765,9 +765,9 @@ class WP_Cassify_Plugin {
 			$duplicate_path_to_remove = rtrim( $blog_path . $blog_path, '/' );
 			$duplicate_path_to_replace = rtrim( $blog_path, '/' );		
 			
-			if ( strpos( $wp_cassify_callback_service_url, $duplicate_path_to_remove ) !== false ) {
+			if ( ! empty( $duplicate_path_to_remove ) && strpos( $wp_cassify_callback_service_url, $duplicate_path_to_remove ) !== false ) {
 				$wp_cassify_callback_service_url = str_replace( $duplicate_path_to_remove, $duplicate_path_to_replace , $wp_cassify_callback_service_url );
-			}			
+			}
 		}
 		// End Fix bug		
 
@@ -850,7 +850,26 @@ class WP_Cassify_Plugin {
 			$cas_user_attributes_items = $cas_user_attributes->item( 0 );
 			foreach ( $cas_user_attributes_items->childNodes as $cas_user_attributes_item ) {
 				$cas_attribute_name = preg_replace( '#^cas:#', '', $cas_user_attributes_item->nodeName );
-				$cas_user_datas[ $cas_attribute_name ] = $cas_user_attributes_item->nodeValue;
+				
+				// Process multivaluate fields. Test if array_key already exist.
+				if ( array_key_exists( $cas_attribute_name, $cas_user_datas ) ) {
+					if ( isset( $cas_user_datas[ $cas_attribute_name ] ) ) {
+						if ( is_array( $cas_user_datas[ $cas_attribute_name ] ) ) {
+							array_push( $cas_user_datas[ $cas_attribute_name ], $cas_user_attributes_item->nodeValue );
+						}
+						else {
+							$cas_attribute_value = $cas_user_datas[ $cas_attribute_name ];
+							$cas_user_datas[ $cas_attribute_name ] = array();
+							
+							array_push( $cas_user_datas[ $cas_attribute_name ], $cas_attribute_value );
+							array_push( $cas_user_datas[ $cas_attribute_name ], $cas_user_attributes_item->nodeValue );
+						}
+					}
+				}
+				else {
+					// Process single valuate field.
+					$cas_user_datas[ $cas_attribute_name ] = $cas_user_attributes_item->nodeValue;
+				}
 			}
 		}
 
@@ -1215,6 +1234,15 @@ class WP_Cassify_Plugin {
 	            	$wp_cassify_wordpress_user_meta = $wp_cassify_user_attributes_mapping_parts[ '0' ];
 	            	$wp_cassify_cas_user_attribute = $wp_cassify_user_attributes_mapping_parts[ '1' ];
 	            	
+			        $cas_user_data_formatted = null;
+            	
+            		if ( is_array( $cas_user_datas[ $wp_cassify_cas_user_attribute ] ) ) {
+            			$cas_user_data_formatted = maybe_serialize( $cas_user_datas[ $wp_cassify_cas_user_attribute ] );
+            		}
+            		else {
+            			$cas_user_data_formatted = $cas_user_datas[ $wp_cassify_cas_user_attribute ];
+            		}
+	            	
 	            	$mapping_set = false;
 	            	
 	            	if ( property_exists( $wp_user->data, $wp_cassify_wordpress_user_meta ) ) {
@@ -1222,7 +1250,7 @@ class WP_Cassify_Plugin {
 	            		$user_id = wp_update_user( 
 	            			array( 
 	            				'ID' => $wp_user->data->ID, 
-	            				$wp_cassify_wordpress_user_meta => $cas_user_datas[ $wp_cassify_cas_user_attribute ] 
+	            				$wp_cassify_wordpress_user_meta => $cas_user_data_formatted
             				) 
         				);
 
@@ -1237,7 +1265,7 @@ class WP_Cassify_Plugin {
             				add_user_meta( 
             					$wp_user->ID, 
             					$wp_cassify_wordpress_user_meta, 
-            					$cas_user_datas[ $wp_cassify_cas_user_attribute ], 
+            					$cas_user_data_formatted, 
             					true 
     						);
 	            		}
@@ -1245,7 +1273,7 @@ class WP_Cassify_Plugin {
 	            			update_user_meta( 
 	            				$wp_user->ID, 
 	            				$wp_cassify_wordpress_user_meta, 
-	            				$cas_user_datas[ $wp_cassify_cas_user_attribute ]
+	            				$cas_user_data_formatted
             				);
 	            		}
 	            	}
