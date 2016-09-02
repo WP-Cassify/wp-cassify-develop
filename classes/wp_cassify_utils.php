@@ -82,8 +82,8 @@ class WP_Cassify_Utils {
 			isset( $_SERVER[ 'HTTP_HOST' ] ) && 
 			isset( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] ) && 
 			isset( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] ) ) {
-				
-			$current_url = $_SERVER[ 'HTTP_HOST' ];
+			
+			$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ? 'https://' : 'http://' ) . $_SERVER[ 'HTTP_HOST' ];
 				
 			if( ( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
 				( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
@@ -91,7 +91,7 @@ class WP_Cassify_Utils {
 			} 	
 			
 			if ( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] == 'https' ) {
-				$current_url = str_replace( "http", "https", $current_url );
+				$current_url = str_replace( "http:", "https:", $current_url );
 			}
 		}
 
