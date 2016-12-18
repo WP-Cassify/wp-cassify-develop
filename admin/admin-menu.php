@@ -90,8 +90,11 @@ class WP_Cassify_Admin_Page {
 			array( $this, 'wp_cassify_options' )
 		 );
 		 
-		// Call register settings function
-		add_action( 'admin_init', array( $this , 'wp_cassify_register_plugin_settings' ) );
+		// Call export plugin configurations settings function
+		add_action( 'admin_init', array( $this , 'wp_cassify_export_configuration_options_settings' ) );
+
+		// Call import plugin configurations settings function
+		add_action( 'admin_init', array( $this , 'wp_cassify_import_configuration_options_settings' ) );
 		
 		// Add javascript needed by metaboxes
 		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );			 
@@ -116,10 +119,13 @@ class WP_Cassify_Admin_Page {
 			'wp-cassify.php' , 
 			array( $this, 'wp_cassify_options' )
 		 );
-			
+
 		// Call register settings function
 		add_action( 'admin_init', array( $this , 'wp_cassify_register_plugin_settings' ) );
-		
+
+		// Call register settings function
+		add_action( 'admin_init', array( $this , 'wp_cassify_register_plugin_settings' ) );
+
 		// Add javascript needed by metaboxes
 		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );	
 		
@@ -285,6 +291,15 @@ class WP_Cassify_Admin_Page {
 			'normal', 
 			'high'
 		);			
+		
+		add_meta_box( 
+			'wp_cassify_metabox_backup_restore_configuration_settings', 
+			'Backup / Restore configuration settings', 
+			array( $this, 'wp_cassify_add_metabox_backup_restore_configuration_settings' ), 
+			$this->wp_cassify_admin_page_hook, 
+			'normal', 
+			'high'
+		);		
 		
 		// Side boxes
 		add_meta_box( 
@@ -1071,6 +1086,35 @@ class WP_Cassify_Admin_Page {
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_debug_settings', FALSE, array( 'id' => 'wp_cassify_save_options_debug_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
 <?php
+	}
+	
+	/**
+	 * Display html output for metabox Backup / Restore configuration settings.
+	 */ 	
+	public function wp_cassify_add_metabox_backup_restore_configuration_settings() {
+		
+        $is_enabled = FALSE;
+
+        if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) == 'enabled' ) {
+            $is_enabled = TRUE;
+        }
+        else {
+            $is_enabled = FALSE;
+        }
+?>
+		<table class="optiontable form-table">
+			<tr valign="top">
+				<td><?php submit_button( 'Backup plugin configuration', 'secondary', 'wp_cassify_backup_plugin_options_settings', FALSE, array( 'id' => 'wp_cassify_backup_plugin_options_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?></td>
+				<td><?php submit_button( 'Restore plugin configuration', 'secondary', 'wp_cassify_restore_plugin_options_settings', FALSE, array( 'id' => 'wp_cassify_restore_plugin_options_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?></td>
+			</tr>
+			<tr valign="top">
+				<th scope="row">Import configuration file</th>
+				<td>
+					<input type="file" id="wp_cassify_restore_plugin_options_configuration_settings_file" name="wp_cassify_restore_plugin_options_configuration_settings_file" class="post_form" value="" size="60" /><br />
+				</td>
+			</tr>			
+		</table>
+<?php
 	}	
 	
 	/**
@@ -1098,7 +1142,7 @@ class WP_Cassify_Admin_Page {
 				if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
 					die( 'Security Check !' );
 				}
-
+				
         		// General settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_base_url', FALSE, $this->wp_cassify_network_activated );                        
 				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version', FALSE, $this->wp_cassify_network_activated ); 
@@ -1281,7 +1325,7 @@ class WP_Cassify_Admin_Page {
 				<div id="message" class="updated" >Settings saved successfully</div>
 		<?php } ?>
 
-		<form method="post" action="<?php echo $wp_cassify_post_action_url; ?>">
+		<form method="post" action="<?php echo $wp_cassify_post_action_url; ?>" enctype="multipart/form-data">
 			<?php wp_nonce_field( 'admin_form', 'wp_cassify_admin_form' ); // Set security token ?>
 			<?php settings_fields( 'wp-cassify-settings-group' ); ?>
 			<?php do_settings_sections( 'wp-cassify-settings-group' ); ?>
@@ -1307,6 +1351,87 @@ class WP_Cassify_Admin_Page {
 		</div>
 		<?php
 	}
+	
+	/**
+	 * Export plugin configuration options settings
+	 */ 
+	public function wp_cassify_export_configuration_options_settings() {
+
+
+        if ( !current_user_can( 'manage_options' ) )  {
+            wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+        }
+
+        if ( $this->wp_cassify_is_options_updated() ) {    
+    	
+    		// Check security tocken
+			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
+				die( 'Security Check !' );
+			}
+			
+			if (! empty( $_POST['wp_cassify_backup_plugin_options_settings'] ) ){
+        	
+	        	$wp_cassify_backup_plugin_options_settings = WP_Cassify_Utils::wp_cassify_export_configuration_options( false );
+	
+				nocache_headers();
+				header( 'Content-Type: application/json; charset=utf-8' );
+				header( 'Content-Disposition: attachment; filename=wpcassify-settings-export-' . date( 'm-d-Y' ) . '.json' );
+				header( "Expires: 0" );
+				
+				echo json_encode( $wp_cassify_backup_plugin_options_settings );
+				exit;         	
+			}
+    	}
+	}	
+
+	/**
+	 * Import plugin configuration options settings
+	 */ 
+	public function wp_cassify_import_configuration_options_settings() {
+
+
+        if ( !current_user_can( 'manage_options' ) )  {
+            wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+        }
+
+        if ( $this->wp_cassify_is_options_updated() ) {    
+    	
+    		// Check security tocken
+			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
+				die( 'Security Check !' );
+			}
+
+			if (! empty( $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) ) {
+
+				$extension = end( explode( '.', $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) );
+
+				if( $extension != 'json' ) {
+					wp_die( __( 'Please upload a valid .json file' ) );
+				}
+				
+				$import_file = $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['tmp_name'];
+				
+				if( empty( $import_file ) ) {
+					wp_die( __( 'Please upload a file to import' ) );
+				}
+				
+				$wp_cassify_import_configuration_options = (array) json_decode( file_get_contents( $import_file ) );
+				
+				WP_Cassify_Utils::wp_cassify_import_configuration_options(
+					$wp_cassify_import_configuration_options, 
+					$this->wp_cassify_network_activated
+				);
+							
+				if ( $this->wp_cassify_network_activated ) {
+					wp_safe_redirect( admin_url( $this->wp_cassify_multisite_admin_page_slug . '?page=wp-cassify.php' ) ); exit;
+				}
+				else {
+					wp_safe_redirect( admin_url( $this->wp_cassify_admin_page_slug . '?page=wp-cassify.php' ) ); exit;
+				}
+			}
+    	}
+	}
+
 	
 	/**
 	 * Detect if form has been submitted.

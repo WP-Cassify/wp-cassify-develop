@@ -528,6 +528,64 @@ class WP_Cassify_Utils {
 		
 		return $decrypted_string;
 	}    
+
+    /**
+     * Export all plugins configuration options
+	 * @param bool 		$wp_cassify_network_activated
+	 * @return array	$wp_cassify_export_configuration_options
+     */	
+	function wp_cassify_export_configuration_options( $wp_cassify_network_activated ) {
+
+		global $wpdb;
+	
+		$wp_cassify_export_configuration_options = array();
+		$configuration_options = null;
+	
+	    if ( $wp_cassify_network_activated ) {
+			$configuration_options = $wpdb->get_results( "SELECT `meta_key`, `meta_value` FROM {$wpdb->prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%'" );
+	    }
+	    else {
+			$configuration_options = $wpdb->get_results( "SELECT `option_name`, `option_value` FROM {$wpdb->prefix}options WHERE `option_name` LIKE 'wp_cassify%'" );
+	    }
+	    
+	    foreach( $configuration_options as $configuration_option ) {
+	    	$wp_cassify_export_configuration_options[ $configuration_option->option_name ] = $configuration_option->option_value;
+	    }
+		
+		return $wp_cassify_export_configuration_options;
+	}
+	
+    /**
+     * Import all plugins configuration options
+	 * @param array		$wp_cassify_import_configuration_options
+	 * @param bool 		$wp_cassify_network_activated
+     */	
+	function wp_cassify_import_configuration_options( $wp_cassify_import_configuration_options = array(), $wp_cassify_network_activated ) {
+
+		global $wpdb;
+		$restore_option_sql_query = null;
+
+	    foreach( $wp_cassify_import_configuration_options as $option_name => $option_value ) {
+
+			if ( $option_name == 'wp_cassify_xml_response_value' ) {
+				$option_value = htmlentities( $option_value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+				$option_value = htmlentities( $option_value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+			}
+
+		    if ( $wp_cassify_network_activated ) {
+				$restore_option_sql_query = "UPDATE {$wpdb->prefix}sitemeta " . 
+					" SET `meta_value` = '" . $option_value . "' " .
+					" WHERE `meta_key` = '" .	$option_name .  "' ";
+		    }
+		    else {
+				$restore_option_sql_query = "UPDATE {$wpdb->prefix}options " . 
+					" SET `option_value` = '" . $option_value . "' " .
+					" WHERE `option_name` = '" .	$option_name .  "' ";
+		    }
+		    
+		    $wpdb->query($restore_option_sql_query);
+	    }
+	}	
 	
 	/**
 	 * Function used by plugin to send mail.
