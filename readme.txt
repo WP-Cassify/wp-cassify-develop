@@ -4,8 +4,8 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 4.5
-Stable tag: 1.9.8
+Tested up to: 4.7.1
+Stable tag: 1.9.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,13 +29,13 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* (New feature !) : Add support for multivaluate cas user fields. Now multivaluate fields can be serialized to be stored in
-custom WP User meta.
+* (New feature !) : Backup / Restore plugin configuration options settings
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
 * Automatic user creation if not exist in Wordpress database.
 * Synchronize Wordpress User metas with CAS User attributes.
+* Add support for multivaluate cas user fields. Now multivaluate fields can be serialized to be stored in custom WP User meta.
 * You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
 * Be careful, to access to CAS User Attributes from your theme file (from 1.8.4), use code below :
 `
@@ -139,6 +139,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 1.9.9 = 
+* Backup / Restore plugin configuration options settings
 
 = 1.9.7 = 
 * Add support for multivaluated field in wp_cassify_parse_xml_response and in wp_cassify_sync_user_metadata.

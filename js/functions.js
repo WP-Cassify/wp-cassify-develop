@@ -346,17 +346,26 @@ jQuery( '[data-style="wp_cassify_save_options"]' ).click( function ( evt ) {
 
 	if ( evt.target.id == 'wp_cassify_save_options_notifications_settings' ) {
 		if ( jQuery.inArray( jQuery( '#wp_cassify_notifications_salt' ).val().length, [ 16, 24, 32 ] ) ) {
-			alert( 'Salt error : only keys of sizes 16, 24 or 32 supported');
+			alert( 'Salt error : only keys of sizes 16, 24 or 32 supported' );
 			
 			evt.preventDefault();
 			return false;
 		}
 		
 		if ( jQuery( '#wp_cassify_notifications_smtp_password' ).val() != jQuery( '#wp_cassify_notifications_smtp_confirm_password' ).val() ) {
-			alert( 'SMTP Password does not macth confirmation !');
+			alert( 'SMTP Password does not macth confirmation !' );
 			
 			evt.preventDefault();
 			return false;
 		}		
+	}
+	else if ( evt.target.id == 'wp_cassify_restore_plugin_options_settings' ) {
+
+		if ( jQuery( '#wp_cassify_restore_plugin_options_configuration_settings_file' ).val() == '' ) {
+			alert( 'Select configuration file to upload' );
+			
+			evt.preventDefault();
+			return false;
+		}
 	}
 });
