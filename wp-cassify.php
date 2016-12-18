@@ -4,9 +4,9 @@
  * Plugin Name: WP Cassify
  * Plugin URI: https://wpcassify.wordpress.com/
  * Description: CAS Authentication Client for Wordpress. Also, it handle custom authorizations rules from cas user attributes.
- * Version: 1.8.0
+ * Version: 1.9.9
  * Author: Alain-Aymerick FRANCOIS
- * Author URI: https://wpcassify.wordpress.com/a-propos/
+ * Author URI: https://wpcassify.wordpress.com/about-me/
  * License: GPLv2
  */
  
@@ -34,20 +34,27 @@ include( plugin_dir_path( __FILE__ ) . 'admin/admin-menu.php');
  * Uninstall script of the plugin 
  */ 
 register_deactivation_hook( __FILE__, 'wp_cassify_deactivation' );
+register_uninstall_hook( __FILE__, 'wp_cassify_uninstall' );
 
 function wp_cassify_deactivation() {
+	// Nothing here.
+}
+
+function wp_cassify_uninstall() {
 	
-	global $wp_cassify_plugin_options_list;
-    global $wp_cassify_network_activated;
-	
-	foreach ( $wp_cassify_plugin_options_list as $option ) {
-        if ( $wp_cassify_network_activated ) {
-            delete_site_option( $option );
-        }
-        else {
-            delete_option( $option );
-        }
-	}  
+	global $wpdb;
+    
+    // Delete network activated options
+	$wpdb->query( "DELETE FROM {$wpdb->prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%'" );
+
+	// Delete blog options
+	$blogs = wp_get_sites();
+	for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
+		// 1 is network
+		if ( $blogs[ $i ][ 'blog_id' ] > 1 ) {
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}{$blogs[ $i ][ 'blog_id' ]}_options WHERE `option_name` LIKE 'wp_cassify%'" );
+		}
+	}
 }
 
 /**

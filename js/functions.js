@@ -83,16 +83,29 @@ jQuery( '#wp_cassify_add_user_role_rule' ).click( function ( evt ) {
 
 	var wp_cassify_user_role = jQuery( '#wp_cassify_default_user_roles option:selected' ).val();
 	var wp_cassify_user_role_rule = jQuery( '#wp_cassify_user_role_rule' ).val();
+	var wp_cassify_network_activated = jQuery( '#wp_cassify_network_activated' ).val();
 	
-	jQuery( '#wp_cassify_user_role_rules' )
-         .append(
-         	jQuery( '<option></option>' )
-         		.attr( 'value', wp_cassify_user_role + '|' + wp_cassify_user_role_rule ) 
-         		.text( wp_cassify_user_role + '|' + wp_cassify_user_role_rule )
-     		); 	
-
+	if (  wp_cassify_network_activated == 'enabled' ) {
+		var wp_cassify_user_role_blog_id = jQuery( '#wp_cassify_user_role_blog_id option:selected' ).val();
+		
+		jQuery( '#wp_cassify_user_role_rules' )
+			 .append(
+				jQuery( '<option></option>' )
+					.attr( 'value', wp_cassify_user_role + '|' +  wp_cassify_user_role_blog_id + '|' + wp_cassify_user_role_rule ) 
+					.text( wp_cassify_user_role + '|' +  wp_cassify_user_role_blog_id + '|' + wp_cassify_user_role_rule )
+				); 	
+	}
+	else { 
+		jQuery( '#wp_cassify_user_role_rules' )
+			 .append(
+				jQuery( '<option></option>' )
+					.attr( 'value', wp_cassify_user_role + '|' + wp_cassify_user_role_rule ) 
+					.text( wp_cassify_user_role + '|' + wp_cassify_user_role_rule )
+				); 				
+	}
+	
 	evt.preventDefault();
-	return false;
+	return false;		
 });
 
 jQuery( '#wp_cassify_remove_user_role_rule' ).click( function ( evt ) {
@@ -105,9 +118,19 @@ jQuery( '#wp_cassify_remove_user_role_rule' ).click( function ( evt ) {
 
 jQuery( '#wp_cassify_user_role_rules' ).dblclick( function ( evt ) {
 
-	jQuery( '#wp_cassify_user_role_rule' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 1 ] );
-	jQuery( '#wp_cassify_default_user_roles' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 0 ] );
-	jQuery( '#wp_cassify_user_role_rules option:selected' ).remove();
+	var wp_cassify_network_activated = jQuery( '#wp_cassify_network_activated' ).val();
+	
+	if (  wp_cassify_network_activated == 'enabled' ) {
+		jQuery( '#wp_cassify_user_role_rule' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 2 ] );
+		jQuery( '#wp_cassify_user_role_blog_id' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 1 ] );
+		jQuery( '#wp_cassify_default_user_roles' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 0 ] );
+		jQuery( '#wp_cassify_user_role_rules option:selected' ).remove();	
+	}
+	else {
+		jQuery( '#wp_cassify_user_role_rule' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 1 ] );
+		jQuery( '#wp_cassify_default_user_roles' ).val( jQuery( '#wp_cassify_user_role_rules option:selected' ).val().split( '|' )[ 0 ] );
+		jQuery( '#wp_cassify_user_role_rules option:selected' ).remove();	
+	}
 
 	evt.preventDefault();	
 	return false;
@@ -323,17 +346,26 @@ jQuery( '[data-style="wp_cassify_save_options"]' ).click( function ( evt ) {
 
 	if ( evt.target.id == 'wp_cassify_save_options_notifications_settings' ) {
 		if ( jQuery.inArray( jQuery( '#wp_cassify_notifications_salt' ).val().length, [ 16, 24, 32 ] ) ) {
-			alert( 'Salt error : only keys of sizes 16, 24 or 32 supported');
+			alert( 'Salt error : only keys of sizes 16, 24 or 32 supported' );
 			
 			evt.preventDefault();
 			return false;
 		}
 		
 		if ( jQuery( '#wp_cassify_notifications_smtp_password' ).val() != jQuery( '#wp_cassify_notifications_smtp_confirm_password' ).val() ) {
-			alert( 'SMTP Password does not macth confirmation !');
+			alert( 'SMTP Password does not macth confirmation !' );
 			
 			evt.preventDefault();
 			return false;
 		}		
+	}
+	else if ( evt.target.id == 'wp_cassify_restore_plugin_options_settings' ) {
+
+		if ( jQuery( '#wp_cassify_restore_plugin_options_configuration_settings_file' ).val() == '' ) {
+			alert( 'Select configuration file to upload' );
+			
+			evt.preventDefault();
+			return false;
+		}
 	}
 });
