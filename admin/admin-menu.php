@@ -90,14 +90,14 @@ class WP_Cassify_Admin_Page {
 			array( $this, 'wp_cassify_options' )
 		 );
 		 
-		// Call export plugin configurations settings function
-		add_action( 'admin_init', array( $this , 'wp_cassify_export_configuration_options_settings' ) );
-
-		// Call import plugin configurations settings function
-		add_action( 'admin_init', array( $this , 'wp_cassify_import_configuration_options_settings' ) );
-		
 		// Add javascript needed by metaboxes
 		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );			 
+		 
+		// Call export plugin configurations settings function
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_export_configuration_options_settings' ) );
+
+		// Call import plugin configurations settings function
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_import_configuration_options_settings' ) );
 		 
 		// Register differents metaboxes on admin screen.
 		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this, 'wp_cassify_register_metaboxes' ) );  
@@ -1366,7 +1366,7 @@ class WP_Cassify_Admin_Page {
     	
     		// Check security tocken
 			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
-				die( 'Security Check !' );
+				die( 'Security Check 1 !' );
 			}
 			
 			if (! empty( $_POST['wp_cassify_backup_plugin_options_settings'] ) ){
@@ -1398,7 +1398,7 @@ class WP_Cassify_Admin_Page {
     	
     		// Check security tocken
 			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
-				die( 'Security Check !' );
+				die( 'Security Check 2 !' );
 			}
 
 			if (! empty( $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) ) {
