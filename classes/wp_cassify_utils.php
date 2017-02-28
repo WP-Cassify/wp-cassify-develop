@@ -178,7 +178,7 @@ class WP_Cassify_Utils {
 		$path     	= isset( $parsed_url['path'] ) ? $parsed_url['path'] : ''; 
 		$fragment	= isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : ''; 		
 		
-		$query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
+		// $query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
 
 		parse_str( $query, $url_params );
 
@@ -534,7 +534,7 @@ class WP_Cassify_Utils {
 	 * @param bool 		$wp_cassify_network_activated
 	 * @return array	$wp_cassify_export_configuration_options
      */	
-	function wp_cassify_export_configuration_options( $wp_cassify_network_activated ) {
+	public static function wp_cassify_export_configuration_options( $wp_cassify_network_activated ) {
 
 		global $wpdb;
 	
@@ -560,7 +560,7 @@ class WP_Cassify_Utils {
 	 * @param array		$wp_cassify_import_configuration_options
 	 * @param bool 		$wp_cassify_network_activated
      */	
-	function wp_cassify_import_configuration_options( $wp_cassify_import_configuration_options = array(), $wp_cassify_network_activated ) {
+	public static function wp_cassify_import_configuration_options( $wp_cassify_import_configuration_options = array(), $wp_cassify_network_activated ) {
 
 		global $wpdb;
 		$restore_option_sql_query = null;
