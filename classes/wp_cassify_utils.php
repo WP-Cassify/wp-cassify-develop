@@ -76,7 +76,25 @@ class WP_Cassify_Utils {
 			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
 			$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
 		} 
-	 
+
+		// Specific use case configuration for Wordpress hosted on nginx behind AWS loadbalancer.
+		if ( 
+			isset( $_SERVER[ 'HTTP_HOST' ] ) && 
+			isset( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] ) && 
+			isset( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] ) ) {
+			
+			$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ? 'https://' : 'http://' ) . $_SERVER[ 'HTTP_HOST' ];
+				
+			if( ( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
+				( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
+				$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
+			} 	
+			
+			if ( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] == 'https' ) {
+				$current_url = str_replace( "http:", "https:", $current_url );
+			}
+		}
+
 		$current_url .= $_SERVER[ 'REQUEST_URI' ];
 		
 		return $current_url;
@@ -160,7 +178,7 @@ class WP_Cassify_Utils {
 		$path     	= isset( $parsed_url['path'] ) ? $parsed_url['path'] : ''; 
 		$fragment	= isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : ''; 		
 		
-		$query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
+		// $query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
 
 		parse_str( $query, $url_params );
 
@@ -182,7 +200,7 @@ class WP_Cassify_Utils {
 		
 		$query = parse_url( $url );
 
-		if ( $query != FALSE ) {
+		if ( $query != false ) {
 			$left_part_uri = $query[ 'scheme' ] . '://' . $query[ 'host' ];
 			if (! empty( $query[ 'port' ] ) ) {
 				$left_part_uri .= ':' . $query[ 'port' ]; 
@@ -223,7 +241,7 @@ class WP_Cassify_Utils {
 		$wp_user_id = 0;
 
 		if (! username_exists( $cas_user_id ) ) {
-			if ( (! empty( $cas_user_email_attribute_value ) ) && ( email_exists( $cas_user_email_attribute_value ) == FALSE ) ) {
+			if ( (! empty( $cas_user_email_attribute_value ) ) && ( email_exists( $cas_user_email_attribute_value ) == false ) ) {
 				$user_email = $cas_user_email_attribute_value;
 			}
 			
@@ -244,7 +262,7 @@ class WP_Cassify_Utils {
 		$is_wordpress_user_exist = TRUE;
 
 		if (! username_exists( $cas_user_id ) ) {
-			$is_wordpress_user_exist = FALSE;
+			$is_wordpress_user_exist = false;
 		}
 		
 		return $is_wordpress_user_exist;
@@ -252,16 +270,16 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Set role to an existing Wordpress user and remove all other roles
-	 * @param	string 	$wordpress_user_login	Wordpress user login
-	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
-	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
+	 * @param	string 	$wordpress_user_login			Wordpress user login
+	 * @param 	string 	$role_key						Role key used in Wordpress. For example, "author" for "Author".
+	 * @return 	bool 	$wp_user_role_updated			Return TRUE if wordpress user account has been updated. false if not.
 	 */ 
 	public static function wp_cassify_set_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
 		
-		$wp_user_role_updated = FALSE;
+		$wp_user_role_updated = false;
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
-		if ( $wp_user != FALSE ) {
+		if ( $wp_user != false ) {
 			$wp_user->set_role( $role_key );
 			$wp_user_role_updated = TRUE;
 		}
@@ -273,14 +291,14 @@ class WP_Cassify_Utils {
 	 * Add role to an existing Wordpress user
 	 * @param	string 	$wordpress_user_login	Wordpress user login
 	 * @param 	string 	$role_key				Role key used in Wordpress. For example, "author" for "Author".
-	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. FALSE if not.
+	 * @return 	bool 	$wp_user_role_updated	Return TRUE if wordpress user account has been updated. false if not.
 	 */ 
 	public static function wp_cassify_add_role_to_wordpress_user( $wordpress_user_login, $role_key ) {
 		
-		$wp_user_role_updated = FALSE;
+		$wp_user_role_updated = false;
 		$wp_user = get_user_by( 'login', $wordpress_user_login );
 		
-		if ( $wp_user != FALSE ) {
+		if ( $wp_user != false ) {
 			$wp_user->add_role( $role_key );
 			$wp_user_role_updated = TRUE;
 		}
@@ -309,7 +327,7 @@ class WP_Cassify_Utils {
 		// Perform redirection only if url is valid.
 		if ( filter_var( $redirect_url, FILTER_VALIDATE_URL ) ) {
 			wp_redirect( $redirect_url ); 
-			exit;
+			exit();
 		}
 		else {
 			die( 'Redirect URL is not valid !');
@@ -318,7 +336,7 @@ class WP_Cassify_Utils {
         
     /**
      * Get plugin option according to activation plugin level
-     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. false if not.
      * @param 	string 	$option_name				Name of blog option or site option if network activated.
      * @return 	string 	$wp_cassify_plugin_option	Return the option value.
      */
@@ -338,7 +356,7 @@ class WP_Cassify_Utils {
     
     /**
      * Set plugin option according to activation plugin level
-     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. FALSE if not.
+     * @param 	bool 	$network_activated			TRUE if plugin is activated on network. false if not.
      * @param 	string 	$option_name				Name of blog option or site option if network activated.
      * @param 	string 	$option_value				The new option value.
      */
@@ -359,9 +377,9 @@ class WP_Cassify_Utils {
      * @param array 	$post_array						$_POST array passed by reference
      * @param string 	$field_name						Form field name.
      * @param bool 		$do_not_check_empty				Empty values are accepted.
-     * @param bool 		$network_activated				TRUE if plugin is activated on network. FALSE if not.
+     * @param bool 		$network_activated				TRUE if plugin is activated on network. false if not.
      */
-    public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = FALSE, $wp_cassify_network_activated ) {
+    public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = false, $wp_cassify_network_activated ) {
 
 		$field_value = '';
 		
@@ -510,6 +528,64 @@ class WP_Cassify_Utils {
 		
 		return $decrypted_string;
 	}    
+
+    /**
+     * Export all plugins configuration options
+	 * @param bool 		$wp_cassify_network_activated
+	 * @return array	$wp_cassify_export_configuration_options
+     */	
+	public static function wp_cassify_export_configuration_options( $wp_cassify_network_activated ) {
+
+		global $wpdb;
+	
+		$wp_cassify_export_configuration_options = array();
+		$configuration_options = null;
+	
+	    if ( $wp_cassify_network_activated ) {
+			$configuration_options = $wpdb->get_results( "SELECT `meta_key`, `meta_value` FROM {$wpdb->prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%'" );
+	    }
+	    else {
+			$configuration_options = $wpdb->get_results( "SELECT `option_name`, `option_value` FROM {$wpdb->prefix}options WHERE `option_name` LIKE 'wp_cassify%'" );
+	    }
+	    
+	    foreach( $configuration_options as $configuration_option ) {
+	    	$wp_cassify_export_configuration_options[ $configuration_option->option_name ] = $configuration_option->option_value;
+	    }
+		
+		return $wp_cassify_export_configuration_options;
+	}
+	
+    /**
+     * Import all plugins configuration options
+	 * @param array		$wp_cassify_import_configuration_options
+	 * @param bool 		$wp_cassify_network_activated
+     */	
+	public static function wp_cassify_import_configuration_options( $wp_cassify_import_configuration_options = array(), $wp_cassify_network_activated ) {
+
+		global $wpdb;
+		$restore_option_sql_query = null;
+
+	    foreach( $wp_cassify_import_configuration_options as $option_name => $option_value ) {
+
+			if ( $option_name == 'wp_cassify_xml_response_value' ) {
+				$option_value = htmlentities( $option_value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+				$option_value = htmlentities( $option_value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+			}
+
+		    if ( $wp_cassify_network_activated ) {
+				$restore_option_sql_query = "UPDATE {$wpdb->prefix}sitemeta " . 
+					" SET `meta_value` = '" . $option_value . "' " .
+					" WHERE `meta_key` = '" .	$option_name .  "' ";
+		    }
+		    else {
+				$restore_option_sql_query = "UPDATE {$wpdb->prefix}options " . 
+					" SET `option_value` = '" . $option_value . "' " .
+					" WHERE `option_name` = '" .	$option_name .  "' ";
+		    }
+		    
+		    $wpdb->query($restore_option_sql_query);
+	    }
+	}	
 	
 	/**
 	 * Function used by plugin to send mail.
