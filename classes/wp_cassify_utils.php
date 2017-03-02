@@ -178,7 +178,7 @@ class WP_Cassify_Utils {
 		$path     	= isset( $parsed_url['path'] ) ? $parsed_url['path'] : ''; 
 		$fragment	= isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : ''; 		
 		
-		// $query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
+		$query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
 
 		parse_str( $query, $url_params );
 
