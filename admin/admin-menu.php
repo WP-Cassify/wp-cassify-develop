@@ -1403,7 +1403,9 @@ class WP_Cassify_Admin_Page {
 
 			if (! empty( $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) ) {
 
-				$extension = end( explode( '.', $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) );
+				//$extension = end( explode( '.', $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) );
+				$extension = explode( '.', $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] );
+				$extension = end( $extension );
 
 				if( $extension != 'json' ) {
 					wp_die( __( 'Please upload a valid .json file' ) );
