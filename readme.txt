@@ -4,8 +4,8 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 4.7
-Stable tag: 2.0.4
+Tested up to: 4.9
+Stable tag: 2.0.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,13 +75,14 @@ https://wpcassify.wordpress.com/
 `
 * Receive email notifications when trigger is fired (after user account creation, after user login/logout).
 * Define notifications rules based on user attributes values.
+* Purge user roles before applying user role rules.
 * Define user account expiration rules bases on CAS User attributes.
 * Network activation allowed
 * You can set Service Logout URL (Needs to have CAS Server with followServiceRedirects option configured).
 * Add support for web application hosted behind a reverse proxy. (Thanks to franck86)
 * Add custom hooks : wp_cassify_after_cas_authentication, wp_cassify_before_auth_user_wordpress, wp_cassify_before_redirect, wp_cassify_after_redirect. (See online documentation)
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
-* Custom shortcode to generate CAS login link into your blog. (See online documentation)
+* Custom shortcode to generate CAS login/logout link into your blog. (See online documentation)
 * Debug settings, dump last xml cas server response.
 * Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
 your index.php or in another template file inside your theme (It use CAS gateway mode) :
@@ -138,6 +139,11 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 2.0.6 = 
+* Add new feature : Purge user roles before applying rules (syncing wordpress local roles with CAS user attributes)
+* Add new shortcode : wp_cassify_logout_with_redirect
+* Some bug fixes
 
 = 2.0.4 = 
 * Fix bug on PHP Strict standards.
