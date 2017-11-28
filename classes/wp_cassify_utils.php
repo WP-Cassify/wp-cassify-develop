@@ -178,13 +178,15 @@ class WP_Cassify_Utils {
 		$path     	= isset( $parsed_url['path'] ) ? $parsed_url['path'] : ''; 
 		$fragment	= isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : ''; 		
 		
-		$query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
-
+		// $query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
+		$query 		= parse_url( $url , PHP_URL_QUERY );
+		
 		parse_str( $query, $url_params );
 
 		$query 		= '?' . http_build_query( $url_params, PHP_QUERY_RFC3986 );
 
-		$query_encoded_url = "$scheme$user$pass$host$port$path$query$fragment"; 
+		// $query_encoded_url = "$scheme$user$pass$host$port$path$query$fragment"; 
+		$query_encoded_url = rawurlencode( "$scheme$user$pass$host$port$path$query$fragment" ); 
 
 		return $query_encoded_url;
 	}	
@@ -304,6 +306,21 @@ class WP_Cassify_Utils {
 		}
 
 		return $wp_user_role_updated;
+	}
+	
+	/**
+	 * Clear all roles to an existing Wordpress user
+	 * @param	string 	$wordpress_user_login	Wordpress user login
+	 */ 
+	public static function wp_cassify_clear_roles_to_wordpress_user( $wordpress_user_login ) {
+		
+		$wp_user = get_user_by( 'login', $wordpress_user_login );
+		
+		if ( $wp_user != false ) {
+			foreach( $wp_user->roles as $role ) {
+				$wp_user->remove_role( $role );
+			}				
+		}
 	}	
 	
     /**
@@ -328,6 +345,10 @@ class WP_Cassify_Utils {
 		if ( filter_var( $redirect_url, FILTER_VALIDATE_URL ) ) {
 			wp_redirect( $redirect_url ); 
 			exit();
+		}
+		else if ( filter_var( urldecode( $redirect_url ), FILTER_VALIDATE_URL ) ) {
+			wp_redirect( $redirect_url ); 
+			exit();			
 		}
 		else {
 			die( 'Redirect URL is not valid !');

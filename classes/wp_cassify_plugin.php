@@ -291,6 +291,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_allow_deny_order = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_allow_deny_order' );
 		$wp_cassify_autorization_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_autorization_rules' ) );		
         $wp_cassify_user_role_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_role_rules' ) );
+        $wp_cassify_user_purge_user_roles_before_applying_rules = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_purge_user_roles_before_applying_rules' );
         $wp_cassify_user_attributes_mapping_list = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_attributes_mapping_list' ) );
  		$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
  		$wp_cassify_expiration_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_expiration_rules' ) );		
@@ -338,6 +339,7 @@ class WP_Cassify_Plugin {
 
 		if ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) {		
 			if (! empty( $service_ticket ) ) {
+				
 				$service_validate_url = $wp_cassify_base_url .
 					$wp_cassify_service_validate_servlet . '?' .
 					$this->wp_cassify_default_service_ticket_parameter_name . '=' . $service_ticket . '&' .
@@ -431,6 +433,11 @@ class WP_Cassify_Plugin {
 							}
 						}
 					}
+				}
+				
+				// Purge wordpress user roles before applying user role rules
+				if ( $wp_cassify_user_purge_user_roles_before_applying_rules ) {
+					WP_Cassify_Utils::wp_cassify_clear_roles_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ] );
 				}
 				
 				// Set wordpress user roles if defined in plugin admin settings
@@ -562,13 +569,19 @@ class WP_Cassify_Plugin {
 		$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 		$wp_cassify_redirect_url_after_logout = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' );
-	
-		// Define default values if options values empty.
+
+		$current_url = WP_Cassify_Utils::wp_cassify_get_current_url( $this->wp_cassify_default_wordpress_blog_http_port, $this->wp_cassify_default_wordpress_blog_https_port );
+		$redirect_to = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $current_url , $this->wp_cassify_default_redirect_parameter_name );
+		
+		// Define default values if url parameters or options values empty.
 		if ( empty( $wp_cassify_logout_servlet ) ) {
 			$wp_cassify_logout_servlet = $this->wp_cassify_default_logout_servlet;
 		}
-	
-		if ( empty ( $wp_cassify_redirect_url_after_logout ) ) {
+
+		if (! empty( $redirect_to ) ) {
+			$wp_cassify_redirect_url_after_logout = $redirect_to;
+		}	
+		elseif ( empty ( $wp_cassify_redirect_url_after_logout ) ) {
 			$wp_cassify_redirect_url_after_logout = get_home_url();
 		}
 
@@ -576,7 +589,6 @@ class WP_Cassify_Plugin {
 		if ( isset(	$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'] ) ) {
 
 			$cas_user_datas = $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'];
-		
 			$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
  		
 			$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
@@ -600,7 +612,7 @@ class WP_Cassify_Plugin {
 			// Redirect to the logout CAS end point.
 			$redirect_url = $wp_cassify_base_url .
 				$wp_cassify_logout_servlet . '?' .
-				$this->wp_cassify_default_service_service_parameter_name . '=' . $wp_cassify_redirect_url_after_logout;
+				$this->wp_cassify_default_service_service_parameter_name . '=' . urlencode( $wp_cassify_redirect_url_after_logout );
 		}
 		else {
 			// If user not authenticated by CAS redirect to home_url.
@@ -751,7 +763,8 @@ class WP_Cassify_Plugin {
 			}
 		}
 		else {
-			$wp_cassify_callback_service_url = home_url() . '/';
+			// $wp_cassify_callback_service_url = home_url() . '/';
+			// Do nothing
 		}
 		
 		if ( $gateway_mode ) {
@@ -759,17 +772,17 @@ class WP_Cassify_Plugin {
 		}
 		
 		// Fix bug : slug is duplicate in return url
-		if( is_multisite() ) {
-			$blog_details = get_blog_details();
-			$blog_path = ltrim( $blog_details->path , '/');
-			$duplicate_path_to_remove = rtrim( $blog_path . $blog_path, '/' );
-			$duplicate_path_to_replace = rtrim( $blog_path, '/' );		
+		// if( is_multisite() ) {
+		// 	$blog_details = get_blog_details();
+		// 	$blog_path = ltrim( $blog_details->path , '/');
+		// 	$duplicate_path_to_remove = rtrim( $blog_path . $blog_path, '/' );
+		// 	$duplicate_path_to_replace = rtrim( $blog_path, '/' );		
 			
-			if ( ! empty( $duplicate_path_to_remove ) && strpos( $wp_cassify_callback_service_url, $duplicate_path_to_remove ) !== false ) {
-				$wp_cassify_callback_service_url = str_replace( $duplicate_path_to_remove, $duplicate_path_to_replace , $wp_cassify_callback_service_url );
-			}
-		}
-		// End Fix bug		
+		// 	if ( ! empty( $duplicate_path_to_remove ) && strpos( $wp_cassify_callback_service_url, $duplicate_path_to_remove ) !== false ) {
+		// 		$wp_cassify_callback_service_url = str_replace( $duplicate_path_to_remove, $duplicate_path_to_replace , $wp_cassify_callback_service_url );
+		// 	}
+		// }
+		// End Fix bug
 
 		return $wp_cassify_callback_service_url;
 	}

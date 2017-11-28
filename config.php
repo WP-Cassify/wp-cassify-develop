@@ -101,6 +101,7 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_allow_deny_order',
 	'wp_cassify_autorization_rules',
 	'wp_cassify_user_role_rules',
+	'wp_cassify_user_purge_user_roles_before_applying_rules',
 	'wp_cassify_redirect_url_if_not_allowed',
 	'wp_cassify_redirect_url_white_list',
 	'wp_cassify_user_attributes_mapping_list',
