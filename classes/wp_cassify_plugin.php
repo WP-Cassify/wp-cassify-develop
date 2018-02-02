@@ -332,6 +332,9 @@ class WP_Cassify_Plugin {
 			$wp_cassify_autorization_rules = array();
 		}		
 		
+		$wp_cassify_default_service_ticket_parameter_name = $this->wp_cassify_default_service_ticket_parameter_name;
+		$wp_cassify_default_service_service_parameter_name = $this->wp_cassify_default_service_service_parameter_name;
+		
 		$service_url = $this->wp_cassify_get_service_callback_url();
 		$service_ticket = $this->wp_cassify_get_service_ticket();	
 
@@ -342,15 +345,29 @@ class WP_Cassify_Plugin {
 				
 				$service_validate_url = $wp_cassify_base_url .
 					$wp_cassify_service_validate_servlet . '?' .
-					$this->wp_cassify_default_service_ticket_parameter_name . '=' . $service_ticket . '&' .
-					$this->wp_cassify_default_service_service_parameter_name .'=' . $service_url;				
+					$wp_cassify_default_service_ticket_parameter_name . '=' . $service_ticket . '&' .
+					$wp_cassify_default_service_service_parameter_name .'=' . $service_url;				
+
+				// Define custom plugin filter to override service validate url
+				if( has_filter( 'wp_cassify_override_service_validate_url' ) ) {
+					$service_validate_url = apply_filters( 
+						'wp_cassify_override_service_validate_url',
+						$service_validate_url,
+						$service_ticket,
+						$service_url,						
+						$wp_cassify_base_url, 
+						$wp_cassify_service_validate_servlet,
+						$wp_cassify_default_service_ticket_parameter_name,
+						$wp_cassify_default_service_service_parameter_name
+					);
+				}
 
 				$cas_server_xml_response = WP_Cassify_Utils::wp_cassify_do_ssl_web_request( 
 					$service_validate_url, 
 					$wp_cassify_ssl_cipher_selected,
 					$wp_cassify_ssl_check_certificate
 				);
-			
+				
 				// Dump xml cas server response if debug option is enabled.	
 				if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) == 'enabled' ) {
 			        if ( $this->wp_cassify_network_activated ) {
@@ -365,7 +382,7 @@ class WP_Cassify_Plugin {
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
 
 				if ( empty( $cas_user_datas['cas_user_id'] ) ) {
-					die( 'CAS Authentication failed ! ');
+					die( 'CAS Authentication failed 2 ! ' . $cas_server_xml_response);
 				}
 				else {
 					$this->wp_cassify_set_authenticated( true );

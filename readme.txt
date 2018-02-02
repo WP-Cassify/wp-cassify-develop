@@ -4,8 +4,8 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 4.9
-Stable tag: 2.0.6
+Tested up to: 4.9.2
+Stable tag: 2.0.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -139,6 +139,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 2.0.7 = 
+* Add new filter wp_cassify_override_service_validate_url. Build you own service validate url. Very useful when you're behind loadbalancer.
 
 = 2.0.6 = 
 * Add new feature : Purge user roles before applying rules (syncing wordpress local roles with CAS user attributes)
