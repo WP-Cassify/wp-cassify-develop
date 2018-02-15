@@ -151,7 +151,7 @@ class wp_cassify_rule_solver {
 	 * @param object $wp_cassify_rule_solver_ite	Object used to store rule and solve it. 
 	 */	
 	public function solve_item( &$wp_cassify_rule_solver_item ) {
-	
+
 		switch( $wp_cassify_rule_solver_item->operator ) {
 		
 			case '-EQ' :
@@ -229,7 +229,35 @@ class wp_cassify_rule_solver {
 					$wp_cassify_rule_solver_item->result = 'FALSE';
 				}
 			
-				break;									
+				break;
+
+			case '-IN' :
+			
+				$wp_cassify_rule_solver_item->result = 'FALSE';
+			
+				if ( is_array( $wp_cassify_rule_solver_item->left_operand ) ) {
+					foreach( $wp_cassify_rule_solver_item->left_operand as $_key => $_value ) {
+						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand ) {
+							$wp_cassify_rule_solver_item->result = 'TRUE';	
+						}						
+					}
+				}
+			
+				break;
+
+			case '-NOTIN' :
+			
+				$wp_cassify_rule_solver_item->result = 'TRUE';
+			
+				if ( is_array( $wp_cassify_rule_solver_item->left_operand ) ) {
+					foreach( $wp_cassify_rule_solver_item->left_operand as $_key => $_value ) {
+						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand ) {
+							$wp_cassify_rule_solver_item->result = 'FALSE';	
+						}						
+					}
+				}
+			
+				break;				
 				
 			default :
 			

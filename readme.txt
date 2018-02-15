@@ -5,7 +5,7 @@ Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap,
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 4.9.2
-Stable tag: 2.0.7
+Stable tag: 2.0.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,15 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
+* New Feature ! Add '-IN' and '-NOTIN' operators to process array attributes values returned from CAS.
+When you have :
+`
+	$cas_user_datas['title'] = array( 'Student', 'Professor' );
+`
+Then you can use :
+`
+	(CAS{title} -IN "professor")
+`
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
 * Automatic user creation if not exist in Wordpress database.
@@ -139,6 +148,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 2.0.8 = 
+* New Feature ! Add '-IN' and '-NOTIN' operators to process array attributes values.
 
 = 2.0.7 = 
 * Add new filter wp_cassify_override_service_validate_url. Build you own service validate url. Very useful when you're behind loadbalancer.
