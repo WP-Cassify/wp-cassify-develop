@@ -161,7 +161,9 @@ $wp_cassify_allowed_operators = array(
 	$wp_cassify_operator_prefix . 'STARTWITH',
 	$wp_cassify_operator_prefix . 'ENDWITH',
 	$wp_cassify_operator_prefix . 'AND',
-	$wp_cassify_operator_prefix . 'OR'
+	$wp_cassify_operator_prefix . 'OR',
+	$wp_cassify_operator_prefix . 'IN',
+	$wp_cassify_operator_prefix . 'NOTIN'
 );
 
 $wp_cassify_allowed_parenthesis = array(
