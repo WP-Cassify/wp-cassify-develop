@@ -91,6 +91,7 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_ssl_cipher',
 	'wp_cassify_ssl_check_certificate',
 	'wp_cassify_redirect_url_after_logout',
+	'wp_cassify_override_service_url',
 	'wp_cassify_login_servlet',
 	'wp_cassify_logout_servlet',
 	'wp_cassify_service_validate_servlet',
@@ -100,6 +101,7 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_allow_deny_order',
 	'wp_cassify_autorization_rules',
 	'wp_cassify_user_role_rules',
+	'wp_cassify_user_purge_user_roles_before_applying_rules',
 	'wp_cassify_redirect_url_if_not_allowed',
 	'wp_cassify_redirect_url_white_list',
 	'wp_cassify_user_attributes_mapping_list',
@@ -115,13 +117,16 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_notifications_priority',
 	'wp_cassify_notifications_smtp_from',
 	'wp_cassify_notifications_smtp_to',
-	'wp_cassify_notifications_smtp_subject_prefix',
+	'wp_cassify_notifications_subject_prefix',
 	'wp_cassify_notifications_send_to_test',
 	
 	'wp_cassify_notifications_actions',
 	'wp_cassify_notification_rules',
 	
-	'wp_cassify_expiration_rules'
+	'wp_cassify_expiration_rules',
+	
+	'wp_cassify_xml_response_dump',
+	'wp_cassify_xml_response_value'
 );
 
 $wp_cassify_wordpress_user_meta_list = array(
@@ -138,7 +143,8 @@ $wp_cassify_wordpress_user_meta_list = array(
 );
 
 $wp_cassify_allowed_get_parameters = array(
-	'wp-cassify-message'
+	'wp-cassify-message',
+	'wp_cassify_redirect_to'
 ); 
 
 $wp_cassify_user_error_codes = array(
