@@ -90,11 +90,14 @@ class WP_Cassify_Admin_Page {
 			array( $this, 'wp_cassify_options' )
 		 );
 		 
-		// Call register settings function
-		add_action( 'admin_init', array( $this , 'wp_cassify_register_plugin_settings' ) );
-		
 		// Add javascript needed by metaboxes
 		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );			 
+		 
+		// Call export plugin configurations settings function
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_export_configuration_options_settings' ) );
+
+		// Call import plugin configurations settings function
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_import_configuration_options_settings' ) );
 		 
 		// Register differents metaboxes on admin screen.
 		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this, 'wp_cassify_register_metaboxes' ) );  
@@ -116,10 +119,13 @@ class WP_Cassify_Admin_Page {
 			'wp-cassify.php' , 
 			array( $this, 'wp_cassify_options' )
 		 );
-			
+
 		// Call register settings function
 		add_action( 'admin_init', array( $this , 'wp_cassify_register_plugin_settings' ) );
-		
+
+		// Call register settings function
+		add_action( 'admin_init', array( $this , 'wp_cassify_register_plugin_settings' ) );
+
 		// Add javascript needed by metaboxes
 		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );	
 		
@@ -275,7 +281,25 @@ class WP_Cassify_Admin_Page {
 			$this->wp_cassify_admin_page_hook, 
 			'normal', 
 			'high'
+		);	
+		
+		add_meta_box( 
+			'wp_cassify_metabox_debug_settings', 
+			'Debug Settings', 
+			array( $this, 'wp_cassify_add_metabox_debug_settings' ), 
+			$this->wp_cassify_admin_page_hook, 
+			'normal', 
+			'high'
 		);			
+		
+		add_meta_box( 
+			'wp_cassify_metabox_backup_restore_configuration_settings', 
+			'Backup / Restore configuration settings', 
+			array( $this, 'wp_cassify_add_metabox_backup_restore_configuration_settings' ), 
+			$this->wp_cassify_admin_page_hook, 
+			'normal', 
+			'high'
+		);		
 		
 		// Side boxes
 		add_meta_box( 
@@ -385,55 +409,59 @@ class WP_Cassify_Admin_Page {
 				<th scope="row">CAS Version protocol</th>
 				<td>
 					<select id="wp_cassify_protocol_version" name="wp_cassify_protocol_version" class="post_form">
-						<?php foreach ( $this->wp_cassify_default_protocol_version_values as $wp_cassify_default_protocol_version_key => $wp_cassify_default_protocol_version_value ) { ?>
-							<?php if ( $wp_cassify_default_protocol_version_value == $wp_cassify_default_protocol_version_selected ) { ?>
+						<?php foreach ( $this->wp_cassify_default_protocol_version_values as $wp_cassify_default_protocol_version_key => $wp_cassify_default_protocol_version_value ) : ?>
+							<?php if ( $wp_cassify_default_protocol_version_value == $wp_cassify_default_protocol_version_selected ) : ?>
 								<option value="<?php echo $wp_cassify_default_protocol_version_key; ?>" selected><?php echo $wp_cassify_default_protocol_version_value; ?></option>
-							<?php } else { ?>
+							<?php else : ?>
 								<option value="<?php echo $wp_cassify_default_protocol_version_key; ?>"><?php echo $wp_cassify_default_protocol_version_value; ?></option>
-							<?php } ?>						
-						<?php } ?>
+							<?php endif; ?>						
+						<?php endforeach; ?>
 					</select>
 					<br /><span class="description">Default value : <?php echo $this->wp_cassify_default_protocol_version_values[ '3' ]; ?></span>
 				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Disable CAS Authentication</th>
-				<?php if ( $is_disabled ) { ?>
-				<td><input type="checkbox" id="wp_cassify_disable_authentication" name="wp_cassify_disable_authentication" class="post_form" value="disabled" checked /></td>
-				<?php } else { ?>
-				<td><input type="checkbox" id="wp_cassify_disable_authentication" name="wp_cassify_disable_authentication" class="post_form" value="disabled" /></td>
-				<?php }?>
+				<td>
+					<?php if ( $is_disabled ) : ?>
+						<input type="checkbox" id="wp_cassify_disable_authentication" name="wp_cassify_disable_authentication" class="post_form" value="disabled" checked />
+					<?php else : ?>
+						<input type="checkbox" id="wp_cassify_disable_authentication" name="wp_cassify_disable_authentication" class="post_form" value="disabled" />
+					<?php endif; ?>
+				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Create user if not exist</th>
-				<?php if ( $create_user_if_not_exist ) { ?>
+				<?php if ( $create_user_if_not_exist ) : ?>
 				<td><input type="checkbox" id="wp_cassify_create_user_if_not_exist" name="wp_cassify_create_user_if_not_exist" class="post_form" value="create_user_if_not_exist" checked /><br /><span class="description">Create wordpress user account if not exist.</span></td>
-				<?php } else { ?>
+				<?php else : ?>
 				<td><input type="checkbox" id="wp_cassify_create_user_if_not_exist" name="wp_cassify_create_user_if_not_exist" class="post_form" value="create_user_if_not_exist" /><br /><span class="description">Create wordpress user account if not exist.</span></td>
-				<?php }?>
+				<?php endif; ?>
 			</tr>
 			<tr valign="top">
 				<th scope="row">SSL Cipher used for query CAS Server with HTTPS Webrequest to validate service ticket</th>
 				<td>
 					<select id="wp_cassify_ssl_cipher" name="wp_cassify_ssl_cipher" class="post_form">
-						<?php foreach ( $this->wp_cassify_default_ssl_cipher_values as $cipher_id => $cipher_name ) { ?>
-							<?php if ( $cipher_id == $wp_cassify_ssl_cipher_selected ) { ?>
+						<?php foreach ( $this->wp_cassify_default_ssl_cipher_values as $cipher_id => $cipher_name ) : ?>
+							<?php if ( $cipher_id == $wp_cassify_ssl_cipher_selected ) : ?>
 								<option value="<?php echo $cipher_id; ?>" selected><?php echo $cipher_name; ?></option>
-							<?php } else { ?>
+							<?php else : ?>
 								<option value="<?php echo $cipher_id; ?>"><?php echo $cipher_name; ?></option>
-							<?php } ?>						
-						<?php } ?>
+							<?php endif; ?>						
+						<?php endforeach; ?>
 					</select>
 					<br /><span class="description">Default value : <?php echo $this->wp_cassify_default_ssl_cipher_values[ '0' ]; ?></span>
 				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Enable SSL Certificate Check</th>
-				<?php if ( $is_ssl_check_certificate_enabled ) { ?>
-				<td><input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" checked /></td>
-				<?php } else { ?>
-				<td><input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" /></td>
-				<?php }?>
+				<td>
+					<?php if ( $is_ssl_check_certificate_enabled ) : ?>
+						<input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" checked />
+					<?php else : ?>
+						<input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" />
+					<?php endif; ?>
+				</td>
 			</tr>		
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_general_settings', FALSE, array( 'id' => 'wp_cassify_save_options_general_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>	
@@ -452,7 +480,16 @@ class WP_Cassify_Admin_Page {
 					<input type="text" id="wp_cassify_redirect_url_after_logout" name="wp_cassify_redirect_url_after_logout" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' ) ); ?>" size="40" class="regular-text post_form" />
 					<br /><span class="description">The blog home url is used when this option is not set .Url where the CAS Server redirect after logout. CAS Server must be configured correctly (see : followServiceRedirects option in JASIG documentation) </span>
 				</td>
-			</tr>								
+			</tr>
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_override_service_url">Override service callback url</label></th>
+				<td>
+					<input type="text" id="wp_cassify_override_service_url" name="wp_cassify_override_service_url" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_override_service_url' ) ); ?>" size="40" class="regular-text post_form" />
+					<br /><span class="description">In multisite context, use this option if you want override service url parameter before beeing redirected to CAS. For example : https://my-current-domain.org?site={WP_CASSIFY_CURRENT_SERVICE_URL}. 
+						Then when you try to access to https://blog1.my-current-domain.org/wp-admin/, you will be redirected to https://my-cas-server.org/cas/login?service=https://my-current-domain.org?site=https://blog1.my-current-domain.org/wp-admin/
+					</span>
+				</td>
+			</tr>			
 			<tr valign="top">
 				<td colspan="2">Update servlets name only if you have customized your CAS Server.</td>
 			</tr>
@@ -549,13 +586,13 @@ class WP_Cassify_Admin_Page {
 				<th scope="row">Order Allow/Deny</th>
 				<td>
 					<select name="wp_cassify_allow_deny_order" class="post_form">
-						<?php foreach ( $this->wp_cassify_default_allow_deny_order as $allow_deny_order ) { ?>
-							<?php if ( $allow_deny_order == $wp_cassify_allow_deny_order_selected ) { ?>
+						<?php foreach ( $this->wp_cassify_default_allow_deny_order as $allow_deny_order ) : ?>
+							<?php if ( $allow_deny_order == $wp_cassify_allow_deny_order_selected ) : ?>
 								<option value="<?php echo $allow_deny_order; ?>" selected><?php echo $allow_deny_order; ?></option>
-							<?php } else { ?>
+							<?php else : ?>
 								<option value="<?php echo $allow_deny_order; ?>"><?php echo $allow_deny_order; ?></option>
-							<?php } ?>						
-						<?php } ?>
+							<?php endif; ?>						
+						<?php endforeach; ?>
 					</select>
 					<br /><span class="description">Default value : <?php echo $this->wp_cassify_default_allow_deny_order[0]; ?></span>
 				</td>
@@ -566,14 +603,14 @@ class WP_Cassify_Admin_Page {
 					<select id="wp_cassify_rule_type" name="wp_cassify_rule_type">
 						<option value="ALLOW">Allow</option>
 						<option value="DENY">Deny</option>
-					</select>
+					</select>					
 					<input type="text" id="wp_cassify_autorization_rule" name="wp_cassify_autorization_rules" class="post_form" value="" size="68" class="regular-text" /><br />
 					<select id="wp_cassify_autorization_rules" name="wp_cassify_autorization_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
-					<?php if ( ( is_array( $wp_cassify_autorization_rules_selected )  ) && ( count( $wp_cassify_autorization_rules_selected ) > 0 ) ) { ?>
-					<?php 	foreach ( $wp_cassify_autorization_rules_selected as $wp_cassify_autorization_rules_selected_key => $wp_cassify_autorization_rules_selected_value ) { ?>
-					<?php 		echo "<option value='$wp_cassify_autorization_rules_selected_value'>$wp_cassify_autorization_rules_selected_value</option>"; ?>
-					<?php 	} ?>
-					<?php } ?>
+					<?php if ( ( is_array( $wp_cassify_autorization_rules_selected )  ) && ( count( $wp_cassify_autorization_rules_selected ) > 0 ) ) : ?>
+						<?php foreach ( $wp_cassify_autorization_rules_selected as $wp_cassify_autorization_rules_selected_key => $wp_cassify_autorization_rules_selected_value ) : ?>
+							<?php echo "<option value='$wp_cassify_autorization_rules_selected_value'>$wp_cassify_autorization_rules_selected_value</option>"; ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
 					</select>
 				</td>
 			</tr>
@@ -624,6 +661,15 @@ class WP_Cassify_Admin_Page {
         else {
         	$wp_cassify_user_role_rules_selected = array();
         }
+
+        $wp_cassify_user_purge_user_roles_before_applying_rules = FALSE;
+
+        if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_user_purge_user_roles_before_applying_rules' ) == 'disabled' ) {
+            $wp_cassify_user_purge_user_roles_before_applying_rules = TRUE;
+        }
+        else {
+            $wp_cassify_user_purge_user_roles_before_applying_rules = FALSE;
+        }        
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
@@ -637,18 +683,27 @@ class WP_Cassify_Admin_Page {
 				<td>
 					<select id="wp_cassify_default_user_roles" name="wp_cassify_default_user_roles" class="post_form">
 					<?php $wp_cassify_wordpress_roles = WP_Cassify_Utils::wp_cassify_get_wordpress_roles_names(); ?>
-					<?php foreach ( $wp_cassify_wordpress_roles as $wp_cassify_wordpress_role_key => $wp_cassify_wordpress_role_value ) { ?>
-					<?php 		echo "<option value='$wp_cassify_wordpress_role_key'>$wp_cassify_wordpress_role_value</option>"; ?>
-					<?php } ?>
+					<?php foreach ( $wp_cassify_wordpress_roles as $wp_cassify_wordpress_role_key => $wp_cassify_wordpress_role_value ) : ?>
+						<?php echo "<option value='$wp_cassify_wordpress_role_key'>$wp_cassify_wordpress_role_value</option>"; ?>
+					<?php endforeach; ?>
 					</select>
+					<?php if ( $this->wp_cassify_network_activated ) : ?>
+					<?php $blogs = wp_get_sites();?>	
+					<select id="wp_cassify_user_role_blog_id" name="wp_cassify_user_role_blog_id" class="post_form">
+						<?php echo '<option value="0">(0)&nbsp;ALL BLOGS</option>';	?>		
+						<?php for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) : ?>
+							<?php echo '<option value="' . $blogs[ $i ][ 'blog_id' ] . '">(' . $blogs[ $i ][ 'blog_id' ] . ')&nbsp;' . $blogs[ $i ][ 'domain' ] . $blogs[ $i ][ 'path' ] . '</option>';	?>	
+						<?php endfor; ?>							
+					</select>
+					<?php endif; ?>
 					<input type="text" id="wp_cassify_user_role_rule" name="wp_cassify_user_role_rule" class="post_form" value="" size="60" class="regular-text" /><br />
 					<br />
 					<select id="wp_cassify_user_role_rules" name="wp_cassify_user_role_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
-					<?php if ( ( is_array( $wp_cassify_user_role_rules_selected )  ) && ( count( $wp_cassify_user_role_rules_selected ) > 0 ) ) { ?>
-					<?php 	foreach ( $wp_cassify_user_role_rules_selected as $wp_cassify_user_role_rules_selected_key => $wp_cassify_user_role_rules_selected_value ) { ?>
-					<?php 		echo "<option value='$wp_cassify_user_role_rules_selected_value'>$wp_cassify_user_role_rules_selected_value</option>"; ?>
-					<?php 	} ?>
-					<?php } ?>
+					<?php if ( ( is_array( $wp_cassify_user_role_rules_selected )  ) && ( count( $wp_cassify_user_role_rules_selected ) > 0 ) ) : ?>
+						<?php foreach ( $wp_cassify_user_role_rules_selected as $wp_cassify_user_role_rules_selected_key => $wp_cassify_user_role_rules_selected_value ) : ?>
+							<?php echo "<option value='$wp_cassify_user_role_rules_selected_value'>$wp_cassify_user_role_rules_selected_value</option>"; ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
 					</select>
 				</td>
 			</tr>
@@ -660,6 +715,16 @@ class WP_Cassify_Admin_Page {
 					<?php submit_button( 'Remove Conditional Rule Role', 'secondary', 'wp_cassify_remove_user_role_rule', FALSE, array( 'id' => 'wp_cassify_remove_user_role_rule' ) ); ?>
 				</td>
 			</tr>
+			<tr valign="top">
+				<th scope="row">Purge user roles before applying rules (syncing wordpress local roles with CAS user attributes).</th>
+				<td>
+				<?php if ( $wp_cassify_user_purge_user_roles_before_applying_rules ) : ?>
+					<input type="checkbox" id="wp_cassify_user_purge_user_roles_before_applying_rules" name="wp_cassify_user_purge_user_roles_before_applying_rules" class="post_form" value="disabled" checked />
+				<?php else : ?>
+					<input type="checkbox" id="wp_cassify_user_purge_user_roles_before_applying_rules" name="wp_cassify_user_purge_user_roles_before_applying_rules" class="post_form" value="disabled" />
+				<?php endif; ?>
+				</td>
+			</tr>			
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_users_roles_settings', FALSE, array( 'id' => 'wp_cassify_save_options_users_roles_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
 <?php
@@ -695,9 +760,9 @@ class WP_Cassify_Admin_Page {
 				<th scope="row">Wordpress User Meta</th>
 				<td>
 					<select id="wp_cassify_wordpress_user_meta_list" name="wp_cassify_wordpress_user_meta_list" class="post_form"> ?>
-					<?php foreach ( $this->wp_cassify_wordpress_user_meta_list as $wp_cassify_wordpress_user_meta ) { ?>
-					<?php 		echo "<option value='$wp_cassify_wordpress_user_meta'>$wp_cassify_wordpress_user_meta</option>"; ?>
-					<?php } ?>
+					<?php foreach ( $this->wp_cassify_wordpress_user_meta_list as $wp_cassify_wordpress_user_meta ) : ?>
+						<?php echo "<option value='$wp_cassify_wordpress_user_meta'>$wp_cassify_wordpress_user_meta</option>"; ?>
+					<?php endforeach; ?>
 					</select>
 					<input type="text" id="wp_cassify_custom_user_meta" name="wp_cassify_custom_user_meta" class="post_form" value="" size="40" class="regular-text" />
 				</td>
@@ -713,11 +778,11 @@ class WP_Cassify_Admin_Page {
 				</td>
 				<td>
 					<select id="wp_cassify_user_attributes_mapping_list" name="wp_cassify_user_attributes_mapping_list[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
-					<?php if ( ( is_array( $wp_cassify_user_attributes_mapping_list_selected )  ) && ( count( $wp_cassify_user_attributes_mapping_list_selected ) > 0 ) ) { ?>
-					<?php 	foreach ( $wp_cassify_user_attributes_mapping_list_selected as $wp_cassify_user_attributes_mapping_list_selected_key => $wp_cassify_user_attributes_mapping_list_selected_value ) { ?>
-					<?php 		echo "<option value='$wp_cassify_user_attributes_mapping_list_selected_value'>$wp_cassify_user_attributes_mapping_list_selected_value</option>"; ?>
-					<?php 	} ?>
-					<?php } ?>
+						<?php if ( ( is_array( $wp_cassify_user_attributes_mapping_list_selected )  ) && ( count( $wp_cassify_user_attributes_mapping_list_selected ) > 0 ) ) : ?>
+							<?php foreach ( $wp_cassify_user_attributes_mapping_list_selected as $wp_cassify_user_attributes_mapping_list_selected_key => $wp_cassify_user_attributes_mapping_list_selected_value ) : ?>
+								<?php echo "<option value='$wp_cassify_user_attributes_mapping_list_selected_value'>$wp_cassify_user_attributes_mapping_list_selected_value</option>"; ?>
+							<?php endforeach; ?>
+						<?php endif; ?>
 					</select>
 				</td>
 			</tr>
@@ -781,35 +846,37 @@ class WP_Cassify_Admin_Page {
 				<th scope="row">SMTP port</th>
 				<td>
 					<select id="wp_cassify_notifications_smtp_port" name="wp_cassify_notifications_smtp_port" class="post_form">
-						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_smtp_port' ] as $wp_cassify_default_notifications_smtp_port_key => $wp_cassify_default_notifications_smtp_port_value ) { ?>
-							<?php if ( $wp_cassify_default_notifications_smtp_port_value == $wp_cassify_notifications_smtp_port_selected ) { ?>
+						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_smtp_port' ] as $wp_cassify_default_notifications_smtp_port_key => $wp_cassify_default_notifications_smtp_port_value ) : ?>
+							<?php if ( $wp_cassify_default_notifications_smtp_port_value == $wp_cassify_notifications_smtp_port_selected ) : ?>
 								<option value="<?php echo $wp_cassify_default_notifications_smtp_port_key; ?>" selected><?php echo $wp_cassify_default_notifications_smtp_port_value; ?></option>
-							<?php } else { ?>
+							<?php else : ?>
 								<option value="<?php echo $wp_cassify_default_notifications_smtp_port_key; ?>"><?php echo $wp_cassify_default_notifications_smtp_port_value; ?></option>
-							<?php } ?>						
-						<?php } ?>
+							<?php endif; ?>						
+						<?php endforeach; ?>
 					</select>
 				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">SMTP Authentication</th>
-				<?php if ( $wp_cassify_notifications_smtp_auth_enabled ) { ?>
-				<td><input type="checkbox" id="wp_cassify_notifications_smtp_auth" name="wp_cassify_notifications_smtp_auth" class="post_form" value="enabled" checked /></td>
-				<?php } else { ?>
-				<td><input type="checkbox" id="wp_cassify_notifications_smtp_auth" name="wp_cassify_notifications_smtp_auth" class="post_form" value="enabled" /></td>
-				<?php }?>
+				<td>
+					<?php if ( $wp_cassify_notifications_smtp_auth_enabled ) : ?>
+						<input type="checkbox" id="wp_cassify_notifications_smtp_auth" name="wp_cassify_notifications_smtp_auth" class="post_form" value="enabled" checked />
+					<?php else : ?>
+						<input type="checkbox" id="wp_cassify_notifications_smtp_auth" name="wp_cassify_notifications_smtp_auth" class="post_form" value="enabled" />
+					<?php endif; ?>
+				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">SMTP Authentication type</th>
 				<td>
 					<select id="wp_cassify_notifications_encryption_type" name="wp_cassify_notifications_encryption_type" class="post_form">
-						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_encryption_type' ] as $wp_cassify_default_notifications_encryption_type_key => $wp_cassify_default_notifications_encryption_type_value ) { ?>
-							<?php if ( $wp_cassify_default_notifications_encryption_type_value == $wp_cassify_notifications_encryption_type_selected ) { ?>
+						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_encryption_type' ] as $wp_cassify_default_notifications_encryption_type_key => $wp_cassify_default_notifications_encryption_type_value ) : ?>
+							<?php if ( $wp_cassify_default_notifications_encryption_type_value == $wp_cassify_notifications_encryption_type_selected ) : ?>
 								<option value="<?php echo $wp_cassify_default_notifications_encryption_type_key; ?>" selected><?php echo $wp_cassify_default_notifications_encryption_type_value; ?></option>
-							<?php } else { ?>
+							<?php else : ?>
 								<option value="<?php echo $wp_cassify_default_notifications_encryption_type_key; ?>"><?php echo $wp_cassify_default_notifications_encryption_type_value; ?></option>
-							<?php } ?>						
-						<?php } ?>
+							<?php endif; ?>						
+						<?php endforeach; ?>
 					</select>
 				</td>
 			</tr>			
@@ -842,13 +909,13 @@ class WP_Cassify_Admin_Page {
 				<th scope="row">Priority</th>
 				<td>
 					<select id="wp_cassify_notifications_priority" name="wp_cassify_notifications_priority" class="post_form">
-						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_priority' ] as $wp_cassify_default_notifications_priority_key => $wp_cassify_default_notifications_priority_value ) { ?>
-							<?php if ( $wp_cassify_default_notifications_priority_key == $wp_cassify_notifications_priority_selected ) { ?>
+						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_priority' ] as $wp_cassify_default_notifications_priority_key => $wp_cassify_default_notifications_priority_value ) : ?>
+							<?php if ( $wp_cassify_default_notifications_priority_key == $wp_cassify_notifications_priority_selected ) : ?>
 								<option value="<?php echo $wp_cassify_default_notifications_priority_key; ?>" selected><?php echo $wp_cassify_default_notifications_priority_value; ?></option>
-							<?php } else { ?>
+							<?php else : ?>
 								<option value="<?php echo $wp_cassify_default_notifications_priority_key; ?>"><?php echo $wp_cassify_default_notifications_priority_value; ?></option>
-							<?php } ?>						
-						<?php } ?>
+							<?php endif; ?>						
+						<?php endforeach; ?>
 					</select>
 				</td>
 			</tr>			
@@ -915,18 +982,18 @@ class WP_Cassify_Admin_Page {
 				<th scope="row">Send mail notification if user match criteria</th>
 				<td>
 					<select id="wp_cassify_notifications_actions" name="wp_cassify_notifications_actions" class="post_form">
-						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_actions' ] as $wp_cassify_default_notifications_actions_key => $wp_cassify_default_notifications_actions_value ) { ?>
-								<option value="<?php echo $wp_cassify_default_notifications_actions_key; ?>"><?php echo $wp_cassify_default_notifications_actions_value; ?></option>
-						<?php } ?>
+						<?php foreach ( $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_actions' ] as $wp_cassify_default_notifications_actions_key => $wp_cassify_default_notifications_actions_value ) : ?>
+							<option value="<?php echo $wp_cassify_default_notifications_actions_key; ?>"><?php echo $wp_cassify_default_notifications_actions_value; ?></option>
+						<?php endforeach; ?>
 					</select>
 					<input type="text" id="wp_cassify_notification_rule" name="wp_cassify_notification_rule" class="post_form" value="" size="60" class="regular-text" /><br />
 					<br />
 					<select id="wp_cassify_notification_rules" name="wp_cassify_notification_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
-					<?php if ( ( is_array( $wp_cassify_notification_rules_selected )  ) && ( count( $wp_cassify_notification_rules_selected ) > 0 ) ) { ?>
-					<?php 	foreach ( $wp_cassify_notification_rules_selected as $wp_cassify_notification_rules_selected_key => $wp_cassify_notification_rules_selected_value ) { ?>
-					<?php 		echo "<option value='$wp_cassify_notification_rules_selected_value'>$wp_cassify_notification_rules_selected_value</option>"; ?>
-					<?php 	} ?>
-					<?php } ?>
+						<?php if ( ( is_array( $wp_cassify_notification_rules_selected )  ) && ( count( $wp_cassify_notification_rules_selected ) > 0 ) ) : ?>
+							<?php foreach ( $wp_cassify_notification_rules_selected as $wp_cassify_notification_rules_selected_key => $wp_cassify_notification_rules_selected_value ) : ?>
+								<?php echo "<option value='$wp_cassify_notification_rules_selected_value'>$wp_cassify_notification_rules_selected_value</option>"; ?>
+							<?php endforeach; ?>
+						<?php endif; ?>
 					</select>
 					<br />
 					<span class="description">(*) Theses triggers needs that users attributes presents in notification rule are populated into session to be fired. See "Attributes Extraction Settings" to populate attributes into session.</span>
@@ -988,11 +1055,11 @@ class WP_Cassify_Admin_Page {
 					
 					<br />
 					<select id="wp_cassify_expiration_rules" name="wp_cassify_expiration_rules[]" class="post_form" multiple="multiple" style="height:100px;width:590px" size="10">
-					<?php if ( ( is_array( $wp_cassify_expiration_rules_selected )  ) && ( count( $wp_cassify_expiration_rules_selected ) > 0 ) ) { ?>
-					<?php 	foreach ( $wp_cassify_expiration_rules_selected as $wp_cassify_expiration_rules_selected_key => $wp_cassify_expiration_rules_selected_value ) { ?>
-					<?php 		echo "<option value='$wp_cassify_expiration_rules_selected_value'>$wp_cassify_expiration_rules_selected_value</option>"; ?>
-					<?php 	} ?>
-					<?php } ?>
+						<?php if ( ( is_array( $wp_cassify_expiration_rules_selected )  ) && ( count( $wp_cassify_expiration_rules_selected ) > 0 ) ) : ?>
+							<?php foreach ( $wp_cassify_expiration_rules_selected as $wp_cassify_expiration_rules_selected_key => $wp_cassify_expiration_rules_selected_value ) : ?>
+								<?php echo "<option value='$wp_cassify_expiration_rules_selected_value'>$wp_cassify_expiration_rules_selected_value</option>"; ?>
+							<?php endforeach; ?>
+						<?php endif; ?>
 					</select>
 					<br />
 				</td>
@@ -1008,7 +1075,74 @@ class WP_Cassify_Admin_Page {
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_expirations_rules_settings', FALSE, array( 'id' => 'wp_cassify_save_options_expirations_rules_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
 <?php
-	}		
+	}
+	
+	/**
+	 * Display html output for metabox Debug Settings.
+	 */ 	
+	public function wp_cassify_add_metabox_debug_settings() {
+		
+        $is_enabled = FALSE;
+
+        if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) == 'enabled' ) {
+            $is_enabled = TRUE;
+        }
+        else {
+            $is_enabled = FALSE;
+        }
+?>
+		<table class="optiontable form-table">
+			<tr valign="top">
+				<th scope="row">Dump xml CAS server response</th>
+				<td>
+					<?php if ( $is_enabled ) : ?>
+						<input type="checkbox" id="wp_cassify_xml_response_dump" name="wp_cassify_xml_response_dump" class="post_form" value="enabled" checked />
+					<?php else :?>
+						<input type="checkbox" id="wp_cassify_xml_response_dump" name="wp_cassify_xml_response_dump" class="post_form" value="enabled" />
+					<?php endif; ?>
+				</td>
+			</tr>	
+			<tr valign="top">
+				<th scope="row">Last XML CAS server response</th>
+				<td>
+					<textarea rows="4" cols="50" id="wp_cassify_xml_response_value" name="wp_cassify_xml_response_value" class="post_form" value="" class="regular-text">
+						<?php echo ltrim( esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_value' ) ) ); ?>
+					</textarea>
+				</td>
+			</tr>			
+		</table>
+		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_debug_settings', FALSE, array( 'id' => 'wp_cassify_save_options_debug_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
+<?php
+	}
+	
+	/**
+	 * Display html output for metabox Backup / Restore configuration settings.
+	 */ 	
+	public function wp_cassify_add_metabox_backup_restore_configuration_settings() {
+		
+        $is_enabled = FALSE;
+
+        if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) == 'enabled' ) {
+            $is_enabled = TRUE;
+        }
+        else {
+            $is_enabled = FALSE;
+        }
+?>
+		<table class="optiontable form-table">
+			<tr valign="top">
+				<td><?php submit_button( 'Backup plugin configuration', 'secondary', 'wp_cassify_backup_plugin_options_settings', FALSE, array( 'id' => 'wp_cassify_backup_plugin_options_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?></td>
+				<td><?php submit_button( 'Restore plugin configuration', 'secondary', 'wp_cassify_restore_plugin_options_settings', FALSE, array( 'id' => 'wp_cassify_restore_plugin_options_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?></td>
+			</tr>
+			<tr valign="top">
+				<th scope="row">Import configuration file</th>
+				<td>
+					<input type="file" id="wp_cassify_restore_plugin_options_configuration_settings_file" name="wp_cassify_restore_plugin_options_configuration_settings_file" class="post_form" value="" size="60" /><br />
+				</td>
+			</tr>			
+		</table>
+<?php
+	}	
 	
 	/**
 	 *  Register option into database.
@@ -1035,7 +1169,7 @@ class WP_Cassify_Admin_Page {
 				if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
 					die( 'Security Check !' );
 				}
-
+				
         		// General settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_base_url', FALSE, $this->wp_cassify_network_activated );                        
 				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version', FALSE, $this->wp_cassify_network_activated ); 
@@ -1046,6 +1180,7 @@ class WP_Cassify_Admin_Page {
 
 				// Url settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout', FALSE, $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_override_service_url', FALSE, $this->wp_cassify_network_activated ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet', FALSE, $this->wp_cassify_network_activated ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_logout_servlet', FALSE, $this->wp_cassify_network_activated );
                 
@@ -1077,6 +1212,7 @@ class WP_Cassify_Admin_Page {
                 
                 // User roles rules settings
                 WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_role_rules', $this->wp_cassify_network_activated ); 
+                WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_user_purge_user_roles_before_applying_rules', 'disabled', $this->wp_cassify_network_activated );
                 
                 // User attributes mapping settings
                 WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_user_attributes_mapping_list', $this->wp_cassify_network_activated ); 
@@ -1124,6 +1260,9 @@ class WP_Cassify_Admin_Page {
 				// Expirations rules settings
 				WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_expiration_rules', $this->wp_cassify_network_activated ); 				
 
+				// Debug settings
+				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_xml_response_dump', 'enabled', $this->wp_cassify_network_activated );	
+                
 				// Send test notification message.
 				if (! empty( $_POST['wp_cassify_send_notification_test_message'] ) ){
 					
@@ -1214,10 +1353,18 @@ class WP_Cassify_Admin_Page {
 				<div id="message" class="updated" >Settings saved successfully</div>
 		<?php } ?>
 
-		<form method="post" action="<?php echo $wp_cassify_post_action_url; ?>">
+		<form method="post" action="<?php echo $wp_cassify_post_action_url; ?>" enctype="multipart/form-data">
 			<?php wp_nonce_field( 'admin_form', 'wp_cassify_admin_form' ); // Set security token ?>
 			<?php settings_fields( 'wp-cassify-settings-group' ); ?>
 			<?php do_settings_sections( 'wp-cassify-settings-group' ); ?>
+			
+			<?php if ( $this->wp_cassify_network_activated ) : ?>
+				<input type="hidden" id="wp_cassify_network_activated" name="wp_cassify_network_activated" value="enabled" />
+			<?php else : ?>
+				<input type="hidden" id="wp_cassify_network_activated" name="wp_cassify_network_activated" value="disabled" />
+			<?php endif; ?>
+
+			
 			<div id="poststuff" class="metabox-holder columns-2">
 				<div id="side-info-column" class="inner-sidebar">
 					<?php do_meta_boxes( $this->wp_cassify_admin_page_hook, 'side', array() ); ?>
@@ -1232,6 +1379,89 @@ class WP_Cassify_Admin_Page {
 		</div>
 		<?php
 	}
+	
+	/**
+	 * Export plugin configuration options settings
+	 */ 
+	public function wp_cassify_export_configuration_options_settings() {
+
+
+        if ( !current_user_can( 'manage_options' ) )  {
+            wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+        }
+
+        if ( $this->wp_cassify_is_options_updated() ) {    
+    	
+    		// Check security tocken
+			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
+				die( 'Security Check 1 !' );
+			}
+			
+			if (! empty( $_POST['wp_cassify_backup_plugin_options_settings'] ) ){
+        	
+	        	$wp_cassify_backup_plugin_options_settings = WP_Cassify_Utils::wp_cassify_export_configuration_options( false );
+	
+				nocache_headers();
+				header( 'Content-Type: application/json; charset=utf-8' );
+				header( 'Content-Disposition: attachment; filename=wpcassify-settings-export-' . date( 'm-d-Y' ) . '.json' );
+				header( "Expires: 0" );
+				
+				echo json_encode( $wp_cassify_backup_plugin_options_settings );
+				exit;         	
+			}
+    	}
+	}	
+
+	/**
+	 * Import plugin configuration options settings
+	 */ 
+	public function wp_cassify_import_configuration_options_settings() {
+
+
+        if ( !current_user_can( 'manage_options' ) )  {
+            wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+        }
+
+        if ( $this->wp_cassify_is_options_updated() ) {    
+    	
+    		// Check security tocken
+			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
+				die( 'Security Check 2 !' );
+			}
+
+			if (! empty( $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) ) {
+
+				//$extension = end( explode( '.', $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) );
+				$extension = explode( '.', $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] );
+				$extension = end( $extension );
+
+				if( $extension != 'json' ) {
+					wp_die( __( 'Please upload a valid .json file' ) );
+				}
+				
+				$import_file = $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['tmp_name'];
+				
+				if( empty( $import_file ) ) {
+					wp_die( __( 'Please upload a file to import' ) );
+				}
+				
+				$wp_cassify_import_configuration_options = (array) json_decode( file_get_contents( $import_file ) );
+				
+				WP_Cassify_Utils::wp_cassify_import_configuration_options(
+					$wp_cassify_import_configuration_options, 
+					$this->wp_cassify_network_activated
+				);
+							
+				if ( $this->wp_cassify_network_activated ) {
+					wp_safe_redirect( admin_url( $this->wp_cassify_multisite_admin_page_slug . '?page=wp-cassify.php' ) ); exit;
+				}
+				else {
+					wp_safe_redirect( admin_url( $this->wp_cassify_admin_page_slug . '?page=wp-cassify.php' ) ); exit;
+				}
+			}
+    	}
+	}
+
 	
 	/**
 	 * Detect if form has been submitted.
