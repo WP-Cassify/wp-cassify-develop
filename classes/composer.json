@@ -1,0 +1,6 @@
+{
+    "require": {
+    	"egulias/email-validator": "~2.1",
+        "swiftmailer/swiftmailer": "^6.0.2"
+    }
+}
