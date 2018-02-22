@@ -623,7 +623,7 @@ class WP_Cassify_Utils {
 	public static function wp_cassify_sendmail( $from, $to, $subject, $body, $priority, $smtp_host, $smtp_port = 25, $smtp_auth = false, $smtp_encryption_type, $smtp_user, $smtp_password ) {
 		
 		// Create the Transport
-		$transport = \Swift_SmtpTransport::newInstance( $smtp_host, $smtp_port )
+		$transport = ( new \Swift_SmtpTransport( $smtp_host, $smtp_port ) )
 			->setUsername( $smtp_user )
 			->setPassword( $smtp_password );
 			
@@ -633,11 +633,11 @@ class WP_Cassify_Utils {
 		}
 		
 		// Create the Mailer using your created Transport
-		$mailer = \Swift_Mailer::newInstance( $transport );			
+		$mailer =  new \Swift_Mailer( $transport );			
 
 		// Create the message
-		$message = \Swift_Message::newInstance()
-			->setSubject( $subject )
+		$message = ( new \Swift_Message( $subject  ) )
+			// ->setSubject( $subject )
 			->setFrom( array( $from => $from ) )
 			->setTo( array( $to ) )
 			->setBody( $body )
