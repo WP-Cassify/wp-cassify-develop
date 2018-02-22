@@ -150,6 +150,9 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
 
+= 2.1.1 = 
+* Fix missing file autoload_static.php
+
 = 2.1.0 = 
 * Fix SVN error
 
