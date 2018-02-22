@@ -150,6 +150,9 @@ Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
 
+= 2.1.0 = 
+* Fix SVN error
+
 = 2.0.9 = 
 * Upgrade SwiftMailer library to 6.0.2.
 
