@@ -77,6 +77,27 @@ class WP_Cassify_Admin_Page {
             add_action( 'admin_menu', array( $this , 'wp_cassify_create_menu' ) );
         }
 	}	
+
+	/**
+	 *  Multisite and single-site add_action statements
+	 */                 
+	 public function wp_cassify_add_admin_actions() {
+	 	
+		// Add javascript needed by metaboxes
+		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );			 
+		 
+		// Call export plugin configurations settings function
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_export_configuration_options_settings' ) );
+                
+                // Call import plugin configurations settings function
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_import_configuration_options_settings' ) );
+		 
+		// Register differents metaboxes on admin screen.
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this, 'wp_cassify_register_metaboxes' ) );  
+		
+		// Add custom javascript functions specific to this plugin
+		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_add_custom_js' ) );
+	}
 	
 	/**
 	 *  Add admin menu options
@@ -90,20 +111,8 @@ class WP_Cassify_Admin_Page {
 			array( $this, 'wp_cassify_options' )
 		 );
 		 
-		// Add javascript needed by metaboxes
-		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );			 
-		 
-		// Call export plugin configurations settings function
-		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_export_configuration_options_settings' ) );
-
-		// Call import plugin configurations settings function
-		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_import_configuration_options_settings' ) );
-		 
-		// Register differents metaboxes on admin screen.
-		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this, 'wp_cassify_register_metaboxes' ) );  
-		
-		// Add custom javascript functions specific to this plugin
-		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_add_custom_js' ) );
+		// Load common actions to single and multi-sites configurations
+		$this->wp_cassify_add_admin_actions();
 	}
 	
 	/**
@@ -125,15 +134,9 @@ class WP_Cassify_Admin_Page {
 
 		// Call register settings function
 		add_action( 'admin_init', array( $this , 'wp_cassify_register_plugin_settings' ) );
-
-		// Add javascript needed by metaboxes
-		add_action( 'admin_init', array( $this , 'wp_cassify_add_metaboxes_js' ) );	
 		
-		// Register differents metaboxes on admin screen.
-		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this, 'wp_cassify_register_metaboxes' ) ); 	
-		
-		// Add custom javascript functions specific to this plugin
-		add_action( 'load-'. $this->wp_cassify_admin_page_hook, array( $this , 'wp_cassify_add_custom_js' ) );	
+		// Load common actions to single and multi-sites configurations
+		$this->wp_cassify_add_admin_actions();
 	}
 	
 	/**
@@ -326,7 +329,7 @@ class WP_Cassify_Admin_Page {
 	 */ 
 	public function wp_cassify_add_metabox_plugin_brand() {
 ?>
-	<div class="wp_cassify_brand"><img src="<?php echo $this->wp_cassify_plugin_directory . '/images/wp-cassify-logo.png'; ?>" /></div>
+	<div class="wp_cassify_brand"><img src="<?php echo $this->wp_cassify_plugin_directory . 'images/wp-cassify-logo.png'; ?>" /></div>
 <?php					
 	}	
 	
