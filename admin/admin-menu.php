@@ -326,7 +326,7 @@ class WP_Cassify_Admin_Page {
 	 */ 
 	public function wp_cassify_add_metabox_plugin_brand() {
 ?>
-	<div class="wp_cassify_brand"><img src="<?php echo $this->wp_cassify_plugin_directory . '/images/wp-cassify-logo.png'; ?>" /></div>
+	<div class="wp_cassify_brand"><img src="<?php echo $this->wp_cassify_plugin_directory . 'images/wp-cassify-logo.png'; ?>" /></div>
 <?php					
 	}	
 	
