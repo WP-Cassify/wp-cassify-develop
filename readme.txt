@@ -4,8 +4,8 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 4.9.2
-Stable tag: 2.1.3
+Tested up to: 4.9.6
+Stable tag: 2.1.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -149,6 +149,15 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 2.1.7 = 
+* Adding meta require PHP version. Fixing error : fix restore configuration filein multi-site configuration. (Thanks to buddywhatshisname)
+
+= 2.1.6 = 
+* Fixing error : fix backup file download in multi-site configuration. (Thanks to buddywhatshisname)
+
+= 2.1.5 = 
+* Fixing error : removing extra slash from logo url
 
 = 2.1.1 = 
 * Fix missing file autoload_static.php

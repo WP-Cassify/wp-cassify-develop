@@ -561,17 +561,20 @@ class WP_Cassify_Utils {
 	
 		$wp_cassify_export_configuration_options = array();
 		$configuration_options = null;
-	
-	    if ( $wp_cassify_network_activated ) {
-			$configuration_options = $wpdb->get_results( "SELECT `meta_key`, `meta_value` FROM {$wpdb->prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%'" );
-	    }
-	    else {
-			$configuration_options = $wpdb->get_results( "SELECT `option_name`, `option_value` FROM {$wpdb->prefix}options WHERE `option_name` LIKE 'wp_cassify%'" );
-	    }
-	    
-	    foreach( $configuration_options as $configuration_option ) {
-	    	$wp_cassify_export_configuration_options[ $configuration_option->option_name ] = $configuration_option->option_value;
-	    }
+
+		if ( $wp_cassify_network_activated ) {
+			$configuration_options = $wpdb->get_results( "SELECT `meta_key`, `meta_value` FROM {$wpdb->prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%' AND `meta_key` != 'wp_cassify_xml_response_value'" );
+			
+			foreach ( $configuration_options as $configuration_option ) {
+				$wp_cassify_export_configuration_options[$configuration_option->meta_key] = $configuration_option->meta_value;
+			}
+		} else {
+			$configuration_options = $wpdb->get_results( "SELECT `option_name`, `option_value` FROM {$wpdb->prefix}options WHERE `option_name` LIKE 'wp_cassify%' AND `meta_key` != 'wp_cassify_xml_response_value'" );
+			
+			foreach ( $configuration_options as $configuration_option ) {
+				$wp_cassify_export_configuration_options[$configuration_option->option_name] = $configuration_option->option_value;
+			}
+		}	    
 		
 		return $wp_cassify_export_configuration_options;
 	}
