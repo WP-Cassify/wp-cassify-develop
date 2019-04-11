@@ -241,12 +241,12 @@ class WP_Cassify_Utils {
 			wp_set_current_user( $user->ID, $user->user_login );
 			wp_set_auth_cookie( $user->ID );
 			
-			do_action( 'wp_login', $user->user_login );
+			do_action( 'wp_login', $user->user_login, $user );
 		}
 		else {
-			die( 'User account does not exists in Wordpress database !');
+			die( 'User account does not exists in WordPress database !');
 		}
-	}
+	}	
 	
 	/**
 	 * Create wordpress user account if not exist.
