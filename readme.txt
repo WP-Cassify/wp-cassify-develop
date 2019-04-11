@@ -4,8 +4,9 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 4.9.6
-Stable tag: 2.1.7
+Tested up to: 5.0.3
+Requires PHP: 7.0
+Stable tag: 2.1.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,7 +26,7 @@ https://wpcassify.wordpress.com/
 = Requirements =
 
 * Require at least PHP version 5.3.10
-* Require at least PHP CURL package (for example, 'apt-get install php5-curl' if you're using php5 on debian systems).
+* Require at least PHP CURL package
 
 = Features included =
 
@@ -149,6 +150,13 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 2.1.9 = 
+* Fix error with recent version of JetPack.
+
+= 2.1.8 = 
+* Add support for Pantheon environments. Thanks to Jesse Loesberg.
+* Fix error on uninstall if table does not exists
 
 = 2.1.7 = 
 * Adding meta require PHP version. Fixing error : fix restore configuration filein multi-site configuration. (Thanks to buddywhatshisname)

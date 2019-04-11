@@ -64,18 +64,35 @@ class WP_Cassify_Utils {
 		
 		$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ) ? 'https://' : 'http://';
 		
+		// // If cassified application is hosted behind reverse proxy.
+		// if ( isset( $_SERVER[ 'HTTP_X_FORWARDED_HOST' ] ) ) {
+		// 	$current_url .= $_SERVER[ 'HTTP_X_FORWARDED_HOST' ];
+		// }
+		// else {
+		// 	$current_url .= $_SERVER[ 'SERVER_NAME' ];
+		// }
+		
+		// if( ( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
+		// 	( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
+		// 	$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
+		// } 
+
 		// If cassified application is hosted behind reverse proxy.
 		if ( isset( $_SERVER[ 'HTTP_X_FORWARDED_HOST' ] ) ) {
 			$current_url .= $_SERVER[ 'HTTP_X_FORWARDED_HOST' ];
+		} elseif (isset( $_ENV['PANTHEON_SITE'] )) { // Are we on Pantheon? Use HTTP_HOST
+			$current_url .= $_SERVER['HTTP_HOST'];
 		}
 		else {
 			$current_url .= $_SERVER[ 'SERVER_NAME' ];
 		}
-		
-		if( ( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
-			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
+
+		if( ( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) &&
+			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) &&
+			!isset( $_ENV['PANTHEON_SITE'] ) ) // Don't use the port if we're on Pantheon
+		  {
 			$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
-		} 
+		}
 
 		// Specific use case configuration for Wordpress hosted on nginx behind AWS loadbalancer.
 		if ( 
@@ -224,12 +241,12 @@ class WP_Cassify_Utils {
 			wp_set_current_user( $user->ID, $user->user_login );
 			wp_set_auth_cookie( $user->ID );
 			
-			do_action( 'wp_login', $user->user_login );
+			do_action( 'wp_login', $user->user_login, $user );
 		}
 		else {
-			die( 'User account does not exists in Wordpress database !');
+			die( 'User account does not exists in WordPress database !');
 		}
-	}
+	}	
 	
 	/**
 	 * Create wordpress user account if not exist.
