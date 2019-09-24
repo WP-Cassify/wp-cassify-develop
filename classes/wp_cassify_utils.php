@@ -515,25 +515,14 @@ class WP_Cassify_Utils {
 	 * @return 	string	$encrypted_string	Text encrypted
 	 */ 
 	public static function wp_cassify_simple_encrypt( $text, $salt = "wp_cassify" ) {
+
+		$cipher				= "AES-128-CBC"; 
+		$ivlen				= openssl_cipher_iv_length( $cipher );
+		$iv					= openssl_random_pseudo_bytes( $ivlen );
+		$ciphertext_raw 	= openssl_encrypt( $text, $cipher, $key, $options=OPENSSL_RAW_DATA, $iv );
+		$hmac 				= hash_hmac( 'sha256', $ciphertext_raw, $key, $as_binary=true );
 		
-		if (! function_exists ( 'mcrypt_encrypt' ) ) {
-			die( 'Please install php mcrypt library !');
-		}		
-		
-		$encrypted_string = trim( 
-			base64_encode( 
-				mcrypt_encrypt( 
-					MCRYPT_RIJNDAEL_256, 
-					$salt, 
-					$text, 
-					MCRYPT_MODE_ECB, 
-					mcrypt_create_iv( 
-						mcrypt_get_iv_size( MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB ), 
-						MCRYPT_RAND 
-					) 
-				)
-			)
-		);
+		$encrypted_string 	= base64_encode( $iv.$hmac.$ciphertext_raw );
 		
 		return $encrypted_string;
 	}
@@ -545,26 +534,22 @@ class WP_Cassify_Utils {
 	 * @return 	string	$decrypted_string	Text decrypted
 	 */ 
 	public static function wp_cassify_simple_decrypt( $text, $salt = "wp_cassify_12345" ) {
+
+		$cipher				= "AES-128-CBC"; 
+		$c 					= base64_decode( $text );
+		$ivlen 				= openssl_cipher_iv_length( $cipher );
+		$iv 				= substr( $c, 0, $ivlen );
+		$hmac 				= substr( $c, $ivlen, $sha2len=32 );
+		$ciphertext_raw 	= substr( $c, $ivlen+$sha2len );
+		$decrypted_string 	= openssl_decrypt($ciphertext_raw, $cipher, $key, $options=OPENSSL_RAW_DATA, $iv );
+		$calcmac 			= hash_hmac( 'sha256', $ciphertext_raw, $key, $as_binary=true );
 		
-		if (! function_exists ( 'mcrypt_decrypt' ) ) {
-			die( 'Please install php mcrypt library !');
+		if ( hash_equals( $hmac, $calcmac ) ) {//PHP 5.6+ timing attack safe comparison
+		    return $decrypted_string;
 		}
-		
-		$decrypted_string = mcrypt_decrypt(
-			MCRYPT_RIJNDAEL_256, 
-			$salt, 
-			base64_decode( $text ), 
-			MCRYPT_MODE_ECB, 
-			mcrypt_create_iv( 
-				mcrypt_get_iv_size( 
-					MCRYPT_RIJNDAEL_256, 
-					MCRYPT_MODE_ECB
-				), 
-				MCRYPT_RAND
-			)
-		);
-		
-		return $decrypted_string;
+		else {
+			return "";
+		}
 	}    
 
     /**
@@ -642,37 +627,39 @@ class WP_Cassify_Utils {
 	 */ 
 	public static function wp_cassify_sendmail( $from, $to, $subject, $body, $priority, $smtp_host, $smtp_port = 25, $smtp_auth = false, $smtp_encryption_type, $smtp_user, $smtp_password ) {
 		
-		// Create the Transport
-		$transport = ( new \Swift_SmtpTransport( $smtp_host, $smtp_port ) )
-			->setUsername( $smtp_user )
-			->setPassword( $smtp_password );
-			
-		if ( $smtp_auth == TRUE ) {
-			$transport->setEncryption( $smtp_encryption_type );
-			// $transport->setStreamOptions( array( $smtp_encryption_type => array( 'allow_self_signed' => true, 'verify_peer' => false ) ) );
+		// Initialize phpmailer class
+		global $phpmailer;
+		
+		// (Re)create it, if it's gone missing
+		if ( ! ( $phpmailer instanceof \PHPMailer ) ) {
+		    require_once ABSPATH . WPINC . '/class-phpmailer.php';
+		    require_once ABSPATH . WPINC . '/class-smtp.php';
 		}
 		
-		// Create the Mailer using your created Transport
-		$mailer =  new \Swift_Mailer( $transport );			
+		$phpmailer = new \PHPMailer;
+		
+		// SMTP configuration
+		$phpmailer->isSMTP();                    
+		$phpmailer->Host 		= $smtp_host;
+		$phpmailer->SMTPAuth 	= true;
+		$phpmailer->Username 	= $smtp_user;
+		$phpmailer->Password 	= $smtp_password;
+		$phpmailer->SMTPSecure 	= $smtp_encryption_type;
+		$phpmailer->Port 		= $smtp_port;		
+		$phpmailer->CharSet 	= "UTF-8";		
+		$phpmailer->Subject 	= $subject;
+		$phpmailer->Body    	= $body;
 
-		// Create the message
-		$message = ( new \Swift_Message( $subject  ) )
-			// ->setSubject( $subject )
-			->setFrom( array( $from => $from ) )
-			->setTo( array( $to ) )
-			->setBody( $body )
-			->setContentType( 'text/html; charset=UTF-8')
-			->setReturnPath( $from )
-			->setPriority( $priority );
-			
-		// Send the message
-		if (! $mailer->send( $message, $failures ) ) {
-			$send_result = $failures;
+		$phpmailer->setFrom( $from );
+		$phpmailer->addAddress( $to );		
+
+		if( ! $phpmailer->send() ) {
+		    $send_result =  $phpmailer->ErrorInfo;
 		}
 		else {
-			$send_result = TRUE;
+		    $send_result =  true;
 		}
-		
+
 		return $send_result;
 	}
 }
