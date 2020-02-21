@@ -399,7 +399,7 @@ class WP_Cassify_Admin_Page {
         }
         else {
             $is_ssl_check_certificate_enabled = FALSE;
-        }		
+        }	
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
@@ -466,7 +466,22 @@ class WP_Cassify_Admin_Page {
 						<input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" />
 					<?php endif; ?>
 				</td>
-			</tr>		
+			</tr>
+			<tr valign="top">
+				<th scope="row">cURL extra-options</th><td></td>
+			</tr>
+			<tr valign="top">
+				<td><label>CURLOPT_CAINFO - path to Certificate Authority (CA) bundle</label></td>
+				<td>
+					<input type="text" id="wp_cassify_curlopt_cainfo" name="wp_cassify_curlopt_cainfo" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_cainfo' ) ); ?>" size="40" class="regular-text post_form" />
+				</td>
+			</tr>
+			<tr valign="top">
+				<td><label>CURLOPT_CAPATH - specify directory holding CA certificates</label></td>
+				<td>
+					<input type="text" id="wp_cassify_curlopt_capath" name="wp_cassify_curlopt_capath" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_capath' ) ); ?>" size="40" class="regular-text post_form" />
+				</td>				
+			</tr>			
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_general_settings', FALSE, array( 'id' => 'wp_cassify_save_options_general_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>	
 <?php		
@@ -1185,6 +1200,8 @@ class WP_Cassify_Admin_Page {
                 WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist', $this->wp_cassify_network_activated );	
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_ssl_cipher', TRUE, $this->wp_cassify_network_activated );
                 WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_ssl_check_certificate', 'enabled', $this->wp_cassify_network_activated );
+				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_curlopt_cainfo', FALSE, $this->wp_cassify_network_activated );
+				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_curlopt_capath', FALSE, $this->wp_cassify_network_activated );
 
 				// Url settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout', FALSE, $this->wp_cassify_network_activated ); 

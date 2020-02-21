@@ -295,8 +295,8 @@ class wp_cassify_rule_solver {
 	private function check_if_no_error() {
 	
 		$no_error = TRUE;
-	
-		if ( ( is_array( $this->wp_cassify_rule_solver_item_array ) ) && ( count( $this->wp_cassify_rule_solver_item_array > 0 ) ) ) {
+
+		if ( ( is_array( $this->wp_cassify_rule_solver_item_array ) ) && ( count( $this->wp_cassify_rule_solver_item_array ) > 0 ) ) {
 			foreach ($this->wp_cassify_rule_solver_item_array as $wp_cassify_rule_solver_item) {
 				if ( $wp_cassify_rule_solver_item->error == 'TRUE' ) {
 					$no_error = FALSE;
