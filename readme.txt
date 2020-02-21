@@ -4,9 +4,9 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 5.2.3
+Tested up to: 5.3.2
 Requires PHP: 7.0
-Stable tag: 2.2
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,7 +25,7 @@ https://wpcassify.wordpress.com/
 
 = Requirements =
 
-* Require at least PHP version 5.3.10
+* Require at least PHP version 7.0
 * Require at least PHP CURL package
 
 = Features included =
@@ -150,6 +150,12 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 2.2.1 =
+* Fix incorrect PHP version requirement, thanks to olhovsky.
+* Fix PHP7 warnings, thanks to vbonamy.
+* Fix serviceUrl with parameters, thanks to franck86
+* Add new parameter settings for cURL : CA_PATH, CA_INFO, thanks to Basile
 
 = 2.2 = 
 * Replace SwiftMailer by native wordpress mailing library PHPMailer. Replace usage of deprecated MCrypt library by openssl. Somes bug fixes.

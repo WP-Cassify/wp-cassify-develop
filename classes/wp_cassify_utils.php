@@ -5,21 +5,23 @@ class WP_Cassify_Utils {
 
 	/**
 	 * Perform an SSL web request to retrieve xml response containing cas-user id and cas-user attributes.
-	 * @param 	string $url							Http url targeted by webrequest.
-	 * @param 	string $ssl_cipher					Cipher used to process webrequest on https.
-	 * @param 	string $ssl_check_certificate		Disable ssl certificate check.
+	 * @param 	string	$url						Http url targeted by webrequest.
+	 * @param 	string	$ssl_cipher					Cipher used to process webrequest on https.
+	 * @param 	string 	$ssl_check_certificate		Disable ssl certificate check.
+	 * @param	string	$ca_cainfo					Path to Certificate Authority (CA) bundle
+	 * @param	string	$ca_capath					Specify directory holding CA certificates
+	 * 
 	 * @return 	string $response					HTTP response received from target.
 	 */ 
-	public static function wp_cassify_do_ssl_web_request( $url, $ssl_cipher, $ssl_check_certificate = 'disabled' ) {
+	public static function wp_cassify_do_ssl_web_request( 
+		$url, 
+		$ssl_cipher, 
+		$ssl_check_certificate = 'disabled', 
+		$curlopt_cainfo = '',
+		$curlopt_capath = '' ) {
 		
 		if (! function_exists ( 'curl_init' ) ) {
 			die( 'Please install php cURL library !');
-		}
-
-		$curlopt_ssl_verify_peer = 0;
-		
-		if ( $ssl_check_certificate == 'enabled' ) {
-			$curlopt_ssl_verify_peer = 1;
 		}
 
 		$ch = curl_init();
@@ -27,8 +29,17 @@ class WP_Cassify_Utils {
 		curl_setopt( $ch, CURLOPT_HEADER, false );
 		curl_setopt( $ch, CURLOPT_URL, $url ) ;
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 2);
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, $curlopt_ssl_verify_peer );
+		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 2 );
+		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, ( ( $ssl_check_certificate == 'enabled' ) ? 1 : 0 ) );
+
+		if ( $ssl_check_certificate == 'enabled' ) {
+			if (! empty( $curlopt_cainfo ) ) {
+				curl_setopt( $ch, CURLOPT_CAINFO, $curlopt_cainfo );
+			}
+			if (! empty( $curlopt_capath ) ) {
+				curl_setopt( $ch, CURLOPT_CAPATH, $curlopt_capath );
+			}
+		}
 		
 		//curl_setopt( $ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13' );
 		curl_setopt( $ch, CURLOPT_SSLVERSION, $ssl_cipher );
