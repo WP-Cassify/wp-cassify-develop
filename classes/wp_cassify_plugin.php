@@ -344,9 +344,9 @@ class WP_Cassify_Plugin {
 			if (! empty( $service_ticket ) ) {
 				
 				$service_validate_url = $wp_cassify_base_url .
-					$wp_cassify_service_validate_servlet . '?' .
-					$wp_cassify_default_service_ticket_parameter_name . '=' . $service_ticket . '&' .
-					$wp_cassify_default_service_service_parameter_name .'=' . $service_url;				
+                    $wp_cassify_service_validate_servlet . '?' .
+                    $wp_cassify_default_service_ticket_parameter_name . '=' . $service_ticket . '&' .
+                    $wp_cassify_default_service_service_parameter_name .'=' . urlencode( $service_url );					
 
 				// Define custom plugin filter to override service validate url
 				if( has_filter( 'wp_cassify_override_service_validate_url' ) ) {
@@ -365,7 +365,9 @@ class WP_Cassify_Plugin {
 				$cas_server_xml_response = WP_Cassify_Utils::wp_cassify_do_ssl_web_request( 
 					$service_validate_url, 
 					$wp_cassify_ssl_cipher_selected,
-					$wp_cassify_ssl_check_certificate
+					$wp_cassify_ssl_check_certificate,
+					esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_cainfo' ) ),
+					esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_capath' ) )
 				);
 				
 				// Dump xml cas server response if debug option is enabled.	
