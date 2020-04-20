@@ -4,9 +4,9 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 5.3.2
+Tested up to: 5.4
 Requires PHP: 7.0
-Stable tag: 2.2.1
+Stable tag: 2.2.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,10 +14,13 @@ The plugin is a JASIG CAS Client. It performs CAS authentication and autorizatio
 
 == Description ==
 
+If you're happy with this plugin :
+As a reward for my efforts, I would like to receive T-shirts (or other goodies) as gifts from the universities or companies that use it. 
+My size is L. Best regards.
+
 This JASIG CAS authentication plugin has no phpCas library dependency. This is not only an authentication plugin. 
 You can build custom authorization rules according to cas user attributes populated. If user don't exist in Wordpress 
-database, it can be created automatically. There are many features. You can customize everything : CAS servlets URL, 
-XPath Query to parse cas server xml response, user attributes you want to populate.
+database, it can be created automatically. There are many features. You can customize everything.
 
 = Website =
 
@@ -30,6 +33,13 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
+* NEW FEATURES !!!
+* SLO (Single Log Out) support (thanks to dedotombo and me)
+* Adding NCONTAINS operator (thanks to blandman)
+* Fix bug on Gateway mode (autologin) (thanks to dedotombo again). Now it's now necessary to hack theme files to fire it.
+* Adding option logout on authentication failure to not disturb users
+* Initialize PHP session at a later stage (on wp_loaded not on init)
+* Adding some customs hooks and filters.
 
 * Tested with CAS Server version 4.1.4
 * Compatible with CAS Protocol version 2 and 3
@@ -86,22 +96,7 @@ https://wpcassify.wordpress.com/
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
 * Custom shortcode to generate CAS login/logout link into your blog. (See online documentation)
 * Debug settings, dump last xml cas server response.
-* Detect if user has already authenticated by CAS from your public pages and perform auto-login. Include this in 
-your index.php or in another template file inside your theme (It use CAS gateway mode) :
-`
-if (! isset( $_GET['wp_cassify_bypass'] ) ) {
-    if (! is_user_logged_in() ) {
-            if ( isset($GLOBALS['wp-cassify']) ) {
-                    $GLOBALS['wp-cassify']->wp_cassify_check_authentication();
-            }
-    }
-    else if (! is_user_member_of_blog() ) {
-            if ( isset($GLOBALS['wp-cassify']) ) {
-                    $GLOBALS['wp-cassify']->wp_cassify_check_authentication();
-            }
-    }
-}
-`
+* Detect if user has already authenticated by CAS from your public pages and perform auto-login with gateway mode
 * Add '-IN' and '-NOTIN' operators to process array attributes values returned from CAS.
 When you have :
 `
@@ -150,6 +145,13 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 Contact me at aa_francois@yahoo.fr and i try answer to your question.
 
 == Changelog ==
+
+= 2.2.2 =
+* SLO (Single Log Out) support (thanks to dedotombo and me)
+* Adding NCONTAINS operator (thanks to blandman)
+* Fix bug on Gateway mode (autologin) (thanks to dedotombo again). Now it's now necessary to hack theme files to fire it.
+* Adding option logout on authentication failure to not disturb users
+* Initialize PHP session at a later stage (on wp_loaded not on init)
 
 = 2.2.1 =
 * Fix incorrect PHP version requirement, thanks to olhovsky.

@@ -121,7 +121,8 @@ $GLOBALS['wp-cassify']->init_parameters(
 		$wp_cassify_allowed_parenthesis,
 		$wp_cassify_allowed_get_parameters,
 		$wp_cassify_error_messages,
-		$wp_cassify_user_error_codes
+		$wp_cassify_user_error_codes,
+		$wp_cassify_service_ticket_salt
 );
 
 $wp_cassify_shortcodes = new \wp_cassify\WP_Cassify_Shortcodes();
