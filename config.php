@@ -11,6 +11,7 @@ $wp_cassify_default_wordpress_blog_http_port = '80';
 $wp_cassify_default_wordpress_blog_https_port = '443';
 $wp_cassify_default_xpath_query_to_extact_cas_user = '//cas:serviceResponse/cas:authenticationSuccess/cas:user';
 $wp_cassify_default_xpath_query_to_extact_cas_attributes  = '//cas:serviceResponse/cas:authenticationSuccess/cas:attributes';
+$wp_cassify_service_ticket_salt = 'change_this_with_another_value'; // Change default salt.
 
 // CAS Protocol version
 $wp_cassify_default_protocol_version_values = array( 

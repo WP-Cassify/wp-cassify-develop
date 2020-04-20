@@ -186,6 +186,17 @@ class wp_cassify_rule_solver {
 				}
 			
 				break;
+
+			case '-NCONTAINS' :
+
+				if ( strpos( $wp_cassify_rule_solver_item->left_operand, $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) == FALSE ) {
+					$wp_cassify_rule_solver_item->result = 'TRUE';	
+				}
+				else {
+					$wp_cassify_rule_solver_item->result = 'FALSE';
+				}
+
+				break;
 				
 			case '-STARTWITH' :
 			
