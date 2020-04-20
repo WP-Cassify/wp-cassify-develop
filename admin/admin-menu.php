@@ -363,21 +363,28 @@ class WP_Cassify_Admin_Page {
         }
 
         $is_disabled = FALSE;
-
         if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_disable_authentication' ) == 'disabled' ) {
             $is_disabled = TRUE;
         }
-        else {
-            $is_disabled = FALSE;
-        }
 
         $create_user_if_not_exist = FALSE;	
-
         if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' ) == 'create_user_if_not_exist' ) {
             $create_user_if_not_exist = TRUE;
         }
-        else {
-            $create_user_if_not_exist = FALSE;
+
+		$log_out_on_errors = FALSE;
+		if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_log_out_on_errors' ) == 'log_out_on_errors' ) {
+			$log_out_on_errors = TRUE;
+		}
+
+        $enable_gateway_mode = FALSE;  
+        if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_gateway_mode' ) == 'enable_gateway_mode' ) {
+            $enable_gateway_mode = TRUE;
+        }
+ 
+        $enable_slo = FALSE;   
+        if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_slo' ) == 'enable_slo' ) {
+            $enable_slo = TRUE;
         }
         
         $wp_cassify_ssl_cipher = WP_Cassify_Utils::wp_cassify_get_option( 
@@ -399,7 +406,7 @@ class WP_Cassify_Admin_Page {
         }
         else {
             $is_ssl_check_certificate_enabled = FALSE;
-        }		
+        }	
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
@@ -442,6 +449,30 @@ class WP_Cassify_Admin_Page {
 				<td><input type="checkbox" id="wp_cassify_create_user_if_not_exist" name="wp_cassify_create_user_if_not_exist" class="post_form" value="create_user_if_not_exist" /><br /><span class="description">Create wordpress user account if not exist.</span></td>
 				<?php endif; ?>
 			</tr>
+            <tr valign="top">
+                <th scope="row">Log out on errors</th>
+                <?php if ( $log_out_on_errors ) : ?>
+                <td><input type="checkbox" id="wp_cassify_log_out_on_errors" name="wp_cassify_log_out_on_errors" class="post_form" value="log_out_on_errors" checked /><br /><span class="description">Disconnect cas user session on authentication errors without displaying any error message (silent mode).</span></td>
+                <?php else : ?>
+                <td><input type="checkbox" id="wp_cassify_log_out_on_errors " name="wp_cassify_log_out_on_errors" class="post_form" value="log_out_on_errors" /><br /><span class="description">Disconnect cas user session on authentication errors without displaying any error message (silent mode).</span></td>
+                <?php endif; ?>
+            </tr>			
+            <tr valign="top">
+                <th scope="row">Enable Gateway Mode</th>
+                <?php if ( $enable_gateway_mode ) : ?>
+                <td><input type="checkbox" id="wp_cassify_enable_gateway_mode" name="wp_cassify_enable_gateway_mode" class="post_form" value="enable_gateway_mode" checked /><br /><span class="description">Enable support for auto-login (Gateway Mode).</span></td>
+                <?php else : ?>
+                <td><input type="checkbox" id="wp_cassify_enable_gateway_mode" name="wp_cassify_enable_gateway_mode" class="post_form" value="enable_gateway_mode" /><br /><span class="description">Enable support for auto-login (Gateway Mode).</span></td>
+                <?php endif; ?>
+            </tr>
+            <tr valign="top">
+                <th scope="row">Enable SLO (Single Log Out)</th>
+                <?php if ( $enable_slo ) : ?>
+                <td><input type="checkbox" id="wp_cassify_enable_slo" name="wp_cassify_enable_slo" class="post_form" value="enable_slo" checked /><br /><span class="description">Enable support for central logout (Single Sign Out).</span></td>
+                <?php else : ?>
+                <td><input type="checkbox" id="wp_cassify_enable_slo" name="wp_cassify_enable_slo" class="post_form" value="enable_slo" /><br /><span class="description">Enable support for central logout (Single Sign Out).</span></td>
+                <?php endif; ?>
+            </tr>			
 			<tr valign="top">
 				<th scope="row">SSL Cipher used for query CAS Server with HTTPS Webrequest to validate service ticket</th>
 				<td>
@@ -466,7 +497,22 @@ class WP_Cassify_Admin_Page {
 						<input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" />
 					<?php endif; ?>
 				</td>
-			</tr>		
+			</tr>
+			<tr valign="top">
+				<th scope="row">cURL extra-options</th><td></td>
+			</tr>
+			<tr valign="top">
+				<td><label>CURLOPT_CAINFO - path to Certificate Authority (CA) bundle</label></td>
+				<td>
+					<input type="text" id="wp_cassify_curlopt_cainfo" name="wp_cassify_curlopt_cainfo" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_cainfo' ) ); ?>" size="40" class="regular-text post_form" />
+				</td>
+			</tr>
+			<tr valign="top">
+				<td><label>CURLOPT_CAPATH - specify directory holding CA certificates</label></td>
+				<td>
+					<input type="text" id="wp_cassify_curlopt_capath" name="wp_cassify_curlopt_capath" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_capath' ) ); ?>" size="40" class="regular-text post_form" />
+				</td>				
+			</tr>			
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_general_settings', FALSE, array( 'id' => 'wp_cassify_save_options_general_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>	
 <?php		
@@ -1183,8 +1229,14 @@ class WP_Cassify_Admin_Page {
 				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version', FALSE, $this->wp_cassify_network_activated ); 
                 WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_disable_authentication', 'disabled', $this->wp_cassify_network_activated );
                 WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist', $this->wp_cassify_network_activated );	
+ 				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_log_out_on_errors', 'log_out_on_errors', $this->wp_cassify_network_activated );  
+ 				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_enable_gateway_mode', 'enable_gateway_mode', $this->wp_cassify_network_activated );  
+                WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_enable_slo', 'enable_slo', $this->wp_cassify_network_activated );
+                
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_ssl_cipher', TRUE, $this->wp_cassify_network_activated );
                 WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_ssl_check_certificate', 'enabled', $this->wp_cassify_network_activated );
+				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_curlopt_cainfo', FALSE, $this->wp_cassify_network_activated );
+				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_curlopt_capath', FALSE, $this->wp_cassify_network_activated );
 
 				// Url settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout', FALSE, $this->wp_cassify_network_activated ); 
@@ -1355,7 +1407,7 @@ class WP_Cassify_Admin_Page {
             }
 ?>
 		<div class="wrap" id="wp-cassify">
-		<h2><?php screen_icon('options-general'); ?><?php echo $this->wp_cassify_plugin_datas[ 'Name' ] ?></h2>
+		<h2><?php echo $this->wp_cassify_plugin_datas[ 'Name' ] ?></h2>
 		
 		<?php if ( $this->wp_cassify_is_options_updated() ) { ?>
 				<div id="message" class="updated" >Settings saved successfully</div>
