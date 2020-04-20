@@ -421,8 +421,6 @@ class WP_Cassify_Plugin {
 				// Parse CAS Server response and store into associative array.
 				$cas_user_datas = $this->wp_cassify_parse_xml_response( $cas_server_xml_response );
 
-				unset( $cas_user_datas['cas_user_id'] );
-
 				if ( empty( $cas_user_datas['cas_user_id'] ) ) {
 					if ( $wp_cassify_log_out_on_errors == 'log_out_on_errors' )
 						$this->wp_cassify_logout();
