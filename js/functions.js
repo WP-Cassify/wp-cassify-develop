@@ -1,3 +1,5 @@
+// TODO : replace JQuery by pure javascript.
+
 jQuery( document ).ready(function() {
 
 	// Some fields state initialization...
