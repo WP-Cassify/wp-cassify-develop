@@ -96,7 +96,13 @@ class wp_cassify_rule_solver {
 
 		if ( ( is_array( $matches_cas_variable_groups[1] ) ) && ( count( $matches_cas_variable_groups[1] ) == 1 ) ) {
 			// Replace with real value if it's a CAS variable and not a constant.
-			$wp_cassify_rule_operand = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
+			//$wp_cassify_rule_operand = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
+
+			// Handle multivalued fields
+			if ( is_array( $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ] ) )
+				$wp_cassify_rule_operand = maybe_serialize( $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ] );
+			else
+				$cas_user_data_formatted = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
 		}
 	}	
 	
