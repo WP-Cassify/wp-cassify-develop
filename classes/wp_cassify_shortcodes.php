@@ -102,12 +102,12 @@ class WP_Cassify_Shortcodes {
 		// 	$this->wp_cassify_default_service_service_parameter_name . '=' .
 		// 	$attributes[ 'service_redirect_url' ];
 
-		// $logout_with_redirect_link = $this->wp_cassify_base_url . 
-		// 	$this->wp_cassify_default_logout_servlet . '?' .
-		// 	$this->wp_cassify_default_service_service_parameter_name . '=' .
-		// 	 wp_logout_url( $attributes[ 'service_redirect_url' ] );
+		$logout_with_redirect_link = $this->wp_cassify_base_url . 
+		 	$this->wp_cassify_default_logout_servlet . '?' .
+		 	$this->wp_cassify_default_service_service_parameter_name . '=' .
+		 	 wp_logout_url( $attributes[ 'service_redirect_url' ] );
 
-		$logout_with_redirect_link = wp_logout_url( $attributes[ 'service_redirect_url' ] );		
+		//$logout_with_redirect_link = wp_logout_url( $attributes[ 'service_redirect_url' ] );		
 		
 		return $logout_with_redirect_link;
 	}	
