@@ -96,7 +96,13 @@ class wp_cassify_rule_solver {
 
 		if ( ( is_array( $matches_cas_variable_groups[1] ) ) && ( count( $matches_cas_variable_groups[1] ) == 1 ) ) {
 			// Replace with real value if it's a CAS variable and not a constant.
-			$wp_cassify_rule_operand = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
+			//$wp_cassify_rule_operand = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
+
+			// Handle multivalued fields
+			if ( is_array( $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ] ) )
+				$wp_cassify_rule_operand = serialize( $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ] );
+			else
+				$wp_cassify_rule_operand = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
 		}
 	}	
 	
@@ -243,15 +249,22 @@ class wp_cassify_rule_solver {
 				break;
 
 			case '-IN' :
-			
+				
 				$wp_cassify_rule_solver_item->result = 'FALSE';
-			
+
 				if ( is_array( $wp_cassify_rule_solver_item->left_operand ) ) {
-					foreach( $wp_cassify_rule_solver_item->left_operand as $_key => $_value ) {
-						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand ) {
+					foreach( $wp_cassify_rule_solver_item->left_operand as $_key => $_value )
+						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand )
 							$wp_cassify_rule_solver_item->result = 'TRUE';	
-						}						
-					}
+				}
+				else {
+					// Ok, i know it's not really elegant but it work's.
+					$left_operand_array = @unserialize( $wp_cassify_rule_solver_item->left_operand );
+					if ( $left_operand_array === null ) $wp_cassify_rule_solver_item->result = 'FALSE';
+
+					foreach( $left_operand_array as $_key => $_value )
+						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand )
+							$wp_cassify_rule_solver_item->result = 'TRUE';
 				}
 			
 				break;
