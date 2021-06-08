@@ -9,7 +9,8 @@ require_once __DIR__ . '/classes/wp_cassify_rule_solver.php';
 
 $mock_cas_object = array(
 	'first_name' => 'Maria2',
-	'email' => 'awoods1a@toplist.cz'
+	'email' => 'awoods1a@toplist.cz',
+	'eduPersonAffiliation' => array('alumn','student','affiliate')
 );
 
 // - One operator per parenthesis group like this : (...-AND...)
@@ -19,7 +20,7 @@ $mock_cas_object = array(
 //$condition = '(CAS{first_name} -EQ "Maria") -AND (CAS{email} -CONTAINS "mhawkins0@mashable.com")';
 // $condition = '(CAS{cas_user_id} -EQ "tferguson4") -AND (CAS{courriel} -CONTAINS "my-university.fr")';
 // $condition = '(CAS{cas_user_id} -EQ "tferguson4") -AND (CAS{courriel} -CONTAINS "my-university.fr") -OR (CAS{cas_user_id} -STARTWITH "test")';
-$condition = '(CAS{first_name} -EQ "Maria")';
+$condition = '(CAS{eduPersonAffiliation} -IN "alumn")';
 
 
 $solver = new \wp_cassify\wp_cassify_rule_solver();
