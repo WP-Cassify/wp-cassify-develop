@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 5.7.1
 Requires PHP: 7.0
-Stable tag: 2.2.7
+Stable tag: 2.2.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,10 +141,10 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 * How to protect all website ?
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
-* Another question ?
-Contact me at aa_francois@yahoo.fr and i try answer to your question.
-
 == Changelog ==
+
+= 2.2.8 =
+* Add new parameter to custom filter wp_cassify_grab_service_ticket_roles_to_push. Now you can use $cas_user_datas inside filter.
 
 = 2.2.7 =
 * Bug fix on multivalued fields with IN operator
