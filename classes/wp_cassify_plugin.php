@@ -505,7 +505,7 @@ class WP_Cassify_Plugin {
                 
 				// Define custom plugin filter to override list roles to push.
 				if( has_filter( 'wp_cassify_grab_service_ticket_roles_to_push' ) ) {
-					$roles_to_push = apply_filters( 'wp_cassify_grab_service_ticket_roles_to_push', $roles_to_push );
+					$roles_to_push = apply_filters( 'wp_cassify_grab_service_ticket_roles_to_push', $roles_to_push, $cas_user_datas );
 				}                
                 
 				foreach ( $roles_to_push as $role ) {
