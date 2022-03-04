@@ -445,7 +445,7 @@ class WP_Cassify_Plugin {
 					$this->wp_cassify_separate_rules( $wp_cassify_autorization_rules );
 					
 					// Force logout if user is not allowed.
-					if (! $this->wp_cassify_is_user_allowed( $cas_user_datas, $wp_cassify_allow_deny_order ) ) {
+					if (! $this->wp_cassify_is_user_allowed( $wp_cassify_allow_deny_order, $cas_user_datas ) ) {
 						$this->wp_cassify_logout_if_not_allowed( 'user_is_not_allowed' );
 					}	
 				}
@@ -505,7 +505,7 @@ class WP_Cassify_Plugin {
 				}
 				
 				// Set wordpress user roles if defined in plugin admin settings
-				$roles_to_push = $this->wp_cassify_get_roles_to_push( $cas_user_datas, $wp_cassify_user_role_rules, $this->wp_cassify_network_activated, $current_blog_id  );
+				$roles_to_push = $this->wp_cassify_get_roles_to_push( $current_blog_id, $cas_user_datas, $wp_cassify_user_role_rules, $this->wp_cassify_network_activated );
                 
 				// Define custom plugin filter to override list roles to push.
 				if( has_filter( 'wp_cassify_grab_service_ticket_roles_to_push' ) ) {
@@ -1147,11 +1147,13 @@ class WP_Cassify_Plugin {
 
 	/**
 	 * Check if user is allow to connect according to autorization rules.
-	 * @param array $cas_user_datas					Associative array containing CAS userID and attributes
-	 * @param string $wp_cassify_allow_deny_order	Order to process authorization rules.
-	 * @return bool $is_user_allowed				Return true if user is allowed to connect. Return false on the other hand.
+	 * 
+	 * @param string 	$wp_cassify_allow_deny_order	Order to process authorization rules.
+	 * @param array 	$cas_user_datas					Associative array containing CAS userID and attributes
+	 * 
+	 * @return bool 	$is_user_allowed				Return true if user is allowed to connect. Return false on the other hand.
 	 */ 
-	private function wp_cassify_is_user_allowed( $cas_user_datas = array(), $wp_cassify_allow_deny_order ) {
+	private function wp_cassify_is_user_allowed( $wp_cassify_allow_deny_order, $cas_user_datas = array() ) {
 
 		$is_user_allowed = false;
 		$rule_check = false;
@@ -1224,11 +1226,13 @@ class WP_Cassify_Plugin {
 	
 	/**
 	 * Check if user is matched by Conditionnal Rule
-	 * @param 	array 	$cas_user_datas		Associative array containing CAS userID and attributes
+	 * 
 	 * @param 	string 	$wp_cassify_rule	WP Cassify rule
+	 * @param 	array 	$cas_user_datas		Associative array containing CAS userID and attributes
+	 * 
 	 * @return 	bool	$rule_matched		Return true if WP Cassify rule assertion is verified. Return false on the other hand.
 	 */ 
-	private function wp_cassify_rule_matched( $cas_user_datas = array(), $wp_cassify_rule ) {
+	private function wp_cassify_rule_matched( $wp_cassify_rule, $cas_user_datas = array() ) {
 
 		$rule_matched = false;
 
@@ -1267,7 +1271,7 @@ class WP_Cassify_Plugin {
 				$expiration_rule_type_value = $expiration_rule_parts[1];
 				$expiration_rule_value = stripslashes( $expiration_rule_parts[2] );
 				
-				if ( $this->wp_cassify_rule_matched( $cas_user_datas, $expiration_rule_value ) ) {
+				if ( $this->wp_cassify_rule_matched( $expiration_rule_value, $cas_user_datas ) ) {
 					
 					switch( $expiration_rule_type )	{
 						case 'after_user_account_created_time_limit' :
@@ -1297,13 +1301,15 @@ class WP_Cassify_Plugin {
 
 	/**
 	 * Check if user is matched by Notification Rule
+	 * 
+	 * @param int		$current_blog_id	The id of the current blog
 	 * @param array 	$cas_user_datas		Associative array containing CAS userID and attributes
 	 * @param array 	$role_rules			Array containing all role rules
 	 * @param bool		$network_activated	True if plugin is activated over the network
-	 * @param int		$current_blog_id	The id of the current blog
+	 * 
 	 * @return array 	$roles_to_push		Array containing roles to push to user
 	 */ 	
-	private function wp_cassify_get_roles_to_push( $cas_user_datas = array(), $role_rules = array(), $network_activated = false, $current_blog_id ) {
+	private function wp_cassify_get_roles_to_push( $current_blog_id, $cas_user_datas = array(), $role_rules = array(), $network_activated = false ) {
 		
 		$roles_to_push = array();
 
@@ -1320,7 +1326,7 @@ class WP_Cassify_Plugin {
 						
 						// role_rule_blog_id == 0 match "ALL BLOGS"
 						if ( ( $role_rule_blog_id == $current_blog_id ) || ( $role_rule_blog_id == 0 ) ) {
-							if ( $this->wp_cassify_rule_matched( $cas_user_datas, $role_rule_expression ) ) {
+							if ( $this->wp_cassify_rule_matched( $role_rule_expression, $cas_user_datas ) ) {
 								array_push( $roles_to_push, $role_rule_key );
 							}
 						}
@@ -1331,7 +1337,7 @@ class WP_Cassify_Plugin {
 						$role_rule_key = $role_rule_parts[0];
 						$role_rule_expression = stripslashes( $role_rule_parts[1] );
 		
-						if ( $this->wp_cassify_rule_matched( $cas_user_datas, $role_rule_expression ) ) {
+						if ( $this->wp_cassify_rule_matched( $role_rule_expression, $cas_user_datas ) ) {
 							array_push( $roles_to_push, $role_rule_key );
 						}
 					}					
@@ -1362,7 +1368,7 @@ class WP_Cassify_Plugin {
 					$notification_rule_expression = stripslashes( $notification_rule_parts[1] );
 					
 					if ( $notification_rule_key == $trigger_name ) {
-						if ( $this->wp_cassify_rule_matched( $cas_user_datas, $notification_rule_expression ) ) {
+						if ( $this->wp_cassify_rule_matched( $notification_rule_expression, $cas_user_datas ) ) {
 							$notification_rule_matched = true;
 						}						
 					}
@@ -1501,11 +1507,11 @@ class WP_Cassify_Plugin {
 			$wp_cassify_send_notification_message,
 			$wp_cassify_notifications_priority,
 			esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_host' ) ), 
-			esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_port' ) ), 
-			$wp_cassify_notifications_smtp_auth_enabled,
 			$wp_cassify_notifications_encryption_type,
 			$wp_cassify_notifications_smtp_user, 
-			$wp_cassify_notifications_smtp_password
+			$wp_cassify_notifications_smtp_password,
+			esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_port' ) ), 
+			$wp_cassify_notifications_smtp_auth_enabled,
 		);
 		
 		return $send_result;
