@@ -423,12 +423,13 @@ class WP_Cassify_Utils {
 
     /**
      * Save plugin options stored in form textfield into database.
+	 * 
      * @param array 	$post_array						$_POST array passed by reference
      * @param string 	$field_name						Form field name.
-     * @param bool 		$do_not_check_empty				Empty values are accepted.
      * @param bool 		$network_activated				TRUE if plugin is activated on network. false if not.
+     * @param bool 		$do_not_check_empty				Empty values are accepted.
      */
-    public static function wp_cassify_update_textfield( &$post_array, $field_name, $do_not_check_empty = false, $wp_cassify_network_activated ) {
+    public static function wp_cassify_update_textfield( &$post_array, $field_name, $wp_cassify_network_activated, $do_not_check_empty = false ) {
 
 		$field_value = '';
 		
@@ -594,10 +595,11 @@ class WP_Cassify_Utils {
 	
     /**
      * Import all plugins configuration options
-	 * @param array		$wp_cassify_import_configuration_options
+	 * 
 	 * @param bool 		$wp_cassify_network_activated
+	 * @param array		$wp_cassify_import_configuration_options
      */	
-	public static function wp_cassify_import_configuration_options( $wp_cassify_import_configuration_options = array(), $wp_cassify_network_activated ) {
+	public static function wp_cassify_import_configuration_options( $wp_cassify_network_activated, $wp_cassify_import_configuration_options = array() ) {
 
 		global $wpdb;
 		$restore_option_sql_query = null;
@@ -626,17 +628,18 @@ class WP_Cassify_Utils {
 	
 	/**
 	 * Function used by plugin to send mail.
+	 * 
 	 * @param 	string	$from			Sender email address
 	 * @param 	string	$to				Recipient email address
 	 * @param 	string	$subject		Subject message
 	 * @param 	string	$body			Body message
 	 * @param 	string	$smtp_host		Ip or fqdn of smtp host
-	 * @param 	string	$smtp_port		Port used by smtp host
-	 * @param 	string	$smtp_auth		Cipher used if authentication
 	 * @param 	string	$smtp_password	Smtp password
 	 * @return 	bool	$send_result	Return TRUE if mail is sended correctly. FAIL if not.
+	 * @param 	string	$smtp_port		Port used by smtp host
+	 * @param 	string	$smtp_auth		Cipher used if authentication
 	 */ 
-	public static function wp_cassify_sendmail( $from, $to, $subject, $body, $priority, $smtp_host, $smtp_port = 25, $smtp_auth = false, $smtp_encryption_type, $smtp_user, $smtp_password ) {
+	public static function wp_cassify_sendmail( $from, $to, $subject, $body, $priority, $smtp_host, $smtp_encryption_type, $smtp_user, $smtp_password, $smtp_port = 25, $smtp_auth = false ) {
 		
 		// Initialize phpmailer class
 		global $phpmailer;
