@@ -738,11 +738,11 @@ class WP_Cassify_Admin_Page {
 					<?php endforeach; ?>
 					</select>
 					<?php if ( $this->wp_cassify_network_activated ) : ?>
-					<?php $blogs = wp_get_sites();?>	
+					<?php $blogs = get_sites();?>	
 					<select id="wp_cassify_user_role_blog_id" name="wp_cassify_user_role_blog_id" class="post_form">
 						<?php echo '<option value="0">(0)&nbsp;ALL BLOGS</option>';	?>		
 						<?php for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) : ?>
-							<?php echo '<option value="' . $blogs[ $i ][ 'blog_id' ] . '">(' . $blogs[ $i ][ 'blog_id' ] . ')&nbsp;' . $blogs[ $i ][ 'domain' ] . $blogs[ $i ][ 'path' ] . '</option>';	?>	
+							<?php echo '<option value="' . $blogs[ $i ]->blog_id . '">(' . $blogs[ $i ]->blog_id . ')&nbsp;' . $blogs[ $i ]->domain . $blogs[ $i ]->path . '</option>';	?>	
 						<?php endfor; ?>							
 					</select>
 					<?php endif; ?>

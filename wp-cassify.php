@@ -46,16 +46,17 @@ function wp_cassify_uninstall() {
 	global $wpdb;
     
     // Delete network activated options
-	if( $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}sitemeta'") != '{$wpdb->prefix}sitemeta' ) {    
-		$wpdb->query( "DELETE FROM {$wpdb->prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%'" );
+	if( $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->base_prefix}sitemeta'") != '{$wpdb->base_prefix}sitemeta' ) {    
+		$wpdb->query( "DELETE FROM {$wpdb->base_prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%'" );
 	}
 
 	// Delete blog options
-	$blogs = wp_get_sites();
+	$blogs = get_sites();
+
 	for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
 		// 1 is network
-		if ( $blogs[ $i ][ 'blog_id' ] > 1 ) {
-			$_tbl_name = "{$wpdb->prefix}" . $blogs[ $i ][ 'blog_id' ] . "_options";
+		if ( $blogs[ $i ]->blog_id > 1 ) {
+			$_tbl_name = "{$wpdb->base_prefix}" . $blogs[ $i ]->blog_id . "_options";
 			if( $wpdb->get_var("SHOW TABLES LIKE '{$_tbl_name}'") != '{$_tbl_name}' ) {   
 				$wpdb->query( "DELETE FROM {$_tbl_name} WHERE `option_name` LIKE 'wp_cassify%'" );
 			}
