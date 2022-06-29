@@ -1511,7 +1511,7 @@ class WP_Cassify_Plugin {
 			$wp_cassify_notifications_smtp_user, 
 			$wp_cassify_notifications_smtp_password,
 			esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_smtp_port' ) ), 
-			$wp_cassify_notifications_smtp_auth_enabled,
+			$wp_cassify_notifications_smtp_auth_enabled
 		);
 		
 		return $send_result;
