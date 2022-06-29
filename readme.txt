@@ -4,9 +4,9 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 5.7.1
+Tested up to: 6.0
 Requires PHP: 7.0
-Stable tag: 2.2.8
+Stable tag: 2.2.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,7 +33,6 @@ https://wpcassify.wordpress.com/
 
 = Features included =
 
-* NEW FEATURES !!!
 * SLO (Single Log Out) support (thanks to dedotombo and me)
 * Adding NCONTAINS operator (thanks to blandman)
 * Fix bug on Gateway mode (autologin) (thanks to dedotombo again). Now it's now necessary to hack theme files to fire it.
@@ -144,7 +143,7 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 == Changelog ==
 
 = 2.2.9 =
-* Add PHP8 support
+* Add PHP8 support (experimental). Reordering optionnal parameters to delete PHP8 deprecated warnings. Replace deprecated method wp_get_sites() by get_sites().
 
 = 2.2.8 =
 * Add new parameter to custom filter wp_cassify_grab_service_ticket_roles_to_push. Now you can use $cas_user_datas inside filter.
