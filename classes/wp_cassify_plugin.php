@@ -480,6 +480,8 @@ class WP_Cassify_Plugin {
 				// Create wordpress user account if not exist
 				if ( $wp_cassify_create_user_if_not_exist == 'create_user_if_not_exist' ) {
 					if ( WP_Cassify_Utils::wp_cassify_is_wordpress_user_exist( $cas_user_datas[ 'cas_user_id' ] ) == false ) {
+						error_log('WP CASSIFY CREATE USER....');
+						
 						$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], null );
 
 						if ( $wordpress_user_id > 0 ) {
@@ -528,6 +530,9 @@ class WP_Cassify_Plugin {
 				
 				// Auth user into wordpress
 				WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
+
+				// Custom hook to perform action after wordpress authentication.
+				do_action( 'wp_cassify_after_auth_user_wordpress', $cas_user_datas );
 
 				$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
 					$cas_user_datas, 
@@ -1399,6 +1404,9 @@ class WP_Cassify_Plugin {
 	            	
 			        $cas_user_data_formatted = null;
             	
+					if (! array_key_exists( $wp_cassify_cas_user_attribute, $cas_user_datas ) )
+						continue;
+
             		if ( is_array( $cas_user_datas[ $wp_cassify_cas_user_attribute ] ) ) {
             			$cas_user_data_formatted = maybe_serialize( $cas_user_datas[ $wp_cassify_cas_user_attribute ] );
             		}
