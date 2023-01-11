@@ -4,9 +4,9 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 6.0
+Tested up to: 6.1.1
 Requires PHP: 7.0
-Stable tag: 2.2.9
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,12 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
 == Changelog ==
+
+= 2.3.0 = 
+* New custom hook wp_cassify_after_auth_user_wordpress
+
+= 2.3.0 = 
+* Some bugfix
 
 = 2.2.9 =
 * Add PHP8 support (experimental). Reordering optionnal parameters to delete PHP8 deprecated warnings. Replace deprecated method wp_get_sites() by get_sites().
