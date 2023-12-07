@@ -221,10 +221,12 @@ class WP_Cassify_Plugin {
 	/**
 	 * Start the php session inside the plugin because session is needed to store callback url.
 	 */	 
-	public function wp_cassify_session_start() {
-
-	    if(!session_id() && !headers_sent()) {
-			session_start();
+	public function wp_cassify_session_start( $force = false ) {
+	    
+		if ( $force || isset( $_COOKIE[ session_name() ] ) ) {
+		    if(! session_id() && !headers_sent() && php_sapi_name() !== 'cli' ) {
+				session_start();
+			}
 		}
 	}
 
@@ -343,7 +345,9 @@ class WP_Cassify_Plugin {
 
 		if ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) {		
 			if (! empty( $service_ticket ) ) {
-				
+				// Ensure session is started
+				$this->wp_cassify_session_start( true );
+
 				// Retrieve configuration options from database
 				$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 				$wp_cassify_create_user_if_not_exist = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' );

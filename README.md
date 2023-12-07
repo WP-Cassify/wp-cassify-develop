@@ -90,7 +90,7 @@ If you want to reset the WordPress instance, after launched docker-compose, you 
 
 To list the docker instances:
 ```  
-docker ps
+docker compose ps
 ```
 
 You take the container id of the mariadb instance and connect to it:
