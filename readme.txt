@@ -1,4 +1,4 @@
-=== Plugin Name ===
+=== WP Cassify ===
 
 Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
