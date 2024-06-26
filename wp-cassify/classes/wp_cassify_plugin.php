@@ -771,7 +771,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_enable_gateway_mode = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_gateway_mode' );
 		
 		if ( $wp_cassify_enable_gateway_mode ) {
-			if ( ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) && ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['user_auth'] ) && (! get_query_var( 'wp_cassify_bypass' ) ) ) {
+		    if ( ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) && ( $_SESSION['wp_cassify'] ?? null && $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['user_auth'] ) && (! get_query_var( 'wp_cassify_bypass' ) ) ) {
 		        if ( isset($GLOBALS['wp-cassify']) ) {
 		            $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['user_auth'] = false;
 		            $GLOBALS['wp-cassify']->wp_cassify_check_authentication();
