@@ -150,7 +150,7 @@ class WP_Cassify_Plugin {
 			add_action( 'wp_loaded', array( $this , 'wp_cassify_grab_service_ticket' ) , 2 );
 			
 			// Perform SLO (Single Log Out) (Not enabled by default)
-            add_action( 'template_redirect', array ( $this, 'wp_cassify_slo' ), 1 );
+            add_action( 'wp_loaded', array ( $this, 'wp_cassify_slo' ), 1 );
             
             // Perform gateway mode : detect if user was already cas authenticated via another app
             // to perform autologin. (Not enabled by default)
@@ -704,10 +704,8 @@ class WP_Cassify_Plugin {
             if ( !empty( $_POST['logoutRequest'] ) ) {
             	
                 $decoded_logout_rq = urldecode( $_POST['logoutRequest'] );
-                $client_fqdn = gethostbyaddr( $_SERVER['REMOTE_ADDR'] );
-                
-                if ( $client_fqdn == parse_url( $wp_cassify_base_url, PHP_URL_HOST ) ) {
-                // if ( true ) {                	
+
+                if ( true ) {
                     preg_match(
                     	"|<samlp:SessionIndex>(.*)</samlp:SessionIndex>|",
                     	$decoded_logout_rq, $tick, PREG_OFFSET_CAPTURE, 3
