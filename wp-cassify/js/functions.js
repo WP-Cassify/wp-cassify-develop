@@ -38,7 +38,7 @@ jQuery( document ).ready(function() {
     else {
     	jQuery( '#wp_cassify_notifications_encryption_type' ).prop( 'disabled', 'disabled' );
     }	
-});
+
 
 /*
 *	Authorizations rules functions
@@ -370,4 +370,6 @@ jQuery( '[data-style="wp_cassify_save_options"]' ).click( function ( evt ) {
 			return false;
 		}
 	}
+});
+
 });
