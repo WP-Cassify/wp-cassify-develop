@@ -97,7 +97,7 @@ docker up selenium-runner
 selenium-side-runner -d -s http://localhost:4444 docker/selenium-sides/03-test-gateway-on-and-off.side
 ```
 
-## Github Actions
+## Continuous integration tests with Github Actions, docker compose and selenium
 
 The project is also configured to run the tests on Github Actions. 
 The workflow is defined in the file `.github/workflows/docker-selenium-tests.yml` and `.github/workflows/docker-selenium-tests-php7.yml` 
@@ -122,6 +122,14 @@ ln -s $(pwd)/wp-cassify $(pwd)/wordpress/wp-content/plugins/
 Next you can open the project with your IDE from the directory ./wordpress.
 
 For XDebug, you have to configure the IDE to listen on port 9003. 
+
+## Release on wordpress.org
+
+Thanks to https://github.com/marketplace/actions/wordpress-plugin-svn-deploy, we release the plugin on wordpress.org with a github action .
+
+To releae the plugin, a github action is triggered on each tag to synchronize the official subversion repository of the plugin with the github repository. 
+
+The action is defined in the file `.github/workflows/release.yml`.
 
 ## License
 
