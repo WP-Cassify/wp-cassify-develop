@@ -4,13 +4,13 @@ Contributors: aaf017
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 6.5.4
-Requires PHP: 7 or 8
-Stable tag: 2.3.2
-License: GPLv2 or later
+Tested up to: 6.5.5
+Requires PHP: 7.4
+Stable tag: 2.3.3
+License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-The plugin is a JASIG CAS Client. It performs CAS authentication and autorization for Wordpress.
+The plugin is an Apereo CAS Client. It performs CAS authentication and autorization for Wordpress.
 
 == Description ==
 
@@ -18,13 +18,20 @@ If you're happy with this plugin :
 As a reward for my efforts, I would like to receive T-shirts (or other goodies) as gifts from the universities or companies that use it. 
 My size is L. Best regards.
 
-This JASIG CAS authentication plugin has no phpCas library dependency. This is not only an authentication plugin. 
+This Apereo CAS authentication plugin has no phpCas library dependency. This is not only an authentication plugin. 
 You can build custom authorization rules according to cas user attributes populated. If user don't exist in Wordpress 
 database, it can be created automatically. There are many features. You can customize everything.
 
 = Website =
 
 https://wpcassify.wordpress.com/
+
+= Development and release environment =
+
+This plugin is now developed and tested from a github repository. You can find it here :
+https://github.com/WP-Cassify/wp-cassify-develop
+
+Don't hesitate to contribute to this project. You can fork it and make pull requests !
 
 = Requirements =
 
@@ -141,6 +148,13 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
 == Changelog ==
+
+= 2.3.3 = 
+* Fix PHP start session only when needed - thanks to @partyka
+* Fix PHP warning parse_str - thanks to @erseco
+* Fix PHP warnings
+* Ensure to run jquery when DOM is ready
+* Fix CAS Single Log Out feature
 
 = 2.3.2 = 
 * Fix PHP8 support
