@@ -223,7 +223,7 @@ class WP_Cassify_Plugin {
 	 */	 
 	public function wp_cassify_session_start() {
 
-	    if(!session_id() && !headers_sent() && (get_current_user_id() > 0)) {
+	    if(!session_id() && !headers_sent()) {
 			session_start();
 		}
 	}
@@ -237,6 +237,7 @@ class WP_Cassify_Plugin {
 	 */
     private function wp_cassify_switch_session_id( $service_ticket, $restore = false ) {
 
+        $this->wp_cassify_session_start();
  		// Backup current session vars
         $current_session = $_SESSION;
         
