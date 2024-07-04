@@ -1,0 +1,27 @@
+name: Tag WordPress Plugin SVN Deploy
+
+on:
+  push:
+    tags:        
+      - '*'           
+
+jobs:
+  release:
+    name: New Tag deployement to WordPress SVN
+
+    if: github.repository == 'WP-Cassify/wp-cassify-develop'
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: WordPress Plugin SVN Deploy
+      uses: nk-o/action-wordpress-plugin-deploy@master
+      # https://github.com/marketplace/actions/wordpress-plugin-svn-deploy
+      env:
+        SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+        SOURCE_DIR: wp-cassify/
+        SLUG: wp-cassify
