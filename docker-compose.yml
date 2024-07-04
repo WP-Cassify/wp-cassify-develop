@@ -1,0 +1,96 @@
+services:
+   db:
+     image: mariadb
+     environment:
+       MARIADB_ROOT_PASSWORD: pass
+       MARIADB_DATABASE: wordpress
+       MARIADB_USER: wordpress
+       MARIADB_PASSWORD: pass
+
+   wordpress:
+     depends_on:
+       - db
+     build:
+      context: ./docker/wordpress-php8
+     healthcheck:
+      test: [ "CMD-SHELL", "curl -f -I http://wordpress.example.org" ]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+     ports:
+       - "80:80"
+     environment:
+       WORDPRESS_DB_HOST: db:3306
+       WORDPRESS_DB_USER: wordpress
+       WORDPRESS_DB_PASSWORD: pass
+       WORDPRESS_CONFIG_EXTRA: |
+        define('DISABLE_WP_CRON', true );
+     volumes:
+       - ./wp-cassify:/var/www/html/wp-content/plugins/wp-cassify
+     networks:
+       default:
+         aliases:
+           - wordpress.example.org
+           - wordpress1.example.org
+           - wordpress2.example.org
+
+   openldap:
+     image: osixia/openldap:1.5.0
+     environment:
+       LDAP_DOMAIN: "example.org"
+     command: --copy-service
+     volumes:
+      - ./docker/ldap-config:/container/service/slapd/assets/config/bootstrap/ldif/custom
+
+   cas:
+     build:
+       context: .
+       dockerfile_inline: |
+         FROM esupportail/apereo-cas-ldap:7.0.5.1
+         RUN apt-get update && apt-get -y install curl
+     healthcheck:
+      test: [ "CMD-SHELL", "curl http://cas.example.org:8080/cas/login | grep username" ]
+      interval: 5s
+      timeout: 10s
+      retries: 20     
+     volumes:
+       - ./docker/cas-config:/etc/cas
+       - ./docker/cas-config/tmp-cas:/tmp/cas
+     ports:
+       - "8080:8080"
+     depends_on:
+       - openldap
+     networks:
+       default:
+         aliases:
+           - cas.example.org       
+
+   selenium-chrome:
+     image: selenium/standalone-chrome:125.0
+     healthcheck:
+       test: [ "CMD-SHELL", "curl -f -LI http://selenium-chrome:4444" ]
+       interval: 5s
+       timeout: 10s
+       retries: 20    
+     shm_size: 1gb
+     ulimits:
+      nofile:
+        soft: "65536"
+        hard: "65536"
+     ports:
+       - "4444:4444"
+
+   selenium-runner:
+     build:
+       context: ./docker/selenium-runner
+     depends_on:
+       wordpress:
+           condition: service_healthy
+       selenium-chrome:
+           condition: service_healthy
+       cas:
+           condition: service_healthy	   
+     volumes:
+       - './docker/selenium-sides:/selenium-sides'
+
+
