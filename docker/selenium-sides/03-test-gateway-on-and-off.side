@@ -73,14 +73,7 @@
       "id": "7ced1c0e-d9ca-4f7a-b842-51bb3ff5e10e",
       "comment": "",
       "command": "click",
-      "target": "linkText=log out",
-      "targets": [],
-      "value": ""
-    }, {
-      "id": "005e670b-1308-458d-ac9a-24efcc7713ab",
-      "comment": "",
-      "command": "click",
-      "target": "linkText=log in",
+      "target": "css=a[href='logout']",
       "targets": [],
       "value": ""
     }]
@@ -192,13 +185,6 @@
       "target": "linkText=Log Out",
       "targets": [],
       "value": ""
-    }, {
-      "id": "4704c165-e196-4985-b582-439af1d754d3",
-      "comment": "",
-      "command": "click",
-      "target": "linkText=log in",
-      "targets": [],
-      "value": ""
     }]
   }, {
     "id": "338e14e8-39c3-4acb-8af0-6b99624d5119",
@@ -277,14 +263,7 @@
       "id": "d2306005-acea-47a4-81ea-2799ce9c8b3b",
       "comment": "",
       "command": "click",
-      "target": "linkText=log out",
-      "targets": [],
-      "value": ""
-    }, {
-      "id": "c78c6612-89b4-4bda-a038-4dc31f8b8d26",
-      "comment": "",
-      "command": "click",
-      "target": "linkText=log in",
+      "target": "css=a[href='logout']",
       "targets": [],
       "value": ""
     }]
@@ -400,13 +379,6 @@
       "target": "linkText=Log Out",
       "targets": [],
       "value": ""
-    }, {
-      "id": "9609f0f6-7d2d-46bc-9e62-0e7846183fa4",
-      "comment": "",
-      "command": "click",
-      "target": "linkText=log in",
-      "targets": [],
-      "value": ""
     }]
   }],
   "suites": [{
@@ -417,6 +389,6 @@
     "timeout": 300,
     "tests": ["9a42396d-3acc-4648-91af-67218dccab99", "4e87aa72-3ca6-446f-ae96-14af22034945", "338e14e8-39c3-4acb-8af0-6b99624d5119", "a1f0871e-a84b-41c9-a8aa-bdfc9b957281"]
   }],
-  "urls": ["http://cas.example.org:8080/", "http://cas:8080/cas/login"],
+  "urls": ["http://cas.example.org:8080/", "http://cas:8080/cas/login", "http://cas.example.org:8080/cas/login"],
   "plugins": []
 }
