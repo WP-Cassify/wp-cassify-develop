@@ -5,7 +5,7 @@
   "url": "http://wordpress.example.org",
   "tests": [{
     "id": "b1d95035-b47d-4e50-8417-dbf494e5f661",
-    "name": "01-off",
+    "name": "no-slo-off",
     "commands": [{
       "id": "4f34ec18-d5c7-47af-9cf8-ae98fa7bd61d",
       "comment": "",
@@ -93,7 +93,7 @@
     }]
   }, {
     "id": "6a3f26f7-6e6f-4f7c-bac7-e38a9766050d",
-    "name": "02-activation",
+    "name": "slo-activation",
     "commands": [{
       "id": "316df49d-baf0-4cd2-a4bd-085e06159fa9",
       "comment": "",
@@ -181,7 +181,7 @@
     }]
   }, {
     "id": "aeb367c2-690b-4fe6-ab27-ef4d3517a294",
-    "name": "03-on",
+    "name": "slo-on",
     "commands": [{
       "id": "674b21b4-d6a0-41fd-9204-9cc8257daef5",
       "comment": "",
@@ -255,7 +255,7 @@
     }]
   }, {
     "id": "f53817d5-0e29-4b27-9594-6544113d52c1",
-    "name": "04-desactivation",
+    "name": "slo-desactivation",
     "commands": [{
       "id": "1ec25b2c-47c2-4dcd-b550-14c863d8caab",
       "comment": "",

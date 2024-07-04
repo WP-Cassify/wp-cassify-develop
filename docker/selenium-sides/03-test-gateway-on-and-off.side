@@ -5,7 +5,7 @@
   "url": "http://cas.example.org:8080/cas/login",
   "tests": [{
     "id": "9a42396d-3acc-4648-91af-67218dccab99",
-    "name": "02-test-gateway-off",
+    "name": "test-no-gateway-off",
     "commands": [{
       "id": "a884f372-02b1-4035-a2b6-92ef8cd16bf8",
       "comment": "",
@@ -79,7 +79,7 @@
     }]
   }, {
     "id": "4e87aa72-3ca6-446f-ae96-14af22034945",
-    "name": "03-activate-gateway",
+    "name": "activate-gateway",
     "commands": [{
       "id": "437182d8-9b6e-415e-bd72-47116560247b",
       "comment": "",
@@ -188,7 +188,7 @@
     }]
   }, {
     "id": "338e14e8-39c3-4acb-8af0-6b99624d5119",
-    "name": "04-test-gateway-on",
+    "name": "test-gateway-on",
     "commands": [{
       "id": "09d3fe98-34fe-4656-a184-0a6afaa47561",
       "comment": "",
@@ -269,7 +269,7 @@
     }]
   }, {
     "id": "a1f0871e-a84b-41c9-a8aa-bdfc9b957281",
-    "name": "05-desactivate-gateway",
+    "name": "desactivate-gateway",
     "commands": [{
       "id": "a63cb070-bc11-4a22-953a-a14a81458298",
       "comment": "",
