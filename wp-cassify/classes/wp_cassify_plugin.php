@@ -1355,7 +1355,7 @@ class WP_Cassify_Plugin {
 	 * @param 	array 	$trigger_name				The name of the action wich fire the notification
 	 * @return 	boolean	$notification_rule_matched	Return true if notification rule assertion is verified. Return false on the other hand.
 	 */ 	
-	private function wp_cassify_notification_rule_matched( $cas_user_datas = array(), $notification_rules = array(), $trigger_name ) {
+	private function wp_cassify_notification_rule_matched( $trigger_name, $cas_user_datas = array(), $notification_rules = array()) {
 		
 		$notification_rule_matched = false;
 

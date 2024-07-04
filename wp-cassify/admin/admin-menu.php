@@ -8,6 +8,7 @@ class WP_Cassify_Admin_Page {
 	public $wp_cassify_plugin_directory;
     public $wp_cassify_network_activated;
 	public $wp_cassify_plugin_options_list;
+	public $wp_cassify_default_protocol_version_values;
 	public $wp_cassify_default_login_servlet;
 	public $wp_cassify_default_logout_servlet;
 	public $wp_cassify_default_service_validate_servlet;
