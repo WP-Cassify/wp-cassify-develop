@@ -140,7 +140,9 @@ class WP_Cassify_Utils {
 		
 		$query = parse_url( $url , PHP_URL_QUERY );
 		
-		parse_str( $query, $url_params );
+		if (! empty( $query ) ) {
+		  parse_str( $query, $url_params );
+		}
 
 		if (! empty( $url_params[ $get_parameter_name ] ) ) {
 			$get_parameter_value = $url_params[ $get_parameter_name ];
