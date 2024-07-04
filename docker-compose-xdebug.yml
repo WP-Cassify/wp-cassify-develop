@@ -4,7 +4,8 @@ services:
      build:
       context: ./docker/wordpress-xdebug
      environment:
-       XDEBUG_CONFIG: client_host=172.17.0.1      
+       XDEBUG_CONFIG: client_host=172.17.0.1
+       WORDPRESS_DEBUG: true
      volumes:
        - type: bind
          source: ./wordpress
