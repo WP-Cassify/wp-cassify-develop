@@ -456,9 +456,9 @@ class WP_Cassify_Plugin {
 					if ( $this->wp_cassify_is_user_account_expired( $cas_user_datas, $wp_cassify_expiration_rules ) ) {
 						
 						$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+						    'when_user_account_expire',
 							$cas_user_datas, 
-							$wp_cassify_notification_rules, 
-							'when_user_account_expire'
+							$wp_cassify_notification_rules
 						);
 						
 						if ( $notification_rule_matched ) {
@@ -488,10 +488,10 @@ class WP_Cassify_Plugin {
 						if ( $wordpress_user_id > 0 ) {
 							$wordpress_user_account_created = true;
 							
-							$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+							$notification_rule_matched = $this->wp_cassify_notification_rule_matched(
+                                'after_user_account_created',
 								$cas_user_datas, 
-								$wp_cassify_notification_rules, 
-								'after_user_account_created'
+								$wp_cassify_notification_rules
 							);
 							
 							if ( $notification_rule_matched ) {
@@ -535,10 +535,10 @@ class WP_Cassify_Plugin {
 				// Custom hook to perform action after wordpress authentication.
 				do_action( 'wp_cassify_after_auth_user_wordpress', $cas_user_datas );
 
-				$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+				$notification_rule_matched = $this->wp_cassify_notification_rule_matched(
+					'after_user_login',                
 					$cas_user_datas, 
-					$wp_cassify_notification_rules, 
-					'after_user_login'
+					$wp_cassify_notification_rules
 				);
 				
 				if ( $notification_rule_matched ) {
@@ -666,9 +666,9 @@ class WP_Cassify_Plugin {
 			$wp_cassify_notification_rules = unserialize( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notification_rules' ) );
  		
 			$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
+			    'after_user_logout',
 				$cas_user_datas, 
 				$wp_cassify_notification_rules, 
-				'after_user_logout'
 			);
 		
 			if ( $notification_rule_matched ) {
