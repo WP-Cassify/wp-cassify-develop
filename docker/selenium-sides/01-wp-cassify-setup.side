@@ -213,7 +213,7 @@
       "id": "6528e8b9-5503-4196-9f25-66725a2114e2",
       "comment": "",
       "command": "click",
-      "target": "id=wp_cassify_add_user_role_rule",
+      "target": "css=#wp_cassify_add_user_role_rule",
       "targets": [],
       "value": ""
     }, {
