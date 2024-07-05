@@ -137,11 +137,12 @@ You can use Eclipse-Php or Visual Studio Code or PhpStorm to edit wp-cassify.
 
 The best is to use the docker-compose file with xdebug to debug the plugin.
 ```
+mkdir wordpress
 docker compose -f docker-compose.yml -f docker-compose-xdebug.yml up
 ```
 With this, you have ./wordpress that is a bind volume to /var/ww/html of the WordPress container.
 
-To edit also the wp-cassify plugin, just make a symbolic link in ./wordpress/wp-content/plugins to the wp-cassify plugin directory.
+To edit also the wp-cassify plugin inside the whole WordPress project, just make a symbolic link in ./wordpress/wp-content/plugins to the wp-cassify plugin directory.
 ```
 rm -r ./wordpress/wp-content/plugins/wp-cassify
 ln -s $(pwd)/wp-cassify $(pwd)/wordpress/wp-content/plugins/

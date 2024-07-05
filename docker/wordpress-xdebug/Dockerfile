@@ -1,4 +1,4 @@
-FROM wordpress:6.5.5-php8.2-apache
+FROM wordpress:beta-6.6-php8.3-apache
 
 RUN apt-get update
 
@@ -10,4 +10,4 @@ RUN pecl install "xdebug"
 RUN docker-php-ext-enable xdebug
 RUN echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
-CMD chmod a+rw -R /var/www/html && docker-entrypoint.sh apache2-foreground
+CMD chmod a+rw -R /usr/src/wordpress && docker-entrypoint.sh apache2-foreground
