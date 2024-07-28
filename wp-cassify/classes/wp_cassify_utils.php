@@ -257,7 +257,7 @@ class WP_Cassify_Utils {
 			do_action( 'wp_login', $user->user_login, $user );
 		}
 		else {
-			die( 'User account does not exists in WordPress database !');
+			die( 'User account does not exist in WordPress database!' );
 		}
 	}	
 	
