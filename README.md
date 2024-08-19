@@ -117,7 +117,7 @@ You can relaunch the selenium tests with Selenium IDE :
 
 ... or you can also relaunch the tests via the docker 'selenium-runner' with the following command:
 ```
-docker up selenium-runner 
+docker compose up selenium-runner 
 ```
 
 ... or you can also relaunch some tests via selenium-runner directly with the following command for example:
