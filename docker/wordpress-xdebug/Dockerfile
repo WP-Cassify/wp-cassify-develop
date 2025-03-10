@@ -1,4 +1,4 @@
-FROM wordpress:6.6.1-php8.3-apache
+FROM wordpress:6.7.2-php8.3-apache
 
 RUN apt-get update
 
