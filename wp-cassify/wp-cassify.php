@@ -17,7 +17,7 @@ if (! function_exists( 'get_plugin_data' ) ) {
 	require_once ABSPATH . '/wp-admin/includes/plugin.php';
 }
 
-$wp_cassify_plugin_datas = get_plugin_data( __FILE__ );
+$wp_cassify_plugin_datas = get_plugin_data( __FILE__, false, false);
 $wp_cassify_plugin_directory = plugin_dir_url( __FILE__ ); 
 $wp_cassify_network_activated = false;
 

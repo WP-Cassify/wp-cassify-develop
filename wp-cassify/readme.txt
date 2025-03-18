@@ -149,6 +149,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 == Changelog ==
 
+= 2.3.6 =
+* Fix 'Notice: Function _load_textdomain_just_in_time was called incorrectly.'
+
 = 2.3.5 =
 * Fix PHP start session only when needed (fix) - thanks to @kkatpcc
 * Fix grammar in die message of wp_cassify_auth_user_wordpress - thanks to Randy Hammond
