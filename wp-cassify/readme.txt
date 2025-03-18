@@ -150,6 +150,7 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 == Changelog ==
 
 = 2.3.6 =
+* Sanitize service_redirect_url in wp_cassify_login_with_redirect to prevent potential XSS (reported by Muhammad Yudha via Patchstack).
 * Fix 'Notice: Function _load_textdomain_just_in_time was called incorrectly.'
 
 = 2.3.5 =
