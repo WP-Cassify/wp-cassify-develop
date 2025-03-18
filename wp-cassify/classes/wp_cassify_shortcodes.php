@@ -105,12 +105,7 @@ class WP_Cassify_Shortcodes {
 		$service_redirect_url = esc_url( $attributes['service_redirect_url'] );
 		
 		// Build the CAS login URL with the sanitized redirect parameter
-		$logout_with_redirect_link = $this->wp_cassify_base_url . 
-		 	$this->wp_cassify_default_logout_servlet . '?' .
-		 	$this->wp_cassify_default_service_service_parameter_name . '=' .
-		 	wp_logout_url(urlencode($service_redirect_url));  // Encode to prevent injection issues
-
-		//$logout_with_redirect_link = wp_logout_url( $attributes[ 'service_redirect_url' ] );		
+		$logout_with_redirect_link = wp_logout_url($service_redirect_url);
 		
 		return $logout_with_redirect_link;
 	}	
