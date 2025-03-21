@@ -149,6 +149,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 == Changelog ==
 
+= 2.3.7 =
+* Fix -NCONTAINS and -NOTIN rule evaluations.
+
 = 2.3.6 =
 * Fix and simplify wp_cassify_logout_with_redirect shortcode
 * Sanitize service_redirect_url in wp_cassify_login_with_redirect to prevent potential XSS (reported by Muhammad Yudha via Patchstack).

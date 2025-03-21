@@ -159,6 +159,7 @@ $wp_cassify_allowed_operators = array(
 	$wp_cassify_operator_prefix . 'EQ',
 	$wp_cassify_operator_prefix . 'NEQ',
 	$wp_cassify_operator_prefix . 'CONTAINS',
+    $wp_cassify_operator_prefix . 'NCONTAINS',
 	$wp_cassify_operator_prefix . 'STARTWITH',
 	$wp_cassify_operator_prefix . 'ENDWITH',
 	$wp_cassify_operator_prefix . 'AND',
