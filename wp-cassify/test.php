@@ -26,6 +26,8 @@ function run_tests() {
     $tests = [
         '(CAS{first_name} -EQ "Maria") -AND (CAS{email} -CONTAINS "mhawkins0@mashable.com")' => false,
         '(CAS{first_name} -EQ "Maria2") -AND (CAS{email} -CONTAINS "awoods1a@toplist.cz")' => true,
+        '(CAS{first_name} -NEQ "Maria2") -AND (CAS{email} -CONTAINS "awoods1a@toplist.cz")' => false,
+        '(CAS{first_name} -NEQ "Maria2") -OR (CAS{email} -CONTAINS "awoods1a@toplist.cz")' => true,
         '[(CAS{eduPersonAffiliation} -CONTAINS "student") -AND (CAS{email} -ENDWITH "toplist.cz")]' => true,
         '(CAS{eduPersonAffiliation} -IN "alumn")' => true,
         '(CAS{eduPersonAffiliation} -IN "al")' => false,
@@ -35,6 +37,10 @@ function run_tests() {
         '(CAS{eduPersonAffiliation} -CONTAINS "al")' => true,
         '(CAS{eduPersonAffiliation} -NCONTAINS "la")' => true,
         '(CAS{eduPersonAffiliation} -NCONTAINS "al")' => false,
+        '(CAS{first_name} -STARTWITH "Mari"))' => true,
+        '(CAS{first_name} -STARTWITH "ari"))' => false,
+        '(CAS{first_name} -ENDWITH "2"))' => true,
+        '(CAS{first_name} -ENDWITH "aria"))' => false,
     ];
 
     $all_tests_passed = true;
