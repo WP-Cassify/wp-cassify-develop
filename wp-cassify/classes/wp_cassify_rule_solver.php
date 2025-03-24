@@ -190,11 +190,11 @@ class wp_cassify_rule_solver {
 				else {
 					$wp_cassify_rule_solver_item->result = 'FALSE';
 				}
-			
+
 				break;
 
 			case '-NCONTAINS' :
-
+                
 				if ( strpos( $wp_cassify_rule_solver_item->left_operand, $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) == FALSE ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
@@ -279,6 +279,15 @@ class wp_cassify_rule_solver {
 							$wp_cassify_rule_solver_item->result = 'FALSE';	
 						}						
 					}
+				}
+				else {
+					// Ok, i know it's not really elegant but it work's.
+					$left_operand_array = @unserialize( $wp_cassify_rule_solver_item->left_operand );
+					if ( $left_operand_array === null ) $wp_cassify_rule_solver_item->result = 'TRUE';
+
+					foreach( $left_operand_array as $_key => $_value )
+						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand )
+							$wp_cassify_rule_solver_item->result = 'FALSE';
 				}
 			
 				break;				
