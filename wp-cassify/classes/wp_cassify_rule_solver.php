@@ -206,7 +206,7 @@ class wp_cassify_rule_solver {
 				
 			case '-STARTWITH' :
 			
-				if ( $this->startsWith( $wp_cassify_rule_solver_item->right_operand, $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->left_operand ) ) ) {
+			    if ( $this->startsWith( $wp_cassify_rule_solver_item->left_operand, $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
