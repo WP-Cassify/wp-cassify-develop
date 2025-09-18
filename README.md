@@ -67,7 +67,7 @@ The WordPress instance is available at http://localhost but to be compliant with
 127.0.0.1 cas.example.org wordpress.example.org wordpress1.example.org wordpress2.example.org
 ```
 
-With this, you can access the WordPress instance at http://wordpress.example.org and the CAS server at http://cas.example.org:8080.
+With this, you can access the WordPress instance at http://wordpress.example.org and the CAS server at http://cas.example.org:8080/cas
 
 Selenium Grid is available at http://localhost:4444.
 
@@ -88,14 +88,9 @@ password: pass
 
 If you want to reset the WordPress instance, after launched docker-compose, you can connect to the mariadb docker instance and remove/recreate the wordpress database.
 
-To list the docker instances:
-```  
-docker compose ps
+You connect to the mariadb instance:
 ```
-
-You take the container id of the mariadb instance and connect to it:
-```
-docker exec -it <container_id> bash
+docker compose exec -it db bash
 ```
 
 Then you connect to the mariadb database:
