@@ -226,7 +226,7 @@ class WP_Cassify_Plugin {
 	    $wp_cassify_enable_gateway_mode = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_gateway_mode' );
 	    
 	    if ( $force || isset( $_COOKIE[ session_name() ] ) || $wp_cassify_enable_gateway_mode ) {
-		    if(! session_id() && !headers_sent() && php_sapi_name() !== 'cli' ) {
+		    if(!session_id() && !wp_doing_ajax() && !wp_doing_cron() && !is_admin() && !headers_sent() && php_sapi_name() !== 'cli' ) {
 				session_start();
 			}
 		}
