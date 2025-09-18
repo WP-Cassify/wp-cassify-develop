@@ -4,9 +4,9 @@ Contributors: aaf017,vbonamy
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.0
-Stable tag: 2.3.7
+Stable tag: 2.3.8
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,7 +47,7 @@ Don't hesitate to contribute to this project. You can fork it and make pull requ
 * Initialize PHP session at a later stage (on wp_loaded not on init)
 * Adding some customs hooks and filters.
 
-* Tested with CAS Server version 4.1.4
+* Tested with Apereo CAS Server version 7.2.5
 * Compatible with CAS Protocol version 2 and 3
 * Automatic user creation if not exist in Wordpress database.
 * Synchronize Wordpress User metas with CAS User attributes.
@@ -148,6 +148,9 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
 == Changelog ==
+
+= 2.3.8 =
+* No session_start for cron/ajax requests
 
 = 2.3.7 =
 * Fix -NCONTAINS and -NOTIN rule evaluations.
