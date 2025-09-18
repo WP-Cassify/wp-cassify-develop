@@ -46,7 +46,7 @@ services:
      build:
        context: .
        dockerfile_inline: |
-         FROM esupportail/apereo-cas-ldap:7.0.5.1
+         FROM esupportail/apereo-cas-ldap:7.2.5
          RUN apt-get update && apt-get -y install curl
      healthcheck:
       test: [ "CMD-SHELL", "curl http://cas.example.org:8080/cas/login | grep username" ]
