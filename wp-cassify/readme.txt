@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 6.8
 Requires PHP: 7.0
-Stable tag: 2.3.8
+Stable tag: 2.3.9
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -148,6 +148,9 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
 == Changelog ==
+
+= 2.3.9 =
+* Just fix tag in wp-cassify.php
 
 = 2.3.8 =
 * No session_start for cron/ajax requests
