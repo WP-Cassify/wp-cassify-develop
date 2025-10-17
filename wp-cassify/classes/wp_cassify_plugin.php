@@ -243,7 +243,7 @@ class WP_Cassify_Plugin {
 
         $this->wp_cassify_session_start();
  		// Backup current session vars
-        $current_session = $_SESSION;
+        $current_session = isset($_SESSION) ? $_SESSION : null;
         
         // Extract service ticket unique ID. Service ticket is structured by default
         // like this : ST-index-XXXXXXX-host
@@ -263,8 +263,8 @@ class WP_Cassify_Plugin {
         session_start();
         
         // Restoring current session vars.
-        if ( $restore ) {
-        	$_SESSION = $current_session;
+        if ($restore && $current_session !== null) {
+           $_SESSION = $current_session;
         }
     }	
 	
