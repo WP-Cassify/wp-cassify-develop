@@ -487,7 +487,7 @@ class WP_Cassify_Plugin {
 				// Create wordpress user account if not exist
 				if ( $wp_cassify_create_user_if_not_exist == 'create_user_if_not_exist' ) {
 					if ( WP_Cassify_Utils::wp_cassify_is_wordpress_user_exist( $cas_user_datas[ 'cas_user_id' ] ) == false ) {
-						error_log('WP CASSIFY CREATE USER....');
+						error_log('[INFO] WP CASSIFY CREATE USER....');
 						
 						$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], null );
 
