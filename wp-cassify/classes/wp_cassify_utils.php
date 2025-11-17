@@ -53,10 +53,10 @@ class WP_Cassify_Utils {
 		if( curl_errno( $ch ) )	{		
 			if ( ( defined( 'WP_DEBUG' ) ) && ( WP_DEBUG == true ) ) {
 				$info = curl_getinfo( $ch );
-				die( 'Curl error: ' . curl_error( $ch ) . print_r( $info, TRUE ) );		
+				die( 'cURL error: ' . curl_error( $ch ) . print_r( $info, TRUE ) );		
 			}
 			else {
-				die( 'Curl error: active WP_DEBUG in wp-config.php');
+				die( 'cURL error: set WP_DEBUG to true in wp-config.php for detailed error information.');
 			}
 		} 
 
