@@ -44,10 +44,16 @@ function wp_cassify_deactivation() {
 function wp_cassify_uninstall() {
 	
 	global $wpdb;
+	$option_prefix_like = 'wp_cassify%';
     
     // Delete network activated options
-	if( $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->base_prefix}sitemeta'") != '{$wpdb->base_prefix}sitemeta' ) {    
-		$wpdb->query( "DELETE FROM {$wpdb->base_prefix}sitemeta WHERE `meta_key` LIKE 'wp_cassify%'" );
+	$network_meta_table = $wpdb->base_prefix . 'sitemeta';
+	if ( preg_match( '/^[A-Za-z0-9_]+$/', $network_meta_table ) === 1 ) {
+		$network_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $network_meta_table ) );
+
+		if ( $network_table_exists === $network_meta_table ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM `{$network_meta_table}` WHERE `meta_key` LIKE %s", $option_prefix_like ) );
+		}
 	}
 
 	// Delete blog options
@@ -56,9 +62,15 @@ function wp_cassify_uninstall() {
 	for( $i = 0; $i <= count( $blogs ) - 1; $i++ ) {
 		// 1 is network
 		if ( $blogs[ $i ]->blog_id > 1 ) {
-			$_tbl_name = "{$wpdb->base_prefix}" . $blogs[ $i ]->blog_id . "_options";
-			if( $wpdb->get_var("SHOW TABLES LIKE '{$_tbl_name}'") != '{$_tbl_name}' ) {   
-				$wpdb->query( "DELETE FROM {$_tbl_name} WHERE `option_name` LIKE 'wp_cassify%'" );
+			$blog_id = absint( $blogs[ $i ]->blog_id );
+			$_tbl_name = $wpdb->base_prefix . $blog_id . '_options';
+
+			if ( preg_match( '/^[A-Za-z0-9_]+$/', $_tbl_name ) === 1 ) {
+				$blog_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $_tbl_name ) );
+
+				if ( $blog_table_exists === $_tbl_name ) {
+					$wpdb->query( $wpdb->prepare( "DELETE FROM `{$_tbl_name}` WHERE `option_name` LIKE %s", $option_prefix_like ) );
+				}
 			}
 		}
 	}
@@ -98,7 +110,7 @@ $wp_cassify_admin_page->init_parameters(
 
 $GLOBALS['wp-cassify'] = new \wp_cassify\WP_Cassify_Plugin(); 
 $GLOBALS['wp-cassify']->init_parameters(
-        $wp_cassify_network_activated,
+		$wp_cassify_network_activated,
 		$wp_cassify_default_xpath_query_to_extact_cas_user,
 		$wp_cassify_default_xpath_query_to_extact_cas_attributes,
 		$wp_cassify_default_redirect_parameter_name,

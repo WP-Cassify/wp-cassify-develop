@@ -614,17 +614,21 @@ class WP_Cassify_Utils {
 			}
 
 		    if ( $wp_cassify_network_activated ) {
-				$restore_option_sql_query = "UPDATE {$wpdb->prefix}sitemeta " . 
-					" SET `meta_value` = '" . $option_value . "' " .
-					" WHERE `meta_key` = '" .	$option_name .  "' ";
+				$restore_option_sql_query = $wpdb->prepare(
+					"UPDATE {$wpdb->prefix}sitemeta SET `meta_value` = %s WHERE `meta_key` = %s",
+					$option_value,
+					$option_name
+				);
 		    }
 		    else {
-				$restore_option_sql_query = "UPDATE {$wpdb->prefix}options " . 
-					" SET `option_value` = '" . $option_value . "' " .
-					" WHERE `option_name` = '" .	$option_name .  "' ";
+				$restore_option_sql_query = $wpdb->prepare(
+					"UPDATE {$wpdb->prefix}options SET `option_value` = %s WHERE `option_name` = %s",
+					$option_value,
+					$option_name
+				);
 		    }
 		    
-		    $wpdb->query($restore_option_sql_query);
+		    $wpdb->query( $restore_option_sql_query );
 	    }
 	}	
 	
