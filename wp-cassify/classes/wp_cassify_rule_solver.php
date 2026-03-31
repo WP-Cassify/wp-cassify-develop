@@ -54,6 +54,83 @@ class wp_cassify_rule_solver {
 	}
 
 	/**
+	 * Find first valid operator token outside quoted strings.
+	 * A token is considered valid when surrounded by whitespaces or expression bounds.
+	 *
+	 * @param string $expression
+	 * @param array $allowed_operators
+	 * @return array|false
+	 */
+	private function find_operator_token( $expression, $allowed_operators ) {
+
+		if ( (! is_string( $expression ) ) || (! is_array( $allowed_operators ) ) || count( $allowed_operators ) === 0 ) {
+			return FALSE;
+		}
+
+		$operators_sorted = $allowed_operators;
+		usort( $operators_sorted, function( $a, $b ) {
+			return strlen( $b ) - strlen( $a );
+		} );
+
+		$expression_length = strlen( $expression );
+		$inside_quotes = FALSE;
+
+		for ( $i = 0; $i < $expression_length; $i++ ) {
+			$char = $expression[ $i ];
+
+			if ( $char === '"' && ( $i === 0 || $expression[ $i - 1 ] !== '\\' ) ) {
+				$inside_quotes = ! $inside_quotes;
+				continue;
+			}
+
+			if ( $inside_quotes ) {
+				continue;
+			}
+
+			foreach ( $operators_sorted as $operator ) {
+				$operator_length = strlen( $operator );
+
+				if ( substr( $expression, $i, $operator_length ) !== $operator ) {
+					continue;
+				}
+
+				$before_char = ( $i === 0 ) ? ' ' : $expression[ $i - 1 ];
+				$after_index = $i + $operator_length;
+				$after_char = ( $after_index >= $expression_length ) ? ' ' : $expression[ $after_index ];
+
+				if ( ctype_space( $before_char ) && ctype_space( $after_char ) ) {
+					return array(
+						'operator' => $operator,
+						'position' => $i
+					);
+				}
+			}
+		}
+
+		return FALSE;
+	}
+
+	/**
+	 * Unserialize a serialized array operand without allowing object instantiation.
+	 * @param mixed $operand
+	 * @return array|null
+	 */
+	private function unserialize_array_operand( $operand ) {
+
+		if ( (! is_string( $operand ) ) || strpos( $operand, 'a:' ) !== 0 ) {
+			return null;
+		}
+
+		$unserialized_operand = unserialize( $operand, array( 'allowed_classes' => FALSE ) );
+
+		if ( is_array( $unserialized_operand ) ) {
+			return $unserialized_operand;
+		}
+
+		return null;
+	}
+
+	/**
 	 * Match parenthesis group in security rule
 	 * @param array 	&$wp_cassify_rule_solver_item_array		Array containing rules based on CAS User attributes values
 	 * @param string 	$wp_cassify_initial_rule				Initial rule based on CAS User attributes values
@@ -92,17 +169,23 @@ class wp_cassify_rule_solver {
 
 		$matches_cas_variable_groups = array();
 
-		preg_match_all( $match_cas_variable_pattern, $wp_cassify_rule_operand, $matches_cas_variable_groups );
+		preg_match( $match_cas_variable_pattern, $wp_cassify_rule_operand, $matches_cas_variable_groups );
 
-		if ( ( is_array( $matches_cas_variable_groups[1] ) ) && ( count( $matches_cas_variable_groups[1] ) == 1 ) ) {
-			// Replace with real value if it's a CAS variable and not a constant.
-			//$wp_cassify_rule_operand = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
+		if ( ( is_array( $matches_cas_variable_groups ) ) && ( count( $matches_cas_variable_groups ) === 2 ) ) {
+			$cas_variable_name = $matches_cas_variable_groups[1];
+			$cas_variable_value = '';
+
+			if ( array_key_exists( $cas_variable_name, $this->cas_user_datas ) ) {
+				$cas_variable_value = $this->cas_user_datas[ $cas_variable_name ];
+			}
 
 			// Handle multivalued fields
-			if ( is_array( $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ] ) )
-				$wp_cassify_rule_operand = serialize( $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ] );
-			else
-				$wp_cassify_rule_operand = $this->cas_user_datas[ $matches_cas_variable_groups[1][0] ];
+			if ( is_array( $cas_variable_value ) ) {
+				$wp_cassify_rule_operand = serialize( $cas_variable_value );
+			}
+			else {
+				$wp_cassify_rule_operand = $cas_variable_value;
+			}
 		}
 	}	
 	
@@ -117,11 +200,11 @@ class wp_cassify_rule_solver {
 		$set_operator = FALSE;
 
 		if ( ( is_array( $allowed_operators ) ) && ( count( $allowed_operators ) > 0 ) ) {
-			foreach( $allowed_operators as $allowed_operator ) {
-				if ( strpos( $wp_cassify_rule_solver_item->parenthesis_group, $allowed_operator ) != false ) {
-					$wp_cassify_rule_solver_item->operator = $allowed_operator;
-					$set_operator = TRUE;
-				}
+			$matched_operator = $this->find_operator_token( $wp_cassify_rule_solver_item->parenthesis_group, $allowed_operators );
+
+			if ( $matched_operator !== FALSE ) {
+				$wp_cassify_rule_solver_item->operator = $matched_operator[ 'operator' ];
+				$set_operator = TRUE;
 			}
 		}
 		
@@ -138,13 +221,15 @@ class wp_cassify_rule_solver {
 		$set_operand = FALSE;
 
 		if (! empty( $wp_cassify_rule_solver_item->operator ) ) {
-			$parenthesis_group_exploded = explode( $wp_cassify_rule_solver_item->operator, 
-			$wp_cassify_rule_solver_item->parenthesis_group );
-			
-			if ( ( is_array( $parenthesis_group_exploded ) ) && ( count( $parenthesis_group_exploded ) == 2 ) ) {
-				$wp_cassify_rule_solver_item->left_operand = trim( $parenthesis_group_exploded[0], ' ' );
-				$wp_cassify_rule_solver_item->right_operand = trim( $parenthesis_group_exploded[1], ' ' );
-				
+			$matched_operator = $this->find_operator_token( $wp_cassify_rule_solver_item->parenthesis_group, array( $wp_cassify_rule_solver_item->operator ) );
+
+			if ( $matched_operator !== FALSE ) {
+				$operator_position = $matched_operator['position'];
+				$operator_length = strlen( $wp_cassify_rule_solver_item->operator );
+
+				$wp_cassify_rule_solver_item->left_operand = trim( substr( $wp_cassify_rule_solver_item->parenthesis_group, 0, $operator_position ), ' ' );
+				$wp_cassify_rule_solver_item->right_operand = trim( substr( $wp_cassify_rule_solver_item->parenthesis_group, $operator_position + $operator_length ), ' ' );
+
 				$set_operand = TRUE;
 			}
 		}	
@@ -162,7 +247,7 @@ class wp_cassify_rule_solver {
 		
 			case '-EQ' :
 			
-				if ( $this->wrap_operand_with_double_quotes( $wp_cassify_rule_solver_item->left_operand ) == $wp_cassify_rule_solver_item->right_operand ) {
+				if ( $this->wrap_operand_with_double_quotes( $wp_cassify_rule_solver_item->left_operand ) === $wp_cassify_rule_solver_item->right_operand ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
@@ -173,7 +258,7 @@ class wp_cassify_rule_solver {
 				
 			case '-NEQ' :
 			
-				if ( $wp_cassify_rule_solver_item->left_operand != $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) {
+				if ( $wp_cassify_rule_solver_item->left_operand !== $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
@@ -195,7 +280,7 @@ class wp_cassify_rule_solver {
 
 			case '-NCONTAINS' :
                 
-				if ( strpos( $wp_cassify_rule_solver_item->left_operand, $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) == FALSE ) {
+				if ( strpos( $wp_cassify_rule_solver_item->left_operand, $this->strip_double_quotes_from_operand( $wp_cassify_rule_solver_item->right_operand ) ) === FALSE ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
@@ -227,8 +312,10 @@ class wp_cassify_rule_solver {
 				break;
 				
 			case '-AND' :
+				$left_operand = $this->normalize_boolean_operand( $wp_cassify_rule_solver_item->left_operand );
+				$right_operand = $this->normalize_boolean_operand( $wp_cassify_rule_solver_item->right_operand );
 			
-				if ( $wp_cassify_rule_solver_item->left_operand == $wp_cassify_rule_solver_item->right_operand ) {
+				if ( ( $left_operand === 'TRUE' ) && ( $right_operand === 'TRUE' ) ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
@@ -238,8 +325,10 @@ class wp_cassify_rule_solver {
 				break;
 				
 			case '-OR' :
+				$left_operand = $this->normalize_boolean_operand( $wp_cassify_rule_solver_item->left_operand );
+				$right_operand = $this->normalize_boolean_operand( $wp_cassify_rule_solver_item->right_operand );
 			
-				if ( ( $wp_cassify_rule_solver_item->left_operand == 'TRUE' ) || ( $wp_cassify_rule_solver_item->right_operand == 'TRUE' ) ) {
+				if ( ( $left_operand === 'TRUE' ) || ( $right_operand === 'TRUE' ) ) {
 					$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
@@ -254,17 +343,19 @@ class wp_cassify_rule_solver {
 
 				if ( is_array( $wp_cassify_rule_solver_item->left_operand ) ) {
 					foreach( $wp_cassify_rule_solver_item->left_operand as $_key => $_value )
-						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand )
+						if ( $this->wrap_operand_with_double_quotes( $_value ) === $wp_cassify_rule_solver_item->right_operand )
 							$wp_cassify_rule_solver_item->result = 'TRUE';	
 				}
 				else {
-					// Ok, i know it's not really elegant but it work's.
-					$left_operand_array = @unserialize( $wp_cassify_rule_solver_item->left_operand );
-					if ( $left_operand_array === null ) $wp_cassify_rule_solver_item->result = 'FALSE';
+					$left_operand_array = $this->unserialize_array_operand( $wp_cassify_rule_solver_item->left_operand );
 
-					foreach( $left_operand_array as $_key => $_value )
-						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand )
-							$wp_cassify_rule_solver_item->result = 'TRUE';
+					if ( is_array( $left_operand_array ) ) {
+						foreach( $left_operand_array as $_key => $_value ) {
+							if ( $this->wrap_operand_with_double_quotes( $_value ) === $wp_cassify_rule_solver_item->right_operand ) {
+								$wp_cassify_rule_solver_item->result = 'TRUE';
+							}
+						}
+					}
 				}
 			
 				break;
@@ -275,26 +366,28 @@ class wp_cassify_rule_solver {
 			
 				if ( is_array( $wp_cassify_rule_solver_item->left_operand ) ) {
 					foreach( $wp_cassify_rule_solver_item->left_operand as $_key => $_value ) {
-						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand ) {
+						if ( $this->wrap_operand_with_double_quotes( $_value ) === $wp_cassify_rule_solver_item->right_operand ) {
 							$wp_cassify_rule_solver_item->result = 'FALSE';	
 						}						
 					}
 				}
 				else {
-					// Ok, i know it's not really elegant but it work's.
-					$left_operand_array = @unserialize( $wp_cassify_rule_solver_item->left_operand );
-					if ( $left_operand_array === null ) $wp_cassify_rule_solver_item->result = 'TRUE';
+					$left_operand_array = $this->unserialize_array_operand( $wp_cassify_rule_solver_item->left_operand );
 
-					foreach( $left_operand_array as $_key => $_value )
-						if ( $this->wrap_operand_with_double_quotes( $_value ) == $wp_cassify_rule_solver_item->right_operand )
-							$wp_cassify_rule_solver_item->result = 'FALSE';
+					if ( is_array( $left_operand_array ) ) {
+						foreach( $left_operand_array as $_key => $_value ) {
+							if ( $this->wrap_operand_with_double_quotes( $_value ) === $wp_cassify_rule_solver_item->right_operand ) {
+								$wp_cassify_rule_solver_item->result = 'FALSE';
+							}
+						}
+					}
 				}
 			
 				break;				
 				
 			default :
 			
-				$wp_cassify_rule_solver_item->error = 'TRUE';
+				$wp_cassify_rule_solver_item->error = TRUE;
 				$wp_cassify_rule_solver_item->error_message = $this->error_messages[ 'solve_item_error' ];			
 						
 				break;
@@ -320,6 +413,15 @@ class wp_cassify_rule_solver {
 		
 		return $needle === "" || ( ( $temp = strlen( $haystack ) - strlen( $needle ) ) >= 0 && strpos( $haystack, $needle, $temp ) !== FALSE);
 	}
+
+	/**
+	 * Normalize boolean operand tokens that may still contain wrapping parenthesis.
+	 * @param string $operand
+	 * @return string
+	 */
+	private function normalize_boolean_operand( $operand ) {
+		return trim( trim( $operand ), "() \t\n\r\0\x0B" );
+	}
 	
 	/**
 	 * Check there is an error during solving rule process
@@ -331,7 +433,7 @@ class wp_cassify_rule_solver {
 
 		if ( ( is_array( $this->wp_cassify_rule_solver_item_array ) ) && ( count( $this->wp_cassify_rule_solver_item_array ) > 0 ) ) {
 			foreach ($this->wp_cassify_rule_solver_item_array as $wp_cassify_rule_solver_item) {
-				if ( $wp_cassify_rule_solver_item->error == 'TRUE' ) {
+				if ( $wp_cassify_rule_solver_item->error === TRUE ) {
 					$no_error = FALSE;
 				}
 			}
@@ -386,12 +488,12 @@ class wp_cassify_rule_solver {
 			foreach ($this->wp_cassify_rule_solver_item_array as $wp_cassify_rule_solver_item) {
 				
 				if ( $contains_or_condition ) {
-					if ( $wp_cassify_rule_solver_item->result == "TRUE" ) {
+					if ( $wp_cassify_rule_solver_item->result === "TRUE" ) {
 						$wp_cassify_rule = "TRUE";
 					}
 				}
 				else {
-					if ( $wp_cassify_rule_solver_item->result == "FALSE" ) {
+					if ( $wp_cassify_rule_solver_item->result === "FALSE" ) {
 						$wp_cassify_rule = "FALSE";
 					}					
 				}
@@ -439,7 +541,7 @@ class wp_cassify_rule_solver {
 			$this->solve_item( $wp_cassify_rule_solver_item );	
 			$this->wp_cassify_initial_rule = $wp_cassify_rule_solver_item->result . ' ' . $right_part;
 		}
-		elseif ( $operators_count == 1 ) {
+		elseif ( $operators_count === 1 ) {
 			$wp_cassify_rule_solver_item = new wp_cassify_rule_solver_item();
 			$wp_cassify_rule_solver_item->parenthesis_group = $this->wp_cassify_initial_rule;
 			
@@ -545,7 +647,7 @@ class wp_cassify_rule_solver {
 			$this->reduce_expression();
 		}
 		
-		if ( trim( $this->wp_cassify_initial_rule ) == 'TRUE' ) {
+		if ( trim( $this->wp_cassify_initial_rule ) === 'TRUE' ) {
 			$result = TRUE;
 		}
 

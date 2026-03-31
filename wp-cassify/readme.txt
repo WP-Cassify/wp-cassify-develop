@@ -150,6 +150,7 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 == Changelog ==
 
 = 2.4.0 =
+* Hardened WP-Cassify’s rule engine for more robust parsing and evaluation.
 * Improved query handling in uninstall and configuration import routines
 * Fix some logs
 

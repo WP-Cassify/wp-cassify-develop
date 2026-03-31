@@ -9,6 +9,9 @@ function run_tests() {
     $mock_cas_object = [
         'first_name' => 'Maria2',
         'email' => 'awoods1a@toplist.cz',
+        'note' => 'team -OR blue',
+        'pattern_like' => 'a.b[c](d)+^$',
+        'complex_note' => 'prefix (-AND) .* suffix',
         'eduPersonAffiliation' => ['alumn', 'student', 'affiliate']
     ];
 
@@ -41,6 +44,13 @@ function run_tests() {
         '(CAS{first_name} -STARTWITH "ari"))' => false,
         '(CAS{first_name} -ENDWITH "2"))' => true,
         '(CAS{first_name} -ENDWITH "aria"))' => false,
+        '(CAS{first_name} -NCONTAINS "Ma")' => false,
+        '(CAS{note} -CONTAINS "-OR")' => true,
+        '(CAS{pattern_like} -CONTAINS "a.b[c]")' => true,
+        '(CAS{pattern_like} -CONTAINS "a.*")' => false,
+        '(CAS{complex_note} -CONTAINS "(-AND) .*")' => true,
+        '(CAS{missing_attr} -EQ "")' => true,
+        '(CAS{missing_attr} -NEQ "")' => false,
     ];
 
     $all_tests_passed = true;
