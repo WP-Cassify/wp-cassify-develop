@@ -30,9 +30,9 @@ class WP_Cassify_Utils {
 		curl_setopt( $ch, CURLOPT_URL, $url ) ;
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 2 );
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, ( ( $ssl_check_certificate == 'enabled' ) ? 1 : 0 ) );
+		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, ( ( $ssl_check_certificate === 'enabled' ) ? 1 : 0 ) );
 
-		if ( $ssl_check_certificate == 'enabled' ) {
+		if ( $ssl_check_certificate === 'enabled' ) {
 			if (! empty( $curlopt_cainfo ) ) {
 				curl_setopt( $ch, CURLOPT_CAINFO, $curlopt_cainfo );
 			}
@@ -44,14 +44,14 @@ class WP_Cassify_Utils {
 		//curl_setopt( $ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13' );
 		curl_setopt( $ch, CURLOPT_SSLVERSION, $ssl_cipher );
 
-		if ( ( defined( 'WP_DEBUG' ) ) && ( WP_DEBUG == true ) ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			curl_setopt( $ch, CURLOPT_VERBOSE, true );
 		}
 		
 		$response = curl_exec( $ch );
 
 		if( curl_errno( $ch ) )	{		
-			if ( ( defined( 'WP_DEBUG' ) ) && ( WP_DEBUG == true ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				$info = curl_getinfo( $ch );
 				die( 'cURL error: ' . curl_error( $ch ) . print_r( $info, TRUE ) );		
 			}
@@ -73,7 +73,7 @@ class WP_Cassify_Utils {
 	 */   
 	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port = 80, $wp_cassify_default_wordpress_blog_https_port = 443 ) {
 		
-		$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ) ? 'https://' : 'http://';
+		$current_url = ( @$_SERVER[ 'HTTPS' ] === 'on' ) ? 'https://' : 'http://';
 		
 		// // If cassified application is hosted behind reverse proxy.
 		// if ( isset( $_SERVER[ 'HTTP_X_FORWARDED_HOST' ] ) ) {
@@ -111,14 +111,14 @@ class WP_Cassify_Utils {
 			isset( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] ) && 
 			isset( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] ) ) {
 			
-			$current_url = ( @$_SERVER[ 'HTTPS' ] == 'on' ? 'https://' : 'http://' ) . $_SERVER[ 'HTTP_HOST' ];
+			$current_url = ( @$_SERVER[ 'HTTPS' ] === 'on' ? 'https://' : 'http://' ) . $_SERVER[ 'HTTP_HOST' ];
 				
 			if( ( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
 				( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
 				$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
 			} 	
 			
-			if ( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] == 'https' ) {
+			if ( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] === 'https' ) {
 				$current_url = str_replace( "http:", "https:", $current_url );
 			}
 		}
@@ -273,7 +273,7 @@ class WP_Cassify_Utils {
 		$wp_user_id = 0;
 
 		if (! username_exists( $cas_user_id ) ) {
-			if ( (! empty( $cas_user_email_attribute_value ) ) && ( email_exists( $cas_user_email_attribute_value ) == false ) ) {
+			if ( (! empty( $cas_user_email_attribute_value ) ) && ( email_exists( $cas_user_email_attribute_value ) === false ) ) {
 				$user_email = $cas_user_email_attribute_value;
 			}
 			
@@ -476,9 +476,9 @@ class WP_Cassify_Utils {
      * @param string $field_name
      * @param bool $wp_cassify_network_activated
      */
-    public static function wp_cassify_update_checkbox( &$post_array, $field_name, $checked_value_name, $wp_cassify_network_activated ) {
+	public static function wp_cassify_update_checkbox( &$post_array, $field_name, $checked_value_name, $wp_cassify_network_activated ) {
 
-        if ( (! empty( $post_array[ $field_name ] ) ) && ( $post_array[ $field_name ] == $checked_value_name ) ) {
+		if ( (! empty( $post_array[ $field_name ] ) ) && ( $post_array[ $field_name ] === $checked_value_name ) ) {
             if ( $wp_cassify_network_activated ) {
                 update_site_option( $field_name , $post_array[ $field_name ] );
             }
@@ -521,6 +521,43 @@ class WP_Cassify_Utils {
             update_option( $field_name , sanitize_text_field( $field_value ) );
         }        
     }      
+
+	/**
+	 * Safely unserialize a plugin option expected to contain an array.
+	 * Handles legacy double-serialized values while disallowing classes.
+	 *
+	 * @param mixed $serialized_value
+	 * @return array
+	 */
+	public static function wp_cassify_safe_unserialize_array( $serialized_value ) {
+
+		if ( is_array( $serialized_value ) ) {
+			return $serialized_value;
+		}
+
+		if ( (! is_string( $serialized_value ) ) || $serialized_value === '' ) {
+			return array();
+		}
+
+		$current_value = $serialized_value;
+
+		for ( $i = 0; $i < 2; $i++ ) {
+			$unserialized_value = @unserialize( $current_value, array( 'allowed_classes' => false ) );
+
+			if ( is_array( $unserialized_value ) ) {
+				return $unserialized_value;
+			}
+
+			if ( is_string( $unserialized_value ) && is_serialized( $unserialized_value ) ) {
+				$current_value = $unserialized_value;
+				continue;
+			}
+
+			break;
+		}
+
+		return array();
+	}
     
 	/**
 	 * Function used to encrypt data
@@ -531,6 +568,7 @@ class WP_Cassify_Utils {
 	public static function wp_cassify_simple_encrypt( $text, $salt = "wp_cassify" ) {
 
 		$cipher				= "AES-128-CBC"; 
+		$key				= substr( hash( 'sha256', (string) $salt, true ), 0, 16 );
 		$ivlen				= openssl_cipher_iv_length( $cipher );
 		$iv					= openssl_random_pseudo_bytes( $ivlen );
 		$ciphertext_raw 	= openssl_encrypt( $text, $cipher, $key, $options=OPENSSL_RAW_DATA, $iv );
@@ -550,6 +588,7 @@ class WP_Cassify_Utils {
 	public static function wp_cassify_simple_decrypt( $text, $salt = "wp_cassify_12345" ) {
 
 		$cipher				= "AES-128-CBC"; 
+		$key				= substr( hash( 'sha256', (string) $salt, true ), 0, 16 );
 		$c 					= base64_decode( $text );
 		$ivlen 				= openssl_cipher_iv_length( $cipher );
 		$iv 				= substr( $c, 0, $ivlen );
@@ -557,6 +596,16 @@ class WP_Cassify_Utils {
 		$ciphertext_raw 	= substr( $c, $ivlen+$sha2len );
 		$decrypted_string 	= openssl_decrypt($ciphertext_raw, $cipher, $key, $options=OPENSSL_RAW_DATA, $iv );
 		$calcmac 			= hash_hmac( 'sha256', $ciphertext_raw, $key, $as_binary=true );
+
+		// Backward compatibility with legacy values encrypted with an empty key.
+		if ( $decrypted_string === false || ! hash_equals( $hmac, $calcmac ) ) {
+			$legacy_key = '';
+			$legacy_decrypted_string = openssl_decrypt($ciphertext_raw, $cipher, $legacy_key, $options=OPENSSL_RAW_DATA, $iv );
+			$legacy_calcmac = hash_hmac( 'sha256', $ciphertext_raw, $legacy_key, $as_binary=true );
+			if ( $legacy_decrypted_string !== false && hash_equals( $hmac, $legacy_calcmac ) ) {
+				return $legacy_decrypted_string;
+			}
+		}
 		
 		if ( hash_equals( $hmac, $calcmac ) ) {//PHP 5.6+ timing attack safe comparison
 		    return $decrypted_string;
@@ -585,7 +634,7 @@ class WP_Cassify_Utils {
 				$wp_cassify_export_configuration_options[$configuration_option->meta_key] = $configuration_option->meta_value;
 			}
 		} else {
-			$configuration_options = $wpdb->get_results( "SELECT `option_name`, `option_value` FROM {$wpdb->prefix}options WHERE `option_name` LIKE 'wp_cassify%' AND `meta_key` != 'wp_cassify_xml_response_value'" );
+			$configuration_options = $wpdb->get_results( "SELECT `option_name`, `option_value` FROM {$wpdb->prefix}options WHERE `option_name` LIKE 'wp_cassify%' AND `option_name` != 'wp_cassify_xml_response_value'" );
 			
 			foreach ( $configuration_options as $configuration_option ) {
 				$wp_cassify_export_configuration_options[$configuration_option->option_name] = $configuration_option->option_value;
@@ -608,7 +657,7 @@ class WP_Cassify_Utils {
 
 	    foreach( $wp_cassify_import_configuration_options as $option_name => $option_value ) {
 
-			if ( $option_name == 'wp_cassify_xml_response_value' ) {
+			if ( $option_name === 'wp_cassify_xml_response_value' ) {
 				$option_value = htmlentities( $option_value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
 				$option_value = htmlentities( $option_value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 			}
