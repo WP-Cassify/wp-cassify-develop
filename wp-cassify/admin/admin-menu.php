@@ -156,7 +156,7 @@ class WP_Cassify_Admin_Page {
 	   	wp_register_script(
 			'wp_cassify_custom_js',	
 			$this->wp_cassify_plugin_directory . 'js/functions.js',
-			array( 'jquery' ),
+			array(),
 			'1.0',
 			TRUE
 		);
@@ -164,9 +164,6 @@ class WP_Cassify_Admin_Page {
         wp_localize_script( 'wp_cassify_custom_js', 'wp_cassify_screen_data', $this->wp_cassify_get_screen_data() );
         wp_enqueue_script( 'wp_cassify_custom_js' );
         
-        // Add jQuery Datepicker control
-        wp_enqueue_script( 'jquery-ui-datepicker', false, array( 'jquery' ) );
-		wp_enqueue_style( 'jquery-ui-style', $this->wp_cassify_plugin_directory . 'css/jquery-ui.min.css' );
 	}	
 	
 	/**
@@ -179,9 +176,9 @@ class WP_Cassify_Admin_Page {
 		
 		if ( ( isset( $_POST[ 'action' ] ) ) && ( $_POST[ 'action' ] === 'update' ) ) {
 
-			// Check security tocken
-			if (! wp_verify_nonce( $_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
-				die( 'Security Check !' );
+			// Check security token.
+			if (! $this->wp_cassify_has_valid_admin_nonce() ) {
+				$this->wp_cassify_die_on_invalid_nonce();
 			}
 			
 			$posted_values = array_values( $_POST );
@@ -1215,14 +1212,14 @@ class WP_Cassify_Admin_Page {
 	public function wp_cassify_options() {
 
             if ( !current_user_can( 'manage_options' ) )  {
-                wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+						$this->wp_cassify_die_forbidden( __( 'You do not have permission to manage WP Cassify settings.' ) );
             }
 
             if ( $this->wp_cassify_is_options_updated() ) {    
         	
-        		// Check security tocken
-				if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
-					die( 'Security Check !' );
+	        		// Check security token.
+				if (! $this->wp_cassify_has_valid_admin_nonce() ) {
+					$this->wp_cassify_die_on_invalid_nonce();
 				}
 				
         		// General settings
@@ -1449,14 +1446,14 @@ class WP_Cassify_Admin_Page {
 
 
         if ( !current_user_can( 'manage_options' ) )  {
-            wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+					$this->wp_cassify_die_forbidden( __( 'You do not have permission to export WP Cassify settings.' ) );
         }
 
         if ( $this->wp_cassify_is_options_updated() ) {    
     	
-    		// Check security tocken
-			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
-				die( 'Security Check 1 !' );
+	    		// Check security token.
+			if (! $this->wp_cassify_has_valid_admin_nonce() ) {
+				$this->wp_cassify_die_on_invalid_nonce();
 			}
 			
 			if (! empty( $_POST['wp_cassify_backup_plugin_options_settings'] ) ){
@@ -1481,14 +1478,14 @@ class WP_Cassify_Admin_Page {
 
 
         if ( !current_user_can( 'manage_options' ) )  {
-            wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+					$this->wp_cassify_die_forbidden( __( 'You do not have permission to import WP Cassify settings.' ) );
         }
 
         if ( $this->wp_cassify_is_options_updated() ) {    
     	
-    		// Check security tocken
-			if (! wp_verify_nonce ($_POST[ 'wp_cassify_admin_form' ], 'admin_form' ) ) {
-				die( 'Security Check 2 !' );
+	    		// Check security token.
+			if (! $this->wp_cassify_has_valid_admin_nonce() ) {
+				$this->wp_cassify_die_on_invalid_nonce();
 			}
 
 			if (! empty( $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['name'] ) ) {
@@ -1498,16 +1495,24 @@ class WP_Cassify_Admin_Page {
 				$extension = end( $extension );
 
 				if( $extension != 'json' ) {
-					wp_die( __( 'Please upload a valid .json file' ) );
+					$this->wp_cassify_die_unsupported_media_type( __( 'Invalid import file type. Please upload a .json file.' ) );
 				}
 				
 				$import_file = $_FILES['wp_cassify_restore_plugin_options_configuration_settings_file']['tmp_name'];
 				
 				if( empty( $import_file ) ) {
-					wp_die( __( 'Please upload a file to import' ) );
+					$this->wp_cassify_die_bad_request( __( 'No import file was provided. Please select a .json file and try again.' ) );
 				}
 				
-				$wp_cassify_import_configuration_options = (array) json_decode( file_get_contents( $import_file ) );
+				$import_file_content = file_get_contents( $import_file );
+				if ( $import_file_content === false ) {
+					$this->wp_cassify_die_bad_request( __( 'Unable to read the uploaded import file.' ) );
+				}
+
+				$wp_cassify_import_configuration_options = (array) json_decode( $import_file_content );
+				if ( json_last_error() !== JSON_ERROR_NONE ) {
+					$this->wp_cassify_die_bad_request( __( 'The import file contains invalid JSON.' ) );
+				}
 				
 				WP_Cassify_Utils::wp_cassify_import_configuration_options(
 					$this->wp_cassify_network_activated,
@@ -1525,6 +1530,55 @@ class WP_Cassify_Admin_Page {
 	}
 
 	
+	/**
+	 * Validate admin form nonce from POST payload.
+	 *
+	 * @return bool
+	 */
+	private function wp_cassify_has_valid_admin_nonce() {
+
+		if (! isset( $_POST['wp_cassify_admin_form'] ) ) {
+			return false;
+		}
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['wp_cassify_admin_form'] ) );
+		return wp_verify_nonce( $nonce, 'admin_form' ) !== false;
+	}
+
+	/**
+	 * Stop current request on invalid admin nonce with a clear message.
+	 */
+	private function wp_cassify_die_on_invalid_nonce() {
+		$this->wp_cassify_die_forbidden( __( 'Security check failed: your form token is missing, invalid, or expired. Please reload the page and try again.' ) );
+	}
+
+	/**
+	 * Stop current request with a forbidden response.
+	 *
+	 * @param string $message
+	 */
+	private function wp_cassify_die_forbidden( $message ) {
+		wp_die( $message, __( 'Access Denied' ), array( 'response' => 403 ) );
+	}
+
+	/**
+	 * Stop current request with a bad request response.
+	 *
+	 * @param string $message
+	 */
+	private function wp_cassify_die_bad_request( $message ) {
+		wp_die( $message, __( 'Invalid Request' ), array( 'response' => 400 ) );
+	}
+
+	/**
+	 * Stop current request with an unsupported media type response.
+	 *
+	 * @param string $message
+	 */
+	private function wp_cassify_die_unsupported_media_type( $message ) {
+		wp_die( $message, __( 'Unsupported Media Type' ), array( 'response' => 415 ) );
+	}
+
 	/**
 	 * Detect if form has been submitted.
 	 * @return is_updated

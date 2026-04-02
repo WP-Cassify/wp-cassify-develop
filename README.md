@@ -86,22 +86,9 @@ password: pass
 
 ## Reset the WordPress instance
 
-If you want to reset the WordPress instance, after launched docker-compose, you can connect to the mariadb docker instance and remove/recreate the wordpress database.
-
-You connect to the mariadb instance:
+If you want to reset the WordPress instance, after launched docker-compose, you can simply remove the db container :
 ```
-docker compose exec -it db bash
-```
-
-Then you connect to the mariadb database:
-```
-mariadb -ppass
-```
-
-You delete and (re)create the WordPress database:
-```
-DROP DATABASE wordpress;
-CREATE DATABASE wordpress;
+docker compose rm db
 ```
 
 You can relaunch the selenium tests with Selenium IDE :

@@ -1260,6 +1260,40 @@ class WP_Cassify_Plugin {
 	}
 
 	/**
+	 * Build an expiration DateTime from admin rule value.
+	 * Supports native date input ISO format and legacy text formats.
+	 *
+	 * @param string $expiration_rule_type_value
+	 * @return \DateTime|null
+	 */
+	private function wp_cassify_parse_expiration_date( $expiration_rule_type_value ) {
+
+		$expiration_rule_type_value = trim( (string) $expiration_rule_type_value );
+
+		if ( $expiration_rule_type_value === '' ) {
+			return null;
+		}
+
+		$supported_formats = array( 'Y-m-d', 'm/d/y', 'm/d/Y', 'd/m/y', 'd/m/Y' );
+
+		foreach ( $supported_formats as $format ) {
+			$expiration_date = \DateTime::createFromFormat( '!'. $format, $expiration_rule_type_value );
+			$errors = \DateTime::getLastErrors();
+
+			if ( ( $expiration_date instanceof \DateTime ) && ( $errors['warning_count'] === 0 ) && ( $errors['error_count'] === 0 ) ) {
+				return $expiration_date;
+			}
+		}
+
+		try {
+			return new \DateTime( $expiration_rule_type_value );
+		}
+		catch ( \Exception $exception ) {
+			return null;
+		}
+	}
+
+	/**
 	 * Test if user account has expired.
 	 * @param 	array 	$cas_user_datas							Associative array containing CAS userID and attributes
 	 * @param	array	$expiration_rules			Array of WP Cassify user account expiration rules
@@ -1283,6 +1317,14 @@ class WP_Cassify_Plugin {
 					switch( $expiration_rule_type )	{
 						case 'after_user_account_created_time_limit' :
 							$current_user = get_user_by( 'login', $cas_user_datas[ 'cas_user_id' ] );
+							if (! $current_user ) {
+								continue 2;
+							}
+
+							if ( ctype_digit( (string) $expiration_rule_type_value ) === false ) {
+								continue 2;
+							}
+
 							$expiration_date = new \DateTime( $current_user->user_registered );
 
 							// Add expiration delay (in days) from user account registered date
@@ -1290,7 +1332,10 @@ class WP_Cassify_Plugin {
 							break;
 							
 						case 'fixed_datetime_limit' :
-							$expiration_date = new \DateTime( $expiration_rule_type_value );
+							$expiration_date = $this->wp_cassify_parse_expiration_date( $expiration_rule_type_value );
+							if (! $expiration_date ) {
+								continue 2;
+							}
 							break;
 					}
 					
