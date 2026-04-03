@@ -436,8 +436,17 @@ class WP_Cassify_Plugin {
 				if ( empty( $cas_user_datas['cas_user_id'] ) ) {
 					if ( $wp_cassify_log_out_on_errors === 'log_out_on_errors' )
 						$this->wp_cassify_logout();
-						
-					die( 'CAS Authentication failed 2 ! ' . $cas_server_xml_response );
+
+					$error_message = __( 'CAS Authentication failed.', 'wp-cassify' );
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						$error_message .= ' ' . esc_html( $cas_server_xml_response );
+					}
+
+					wp_die(
+						$error_message,
+						__( 'Authentication Error', 'wp-cassify' ),
+						array( 'response' => 403 )
+					);
 				}
 				else {
 					$this->wp_cassify_set_authenticated( true );
@@ -597,7 +606,11 @@ class WP_Cassify_Plugin {
 				if ( empty( $service_url ) ) {
 					if ( $wp_cassify_log_out_on_errors === 'log_out_on_errors' )
 						$this->wp_cassify_logout();
-					die( 'CAS Service URL not set !' );
+					wp_die(
+						__( 'CAS Service URL not set.', 'wp-cassify' ),
+						__( 'Configuration Error', 'wp-cassify' ),
+						array( 'response' => 500 )
+					);
 				}	
 				elseif ( empty( $service_ticket ) ) {	
 

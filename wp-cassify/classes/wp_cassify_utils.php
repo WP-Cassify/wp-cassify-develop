@@ -21,7 +21,11 @@ class WP_Cassify_Utils {
 		$curlopt_capath = '' ) {
 		
 		if (! function_exists ( 'curl_init' ) ) {
-			die( 'Please install php cURL library !');
+			wp_die(
+				__( 'Please install PHP cURL library.', 'wp-cassify' ),
+				__( 'Server Configuration Error', 'wp-cassify' ),
+				array( 'response' => 500 )
+			);
 		}
 
 		$ch = curl_init();
@@ -53,10 +57,18 @@ class WP_Cassify_Utils {
 		if( curl_errno( $ch ) )	{		
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				$info = curl_getinfo( $ch );
-				die( 'cURL error: ' . curl_error( $ch ) . print_r( $info, TRUE ) );		
+				wp_die(
+					'cURL error: ' . esc_html( curl_error( $ch ) ) . '<br /><pre>' . esc_html( print_r( $info, true ) ) . '</pre>',
+					__( 'CAS Request Error', 'wp-cassify' ),
+					array( 'response' => 502 )
+				);
 			}
 			else {
-				die( 'cURL error: set WP_DEBUG to true in wp-config.php for detailed error information.');
+				wp_die(
+					__( 'cURL error: set WP_DEBUG to true in wp-config.php for detailed error information.', 'wp-cassify' ),
+					__( 'CAS Request Error', 'wp-cassify' ),
+					array( 'response' => 502 )
+				);
 			}
 		} 
 
@@ -257,7 +269,11 @@ class WP_Cassify_Utils {
 			do_action( 'wp_login', $user->user_login, $user );
 		}
 		else {
-			die( 'User account does not exist in WordPress database!' );
+			wp_die(
+				__( 'User account does not exist in WordPress database.', 'wp-cassify' ),
+				__( 'Access Denied', 'wp-cassify' ),
+				array( 'response' => 403 )
+			);
 		}
 	}	
 	
@@ -381,7 +397,11 @@ class WP_Cassify_Utils {
 			exit();			
 		}
 		else {
-			die( 'Redirect URL is not valid !');
+			wp_die(
+				__( 'Redirect URL is not valid.', 'wp-cassify' ),
+				__( 'Invalid Request', 'wp-cassify' ),
+				array( 'response' => 400 )
+			);
 		}	
 	}
         
