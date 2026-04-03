@@ -34,12 +34,13 @@ The same docker-compose provides also
  * and a selenium runner that runs the tests
 
 The tests are edited with Selenium IDE.
-There are currently five tests files:
+There are currently six tests files:
  * one that make the install of wordpress and the plugin and a simple configuration of the plugin (wp-cassify)
  * one that make the login with CAS on wordpress
  * one that make the login with the gateway feature of the CAS protocol
  * one that make the logout  with the Single Logout feature of the CAS protocol
  * one that checks additional plugin settings behavior (disable authentication for local login, create-user toggle, and URL settings persistence)
+ * one that checks URL bypass security behavior (disabled by default), custom bypass parameter name/value support, and re-disabling bypass
 
 ## Usage
 
@@ -98,6 +99,7 @@ You can relaunch the selenium tests with Selenium IDE :
 * docker/selenium-sides/03-test-gateway-on-and-off.side
 * docker/selenium-sides/04-single-sign-on-off.side
 * docker/selenium-sides/05-disable-authentication-local-login.side
+* docker/selenium-sides/06-url-bypass-security-and-configurable.side
 
 ... or you can also relaunch the tests via the docker 'selenium-runner' with the following command:
 ```
