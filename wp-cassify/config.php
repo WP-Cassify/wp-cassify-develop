@@ -93,6 +93,8 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_ssl_check_certificate',
 	'wp_cassify_redirect_url_after_logout',
 	'wp_cassify_override_service_url',
+	'wp_cassify_service_url_validation_mode',
+	'wp_cassify_service_url_allowed_hosts',
 	'wp_cassify_login_servlet',
 	'wp_cassify_logout_servlet',
 	'wp_cassify_service_validate_servlet',

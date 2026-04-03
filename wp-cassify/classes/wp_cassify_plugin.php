@@ -134,7 +134,8 @@ class WP_Cassify_Plugin {
 		$this->wp_cassify_error_messages	= $wp_cassify_error_messages;
 		$this->wp_cassify_user_error_codes = $wp_cassify_user_error_codes;
 		$this->wp_cassify_service_ticket_salt = $wp_cassify_service_ticket_salt;
-		
+		$this->wp_cassify_initialize_service_url_validation_settings();
+
 		// Check if CAS Authentication must be bypassed.
 		if (! $this->wp_cassify_bypass() ) {
 			
@@ -619,7 +620,9 @@ class WP_Cassify_Plugin {
 					if( has_filter( 'wp_cassify_redirect_service_url_filter' ) ) {
 						$service_url = apply_filters( 'wp_cassify_redirect_service_url_filter', $service_url );
 					}
-					
+
+					$service_url = $this->wp_cassify_apply_service_url_validation( $service_url, 'redirect' );
+
 					$redirect_url = $wp_cassify_base_url .
 						$wp_cassify_login_servlet . '?' .
 						$this->wp_cassify_default_service_service_parameter_name . '=' . $service_url;
@@ -934,7 +937,252 @@ class WP_Cassify_Plugin {
 		// }
 		// End Fix bug
 
+		$wp_cassify_callback_service_url = $this->wp_cassify_apply_service_url_validation(
+			$wp_cassify_callback_service_url,
+			'callback_service_url'
+		);
+
 		return $wp_cassify_callback_service_url;
+	}
+
+	/**
+	 * Initialize service URL validation settings with backward-compatible defaults.
+	 */
+	private function wp_cassify_initialize_service_url_validation_settings() {
+
+		$wp_cassify_service_url_validation_mode = $this->wp_cassify_get_raw_option( 'wp_cassify_service_url_validation_mode' );
+		$wp_cassify_service_url_allowed_hosts = $this->wp_cassify_get_raw_option( 'wp_cassify_service_url_allowed_hosts' );
+
+		if ( $wp_cassify_service_url_validation_mode === false || $wp_cassify_service_url_validation_mode === '' ) {
+			WP_Cassify_Utils::wp_cassify_update_option( $this->wp_cassify_network_activated, 'wp_cassify_service_url_validation_mode', 'monitor' );
+		}
+
+		if ( $wp_cassify_service_url_allowed_hosts === false || $wp_cassify_service_url_allowed_hosts === '' ) {
+			$allowed_hosts = $this->wp_cassify_collect_default_service_url_allowed_hosts();
+
+			if ( count( $allowed_hosts ) > 0 ) {
+				WP_Cassify_Utils::wp_cassify_update_option(
+					$this->wp_cassify_network_activated,
+					'wp_cassify_service_url_allowed_hosts',
+					implode( ',', $allowed_hosts )
+				);
+			}
+		}
+	}
+
+	/**
+	 * Get an option and preserve "not set" information.
+	 * @param string $option_name
+	 * @return mixed
+	 */
+	private function wp_cassify_get_raw_option( $option_name ) {
+
+		if ( $this->wp_cassify_network_activated ) {
+			return get_site_option( $option_name, false );
+		}
+
+		return get_option( $option_name, false );
+	}
+
+	/**
+	 * Build default hosts allowlist from current site and override URL setting.
+	 * @return array
+	 */
+	private function wp_cassify_collect_default_service_url_allowed_hosts() {
+
+		$hosts = array();
+		$urls = array(
+			home_url( '/' ),
+			site_url( '/' )
+		);
+
+		if ( is_multisite() && function_exists( 'network_home_url' ) ) {
+			$urls[] = network_home_url( '/' );
+		}
+
+		$wp_cassify_override_service_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_override_service_url' );
+
+		if ( !empty( $wp_cassify_override_service_url ) ) {
+			$urls[] = $wp_cassify_override_service_url;
+		}
+
+		foreach ( $urls as $url ) {
+			$host = parse_url( $url, PHP_URL_HOST );
+
+			if ( !empty( $host ) ) {
+				$hosts[ strtolower( $host ) ] = true;
+			}
+		}
+
+		return array_keys( $hosts );
+	}
+
+	/**
+	 * Return validation mode for service URL.
+	 * @return string
+	 */
+	private function wp_cassify_get_service_url_validation_mode() {
+
+		$wp_cassify_service_url_validation_mode = strtolower( trim( (string) WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_service_url_validation_mode' ) ) );
+
+		if ( !in_array( $wp_cassify_service_url_validation_mode, array( 'off', 'monitor', 'enforce' ), true ) ) {
+			$wp_cassify_service_url_validation_mode = 'monitor';
+		}
+
+		return $wp_cassify_service_url_validation_mode;
+	}
+
+	/**
+	 * Build effective allowlist from saved hosts and implicit local hosts.
+	 * @return array
+	 */
+	private function wp_cassify_get_service_url_allowed_hosts() {
+
+		$allowed_hosts = array();
+		$wp_cassify_service_url_allowed_hosts = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_service_url_allowed_hosts' );
+
+		if ( !empty( $wp_cassify_service_url_allowed_hosts ) ) {
+			$wp_cassify_service_url_allowed_hosts = str_replace( ';', ',', $wp_cassify_service_url_allowed_hosts );
+			$hosts = preg_split( '/[\s,]+/', $wp_cassify_service_url_allowed_hosts );
+
+			if ( is_array( $hosts ) ) {
+				foreach ( $hosts as $host ) {
+					$host = strtolower( trim( $host ) );
+
+					if ( !empty( $host ) ) {
+						$allowed_hosts[ $host ] = true;
+					}
+				}
+			}
+		}
+
+		foreach ( $this->wp_cassify_collect_default_service_url_allowed_hosts() as $host ) {
+			$allowed_hosts[ $host ] = true;
+		}
+
+		return array_keys( $allowed_hosts );
+	}
+
+	/**
+	 * Match host against exact hosts or wildcard entries prefixed by dot.
+	 * @param string $host
+	 * @param array $allowed_hosts
+	 * @return bool
+	 */
+	private function wp_cassify_is_host_allowed( $host, $allowed_hosts ) {
+
+		$host = strtolower( $host );
+
+		foreach ( $allowed_hosts as $allowed_host ) {
+			$allowed_host = strtolower( trim( $allowed_host ) );
+
+			if ( $allowed_host === $host ) {
+				return true;
+			}
+
+			if ( strpos( $allowed_host, '.' ) === 0 ) {
+				$domain_suffix = substr( $allowed_host, 1 );
+
+				if ( $host === $domain_suffix ) {
+					return true;
+				}
+
+				if ( strlen( $host ) > strlen( $domain_suffix ) && substr( $host, -strlen( '.' . $domain_suffix ) ) === '.' . $domain_suffix ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Validate service URL format and destination host against allowlist.
+	 * @param string $service_url
+	 * @return array
+	 */
+	private function wp_cassify_validate_service_url( $service_url ) {
+
+		$validation_result = array(
+			'is_valid' => false,
+			'reason' => 'unknown_error'
+		);
+
+		if ( empty( $service_url ) ) {
+			$validation_result[ 'reason' ] = 'empty_service_url';
+			return $validation_result;
+		}
+
+		$parsed_url = parse_url( $service_url );
+
+		if ( $parsed_url === false ) {
+			$validation_result[ 'reason' ] = 'malformed_service_url';
+			return $validation_result;
+		}
+
+		$scheme = isset( $parsed_url[ 'scheme' ] ) ? strtolower( $parsed_url[ 'scheme' ] ) : '';
+		$host = isset( $parsed_url[ 'host' ] ) ? strtolower( $parsed_url[ 'host' ] ) : '';
+
+		if ( !in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			$validation_result[ 'reason' ] = 'invalid_scheme';
+			return $validation_result;
+		}
+
+		if ( empty( $host ) ) {
+			$validation_result[ 'reason' ] = 'missing_host';
+			return $validation_result;
+		}
+
+		if ( ! $this->wp_cassify_is_host_allowed( $host, $this->wp_cassify_get_service_url_allowed_hosts() ) ) {
+			$validation_result[ 'reason' ] = 'host_not_allowed';
+			return $validation_result;
+		}
+
+		$validation_result[ 'is_valid' ] = true;
+		$validation_result[ 'reason' ] = '';
+
+		return $validation_result;
+	}
+
+	/**
+	 * Apply service URL validation according to mode.
+	 * @param string $service_url
+	 * @param string $context
+	 * @return string
+	 */
+	private function wp_cassify_apply_service_url_validation( $service_url, $context = '' ) {
+
+		$wp_cassify_service_url_validation_mode = $this->wp_cassify_get_service_url_validation_mode();
+
+		if ( $wp_cassify_service_url_validation_mode === 'off' ) {
+			return $service_url;
+		}
+
+		$validation_result = $this->wp_cassify_validate_service_url( $service_url );
+
+		if ( $validation_result[ 'is_valid' ] ) {
+			return $service_url;
+		}
+
+		$fallback_url = home_url( '/' );
+		$context = empty( $context ) ? 'unknown_context' : $context;
+
+		do_action(
+			'wp_cassify_service_url_validation_decision',
+			$validation_result,
+			$wp_cassify_service_url_validation_mode,
+			$service_url,
+			$fallback_url,
+			$context
+		);
+
+		error_log( '[WARN] WP CASSIFY invalid service URL (' . $context . ', mode=' . $wp_cassify_service_url_validation_mode . ', reason=' . $validation_result[ 'reason' ] . ') : ' . $service_url );
+
+		if ( $wp_cassify_service_url_validation_mode === 'enforce' ) {
+			return $fallback_url;
+		}
+
+		return $service_url;
 	}
 	
 	/**

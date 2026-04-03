@@ -520,6 +520,11 @@ class WP_Cassify_Admin_Page {
 	 * Display html output for metabox Url Settings.
 	 */ 	
 	public function wp_cassify_add_metabox_urls_settings() {
+		$wp_cassify_service_url_validation_mode = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_service_url_validation_mode' );
+
+		if ( empty( $wp_cassify_service_url_validation_mode ) ) {
+			$wp_cassify_service_url_validation_mode = 'monitor';
+		}
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
@@ -538,6 +543,24 @@ class WP_Cassify_Admin_Page {
 					</span>
 				</td>
 			</tr>			
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_service_url_validation_mode">Service URL validation mode</label></th>
+				<td>
+					<select id="wp_cassify_service_url_validation_mode" name="wp_cassify_service_url_validation_mode" class="post_form">
+						<option value="off" <?php selected( $wp_cassify_service_url_validation_mode, 'off' ); ?>>off</option>
+						<option value="monitor" <?php selected( $wp_cassify_service_url_validation_mode, 'monitor' ); ?>>monitor</option>
+						<option value="enforce" <?php selected( $wp_cassify_service_url_validation_mode, 'enforce' ); ?>>enforce</option>
+					</select>
+					<br /><span class="description">Recommended rollout: start with monitor (logs only), then switch to enforce when validated.</span>
+				</td>
+			</tr>
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_service_url_allowed_hosts">Service URL allowed hosts</label></th>
+				<td>
+					<input type="text" id="wp_cassify_service_url_allowed_hosts" name="wp_cassify_service_url_allowed_hosts" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_service_url_allowed_hosts' ) ); ?>" size="80" class="regular-text post_form" />
+					<br /><span class="description">Comma-separated host allowlist (example.org,.example.org). Home/site hosts are always allowed implicitly.</span>
+				</td>
+			</tr>
 			<tr valign="top">
 				<td colspan="2">Update servlets name only if you have customized your CAS Server.</td>
 			</tr>
@@ -1239,6 +1262,8 @@ class WP_Cassify_Admin_Page {
 				// Url settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_redirect_url_after_logout', $this->wp_cassify_network_activated, FALSE ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_override_service_url', $this->wp_cassify_network_activated, FALSE ); 
+				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_service_url_validation_mode', $this->wp_cassify_network_activated, FALSE );
+				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_service_url_allowed_hosts', $this->wp_cassify_network_activated, FALSE );
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet', $this->wp_cassify_network_activated, FALSE ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_logout_servlet', $this->wp_cassify_network_activated, FALSE );
                 
