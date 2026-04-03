@@ -31,6 +31,7 @@ include( plugin_dir_path( __FILE__ ) . 'admin/admin-menu.php' );
 
 global $wpdb;
 
+
 /**
  * Uninstall script of the plugin 
  */ 
@@ -135,7 +136,9 @@ $GLOBALS['wp-cassify']->init_parameters(
 		$wp_cassify_allowed_get_parameters,
 		$wp_cassify_error_messages,
 		$wp_cassify_user_error_codes,
-		$wp_cassify_service_ticket_salt
+		$wp_cassify_service_ticket_salt,
+		$wp_cassify_default_bypass_parameter_value,
+		$wp_cassify_default_enable_url_bypass
 );
 
 $wp_cassify_shortcodes = new \wp_cassify\WP_Cassify_Shortcodes();

@@ -67,7 +67,7 @@ Don't hesitate to contribute to this project. You can fork it and make pull requ
 * Authorization rule editor.
 * Compatible with Wordpress Access Control Plugin.
 * Manage URL White List to bypass CAS Authentication on certain pages.
-* Much simpler bypass authentication with post method provided by Susan Boland (See online documentation). Create wordpress authentication form with redirect attribute like this :
+* Much simpler bypass authentication with post method provided by Susan Boland (See online documentation). Create wordpress authentication form with redirect attribute like this (works only if URL bypass is enabled in settings) :
 `
     <?php
          
@@ -151,6 +151,7 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 = 2.4.0 =
 * feat(security): validate CAS service URL with host allowlist and backward-compatible monitor mode
+* security: URL bypass is now disabled by default and bypass parameter name/value are configurable
 * improve die messages.
 * remove jquery dependency for admin interface, use vanilla js instead.
 * security: harden input handling, unserialize, and admin output escaping

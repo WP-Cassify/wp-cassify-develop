@@ -365,6 +365,21 @@ class WP_Cassify_Admin_Page {
             $is_disabled = TRUE;
         }
 
+		$is_url_bypass_enabled = FALSE;
+		if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_url_bypass' ) === 'enabled' ) {
+			$is_url_bypass_enabled = TRUE;
+		}
+
+		$wp_cassify_bypass_parameter_name = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_bypass_parameter_name' );
+		if ( empty( $wp_cassify_bypass_parameter_name ) ) {
+			$wp_cassify_bypass_parameter_name = 'wp_cassify_bypass';
+		}
+
+		$wp_cassify_bypass_parameter_value = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_bypass_parameter_value' );
+		if ( $wp_cassify_bypass_parameter_value === '' ) {
+			$wp_cassify_bypass_parameter_value = 'bypass';
+		}
+
         $create_user_if_not_exist = FALSE;	
 		if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' ) === 'create_user_if_not_exist' ) {
             $create_user_if_not_exist = TRUE;
@@ -437,6 +452,31 @@ class WP_Cassify_Admin_Page {
 					<?php else : ?>
 						<input type="checkbox" id="wp_cassify_disable_authentication" name="wp_cassify_disable_authentication" class="post_form" value="disabled" />
 					<?php endif; ?>
+				</td>
+			</tr>
+			<tr valign="top">
+				<th scope="row">Enable URL bypass parameter</th>
+				<td>
+					<?php if ( $is_url_bypass_enabled ) : ?>
+						<input type="checkbox" id="wp_cassify_enable_url_bypass" name="wp_cassify_enable_url_bypass" class="post_form" value="enabled" checked />
+					<?php else : ?>
+						<input type="checkbox" id="wp_cassify_enable_url_bypass" name="wp_cassify_enable_url_bypass" class="post_form" value="enabled" />
+					<?php endif; ?>
+					<br /><span class="description">Security option. Disabled by default. Enable only if you need WordPress login fallback through URL parameter.</span>
+				</td>
+			</tr>
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_bypass_parameter_name">Bypass parameter name</label></th>
+				<td>
+					<input type="text" id="wp_cassify_bypass_parameter_name" name="wp_cassify_bypass_parameter_name" value="<?php echo esc_attr( $wp_cassify_bypass_parameter_name ); ?>" size="40" class="regular-text post_form" />
+					<br /><span class="description">Default value: wp_cassify_bypass</span>
+				</td>
+			</tr>
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_bypass_parameter_value">Bypass parameter value</label></th>
+				<td>
+					<input type="text" id="wp_cassify_bypass_parameter_value" name="wp_cassify_bypass_parameter_value" value="<?php echo esc_attr( $wp_cassify_bypass_parameter_value ); ?>" size="40" class="regular-text post_form" />
+					<br /><span class="description">Default value: bypass</span>
 				</td>
 			</tr>
 			<tr valign="top">
@@ -1249,6 +1289,20 @@ class WP_Cassify_Admin_Page {
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_base_url', $this->wp_cassify_network_activated, FALSE );                        
 				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_protocol_version', $this->wp_cassify_network_activated, FALSE ); 
                 WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_disable_authentication', 'disabled', $this->wp_cassify_network_activated );
+				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_enable_url_bypass', 'enabled', $this->wp_cassify_network_activated );
+
+				$wp_cassify_bypass_parameter_name = '';
+				if ( isset( $_POST['wp_cassify_bypass_parameter_name'] ) ) {
+					$wp_cassify_bypass_parameter_name = sanitize_key( wp_unslash( $_POST['wp_cassify_bypass_parameter_name'] ) );
+				}
+				WP_Cassify_Utils::wp_cassify_update_textfield_manual( $wp_cassify_bypass_parameter_name, 'wp_cassify_bypass_parameter_name', $this->wp_cassify_network_activated );
+
+				$wp_cassify_bypass_parameter_value = '';
+				if ( isset( $_POST['wp_cassify_bypass_parameter_value'] ) ) {
+					$wp_cassify_bypass_parameter_value = sanitize_text_field( wp_unslash( $_POST['wp_cassify_bypass_parameter_value'] ) );
+				}
+				WP_Cassify_Utils::wp_cassify_update_textfield_manual( $wp_cassify_bypass_parameter_value, 'wp_cassify_bypass_parameter_value', $this->wp_cassify_network_activated );
+
                 WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_create_user_if_not_exist', 'create_user_if_not_exist', $this->wp_cassify_network_activated );	
  				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_log_out_on_errors', 'log_out_on_errors', $this->wp_cassify_network_activated );  
  				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_enable_gateway_mode', 'enable_gateway_mode', $this->wp_cassify_network_activated );  

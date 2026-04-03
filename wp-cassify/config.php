@@ -36,6 +36,8 @@ $wp_cassify_default_service_ticket_parameter_name = 'ticket';
 $wp_cassify_default_service_service_parameter_name = 'service';
 $wp_cassify_default_gateway_parameter_name = 'gateway';
 $wp_cassify_default_bypass_parameter_name = 'wp_cassify_bypass';
+$wp_cassify_default_bypass_parameter_value = 'bypass';
+$wp_cassify_default_enable_url_bypass = 'disabled';
 
 // 	Set the times authentication will be cached before really accessing the
 //	CAS server in gateway mode:
@@ -88,6 +90,9 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_base_url',
 	'wp_cassify_protocol_version',
 	'wp_cassify_disable_authentication',
+	'wp_cassify_enable_url_bypass',
+	'wp_cassify_bypass_parameter_name',
+	'wp_cassify_bypass_parameter_value',
 	'wp_cassify_create_user_if_not_exist',
 	'wp_cassify_ssl_cipher',
 	'wp_cassify_ssl_check_certificate',
