@@ -1158,6 +1158,49 @@ class WP_Cassify_Plugin {
 	}
 
 	/**
+	 * Build a safe fallback service URL on the canonical host.
+	 * Keep path/query when available to preserve target (e.g. /wp-admin).
+	 *
+	 * @param string $service_url
+	 * @return string
+	 */
+	private function wp_cassify_build_safe_fallback_service_url( $service_url ) {
+
+		$fallback_url = home_url( '/' );
+		$parsed_fallback_url = parse_url( $fallback_url );
+
+		if ( $parsed_fallback_url === false || empty( $parsed_fallback_url['scheme'] ) || empty( $parsed_fallback_url['host'] ) ) {
+			return $fallback_url;
+		}
+
+		$parsed_service_url = parse_url( $service_url );
+		$path = '/';
+		$query = '';
+		$fragment = '';
+
+		if ( is_array( $parsed_service_url ) ) {
+			if ( !empty( $parsed_service_url['path'] ) ) {
+				$path = $parsed_service_url['path'];
+			}
+
+			if ( !empty( $parsed_service_url['query'] ) ) {
+				$query = '?' . $parsed_service_url['query'];
+			}
+
+			if ( !empty( $parsed_service_url['fragment'] ) ) {
+				$fragment = '#' . $parsed_service_url['fragment'];
+			}
+		}
+
+		$port = '';
+		if ( !empty( $parsed_fallback_url['port'] ) ) {
+			$port = ':' . $parsed_fallback_url['port'];
+		}
+
+		return $parsed_fallback_url['scheme'] . '://' . $parsed_fallback_url['host'] . $port . $path . $query . $fragment;
+	}
+
+	/**
 	 * Apply service URL validation according to mode.
 	 * @param string $service_url
 	 * @param string $context
@@ -1177,7 +1220,7 @@ class WP_Cassify_Plugin {
 			return $service_url;
 		}
 
-		$fallback_url = home_url( '/' );
+		$fallback_url = $this->wp_cassify_build_safe_fallback_service_url( $service_url );
 		$context = empty( $context ) ? 'unknown_context' : $context;
 
 		do_action(
@@ -1189,7 +1232,7 @@ class WP_Cassify_Plugin {
 			$context
 		);
 
-		error_log( '[WARN] WP CASSIFY invalid service URL (' . $context . ', mode=' . $wp_cassify_service_url_validation_mode . ', reason=' . $validation_result[ 'reason' ] . ') : ' . $service_url );
+		error_log( '[WARN] WP CASSIFY invalid service URL (' . $context . ', mode=' . $wp_cassify_service_url_validation_mode . ', reason=' . $validation_result[ 'reason' ] . ') : ' . $service_url . ' => fallback=' . $fallback_url );
 
 		if ( $wp_cassify_service_url_validation_mode === 'enforce' ) {
 			return $fallback_url;
@@ -1379,7 +1422,7 @@ class WP_Cassify_Plugin {
 		
 		// 4- Check $_GET['wp_cassify_bypass'] value
 		if ( isset( $_GET[ $this->wp_cassify_default_bypass_parameter_name ] ) ) {
-			// Can't use get_query_var function because 'query_vars' filter has not yet fired. I use $_GET instead. 
+				// Can't use get_query_var function because 'query_vars' filter has not yet fired. I use $_GET instead. 
 			$wp_cassify_bypass_by_get = sanitize_text_field( wp_unslash( $_GET[ $this->wp_cassify_default_bypass_parameter_name ] ) );
 		}
 
