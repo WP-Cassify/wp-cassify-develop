@@ -17,7 +17,7 @@
       "id": "8906b7a8-d3ae-4510-b49c-5f2622f72967",
       "comment": "Bypass is disabled by default: should still go to CAS login",
       "command": "open",
-      "target": "http://wordpress.example.org/wp-admin/index.php?wp_cassify_bypass=bypass",
+      "target": "http://wordpress.example.org/wp-login.php?wp_cassify_bypass=bypass&redirect_to=/wp-admin/",
       "targets": [],
       "value": ""
     }, {
@@ -171,7 +171,7 @@
       "id": "ce67a674-62fd-4e4d-a66c-aa2e36d0e43c",
       "comment": "Custom bypass now enabled: should show local WordPress login",
       "command": "open",
-      "target": "http://wordpress.example.org/wp-admin/index.php?cassify_test_bypass=letmein",
+      "target": "http://wordpress.example.org/wp-login.php?cassify_test_bypass=letmein&redirect_to=/wp-admin/",
       "targets": [],
       "value": ""
     }, {
@@ -283,7 +283,7 @@
       "id": "415a20af-8401-438a-a8c7-11cb3fe05904",
       "comment": "Bypass disabled again: custom parameter should no longer bypass CAS",
       "command": "open",
-      "target": "http://wordpress.example.org/wp-admin/index.php?cassify_test_bypass=letmein",
+      "target": "http://wordpress.example.org/wp-login.php?cassify_test_bypass=letmein&redirect_to=/wp-admin/",
       "targets": [],
       "value": ""
     }, {
