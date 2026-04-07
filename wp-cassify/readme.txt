@@ -150,11 +150,12 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 == Changelog ==
 
 = 2.4.0 =
-* feat(security): validate CAS service URL with host allowlist and backward-compatible monitor mode
-* security: URL bypass is now disabled by default and bypass parameter name/value are configurable
-* improve die messages.
-* remove jquery dependency for admin interface, use vanilla js instead.
-* security: harden input handling, unserialize, and admin output escaping
+* Fix : let 'name of the service validate servlet' be customized
+* Feat(security): validate CAS service URL with host allowlist and backward-compatible monitor mode
+* Security: URL bypass is now disabled by default and bypass parameter name/value are configurable
+* Improve die messages.
+* Remove jquery dependency for admin interface, use vanilla js instead.
+* Security: harden input handling, unserialize, and admin output escaping
 * Hardened WP-Cassify’s rule engine for more robust parsing and evaluation.
 * Improved query handling in uninstall and configuration import routines
 * Fix some logs

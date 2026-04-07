@@ -1320,22 +1320,7 @@ class WP_Cassify_Admin_Page {
 				WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_service_url_allowed_hosts', $this->wp_cassify_network_activated, FALSE );
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_login_servlet', $this->wp_cassify_network_activated, FALSE ); 
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_logout_servlet', $this->wp_cassify_network_activated, FALSE );
-                
-				$wp_cassify_protocol_version = isset( $_POST['wp_cassify_protocol_version'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_cassify_protocol_version'] ) ) : '';
-				if ( $wp_cassify_protocol_version === '3' ) {
-                	WP_Cassify_Utils::wp_cassify_update_textfield_manual( 
-                		'p3/' . $this->wp_cassify_default_service_validate_servlet, 
-                		'wp_cassify_service_validate_servlet',
-                		$this->wp_cassify_network_activated
-            		);
-                }
-                else {
-					WP_Cassify_Utils::wp_cassify_update_textfield_manual( 
-                		'', 
-                		'wp_cassify_service_validate_servlet',
-                		$this->wp_cassify_network_activated
-            		);
-                }
+                WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_service_validate_servlet', $this->wp_cassify_network_activated, FALSE );
 				
 				// Attributes extraction settings
                 WP_Cassify_Utils::wp_cassify_update_textfield( $_POST, 'wp_cassify_xpath_query_to_extact_cas_user', $this->wp_cassify_network_activated, FALSE ); 
