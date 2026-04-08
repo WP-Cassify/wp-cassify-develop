@@ -149,6 +149,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 == Changelog ==
 
+= 2.4.1 =
+* Log debug/info messages only if debug mode is enabled in plugin settings or if WP_DEBUG is enabled. Fix some logs.
+
 = 2.4.0 =
 * Fix : let 'name of the service validate servlet' be customized
 * Feat(security): validate CAS service URL with host allowlist and backward-compatible monitor mode

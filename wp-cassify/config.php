@@ -134,7 +134,8 @@ $wp_cassify_plugin_options_list = array(
 	'wp_cassify_expiration_rules',
 	
 	'wp_cassify_xml_response_dump',
-	'wp_cassify_xml_response_value'
+	'wp_cassify_xml_response_value',
+	'wp_cassify_debug_log'
 );
 
 $wp_cassify_wordpress_user_meta_list = array(

@@ -1192,27 +1192,34 @@ class WP_Cassify_Admin_Page {
 	 * Display html output for metabox Debug Settings.
 	 */ 	
 	public function wp_cassify_add_metabox_debug_settings() {
-		
-        $is_enabled = FALSE;
 
-		if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) === 'enabled' ) {
-            $is_enabled = TRUE;
-        }
-        else {
-            $is_enabled = FALSE;
-        }
+		$is_xml_dump_enabled = WP_Cassify_Utils::wp_cassify_get_option(
+			$this->wp_cassify_network_activated,
+			'wp_cassify_xml_response_dump'
+		) === 'enabled';
+
+		$is_debug_log_enabled = WP_Cassify_Utils::wp_cassify_get_option(
+			$this->wp_cassify_network_activated,
+			'wp_cassify_debug_log'
+		) === 'enabled';
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
-				<th scope="row">Dump xml CAS server response</th>
+				<th scope="row"><label for="wp_cassify_debug_log">Enable plugin debug log</label></th>
 				<td>
-					<?php if ( $is_enabled ) : ?>
-						<input type="checkbox" id="wp_cassify_xml_response_dump" name="wp_cassify_xml_response_dump" class="post_form" value="enabled" checked />
-					<?php else :?>
-						<input type="checkbox" id="wp_cassify_xml_response_dump" name="wp_cassify_xml_response_dump" class="post_form" value="enabled" />
-					<?php endif; ?>
+					<input type="checkbox" id="wp_cassify_debug_log" name="wp_cassify_debug_log" class="post_form" value="enabled" <?php checked( $is_debug_log_enabled ); ?> />
+					<br /><span class="description">
+						Log INFO-level events (user creation, etc.) to the PHP error log or <code>wp-content/debug.log</code>.
+						WARN and ERROR levels are always logged. Does not require <code>WP_DEBUG</code> to be enabled.
+					</span>
 				</td>
-			</tr>	
+			</tr>
+			<tr valign="top">
+				<th scope="row"><label for="wp_cassify_xml_response_dump">Dump xml CAS server response</label></th>
+				<td>
+					<input type="checkbox" id="wp_cassify_xml_response_dump" name="wp_cassify_xml_response_dump" class="post_form" value="enabled" <?php checked( $is_xml_dump_enabled ); ?> />
+				</td>
+			</tr>
 			<tr valign="top">
 				<th scope="row">Last XML CAS server response</th>
 				<td>
@@ -1220,7 +1227,7 @@ class WP_Cassify_Admin_Page {
 						<?php echo ltrim( esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_value' ) ) ); ?>
 					</textarea>
 				</td>
-			</tr>			
+			</tr>
 		</table>
 		<?php submit_button( 'Save options', 'primary', 'wp_cassify_save_options_debug_settings', FALSE, array( 'id' => 'wp_cassify_save_options_debug_settings', 'data-style' => 'wp_cassify_save_options' ) ); ?>
 <?php
@@ -1384,7 +1391,8 @@ class WP_Cassify_Admin_Page {
 				WP_Cassify_Utils::wp_cassify_update_multiple_select( $_POST, 'wp_cassify_expiration_rules', $this->wp_cassify_network_activated ); 				
 
 				// Debug settings
-				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_xml_response_dump', 'enabled', $this->wp_cassify_network_activated );	
+				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_xml_response_dump', 'enabled', $this->wp_cassify_network_activated );
+				WP_Cassify_Utils::wp_cassify_update_checkbox( $_POST, 'wp_cassify_debug_log', 'enabled', $this->wp_cassify_network_activated );
                 
 				// Send test notification message.
 				if (! empty( $_POST['wp_cassify_send_notification_test_message'] ) ){

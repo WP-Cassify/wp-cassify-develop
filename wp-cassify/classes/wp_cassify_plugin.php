@@ -548,8 +548,11 @@ class WP_Cassify_Plugin {
 				// Create wordpress user account if not exist
 				if ( $wp_cassify_create_user_if_not_exist === 'create_user_if_not_exist' ) {
 					if ( WP_Cassify_Utils::wp_cassify_is_wordpress_user_exist( $cas_user_datas[ 'cas_user_id' ] ) === false ) {
-						error_log('[INFO] WP CASSIFY CREATE USER....');
-						
+						WP_Cassify_Utils::wp_cassify_log(
+							'WordPress user account created for CAS user: ' . $cas_user_datas['cas_user_id'],
+							'INFO'
+						);
+
 						$wordpress_user_id = WP_Cassify_Utils::wp_cassify_create_wordpress_user( $cas_user_datas[ 'cas_user_id' ], null );
 
 						if ( $wordpress_user_id > 0 ) {
@@ -1283,7 +1286,15 @@ class WP_Cassify_Plugin {
 			$context
 		);
 
-		error_log( '[WARN] WP CASSIFY invalid service URL (' . $context . ', mode=' . $wp_cassify_service_url_validation_mode . ', reason=' . $validation_result[ 'reason' ] . ') : ' . $service_url . ' => fallback=' . $fallback_url );
+		WP_Cassify_Utils::wp_cassify_log(
+			'Invalid service URL'
+				. ' (context=' . $context
+				. ', mode=' . $wp_cassify_service_url_validation_mode
+				. ', reason=' . $validation_result['reason']
+				. ') : ' . $service_url
+				. ' => fallback=' . $fallback_url,
+			'WARN'
+		);
 
 		if ( $wp_cassify_service_url_validation_mode === 'enforce' ) {
 			return $fallback_url;

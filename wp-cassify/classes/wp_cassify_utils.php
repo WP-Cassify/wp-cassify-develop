@@ -76,7 +76,35 @@ class WP_Cassify_Utils {
 
 		return $response;
 	}
-	
+
+	/**
+	 * Log a message to the PHP error log.
+	 *
+	 * - INFO and DEBUG levels are logged only when either:
+	 *     (a) the plugin option 'wp_cassify_debug_log' is set to 'enabled', OR
+	 *     (b) both WP_DEBUG and WP_DEBUG_LOG constants are true (dev environment).
+	 * - WARN and ERROR levels are always logged regardless of settings.
+	 *
+	 * When WP_DEBUG_LOG is enabled, WordPress redirects error_log() output to
+	 * wp-content/debug.log instead of the server error log.
+	 *
+	 * @param string $message  The message to log.
+	 * @param string $level    Log level : DEBUG | INFO | WARN | ERROR. Default: 'INFO'.
+	 */
+	public static function wp_cassify_log( string $message, string $level = 'INFO' ): void {
+		$always_log = in_array( $level, [ 'WARN', 'ERROR' ], true );
+
+		$plugin_debug_enabled = get_option( 'wp_cassify_debug_log' ) === 'enabled'
+			|| get_site_option( 'wp_cassify_debug_log' ) === 'enabled';
+
+		$wp_debug_log_enabled = defined( 'WP_DEBUG' ) && WP_DEBUG
+			&& defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
+
+		if ( $always_log || $plugin_debug_enabled || $wp_debug_log_enabled ) {
+			error_log( '[WP Cassify][' . $level . '] ' . $message );
+		}
+	}
+
 	/**
 	 * Return the current url with parameters.
 	 * @param 	string $wp_cassify_default_wordpress_blog_http_port		Port use for http communications. 80 By default.
