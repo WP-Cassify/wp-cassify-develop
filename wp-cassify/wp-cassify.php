@@ -4,7 +4,7 @@
  * Plugin Name: WP Cassify
  * Plugin URI: https://wpcassify.wordpress.com/
  * Description: CAS Authentication Client for Wordpress. Also, it handle custom authorizations rules from cas user attributes.
- * Version: 2.4.0
+ * Version: 2.4.1
  * Requires PHP: 7.0
  * Author: Alain-Aymerick FRANCOIS
  * Author URI: https://wpcassify.wordpress.com/about-me/
@@ -12,6 +12,11 @@
  */
  
 defined( 'ABSPATH' ) || exit;
+
+/**
+ * Current plugin version. Used for option migration tracking.
+ */
+define( 'WP_CASSIFY_VERSION', '2.4.1' );
 
 if (! function_exists( 'get_plugin_data' ) ) {
 	require_once ABSPATH . '/wp-admin/includes/plugin.php';
@@ -41,6 +46,66 @@ register_uninstall_hook( __FILE__, 'wp_cassify_uninstall' );
 function wp_cassify_deactivation() {
 	// Nothing here.
 }
+
+/**
+ * Runs option migration tasks when the plugin version changes.
+ *
+ * Called on 'plugins_loaded' to handle silent upgrades (i.e. updates made
+ * through the WordPress update mechanism without manual deactivation/reactivation).
+ *
+ * Migration added in 2.4.1:
+ *   In 2.4.0, the default value of wp_cassify_enable_url_bypass was changed from
+ *   'enabled' to 'disabled'. Users who had never explicitly saved this option relied
+ *   on the old default being 'enabled'. If we detect a pre-2.4.1 upgrade on an
+ *   already-configured site (i.e. wp_cassify_base_url is set), we write 'enabled'
+ *   explicitly so their access is not silently broken.
+ *   Fresh installs of 2.4.1 (wp_cassify_base_url is empty) are not affected and
+ *   correctly start with the 'disabled' default.
+ */
+function wp_cassify_maybe_migrate_options() {
+	global $wp_cassify_network_activated;
+
+	$stored_version = $wp_cassify_network_activated
+		? get_site_option( 'wp_cassify_plugin_version', '' )
+		: get_option( 'wp_cassify_plugin_version', '' );
+
+	// Nothing to do when already on the current version.
+	if ( $stored_version === WP_CASSIFY_VERSION ) {
+		return;
+	}
+
+	// --- Migration: any version prior to 2.4.1 ---
+	// In 2.4.0, wp_cassify_enable_url_bypass was changed to default to 'disabled'.
+	// Restore 'enabled' for existing sites that never explicitly configured this option.
+	if ( version_compare( $stored_version, '2.4.1', '<' ) ) {
+		$existing_bypass = $wp_cassify_network_activated
+			? get_site_option( 'wp_cassify_enable_url_bypass', '' )
+			: get_option( 'wp_cassify_enable_url_bypass', '' );
+
+		$existing_base_url = $wp_cassify_network_activated
+			? get_site_option( 'wp_cassify_base_url', '' )
+			: get_option( 'wp_cassify_base_url', '' );
+
+		// Only migrate when the option was never explicitly saved AND the plugin
+		// was already configured (base URL set), meaning this is a real upgrade,
+		// not a brand-new installation.
+		if ( ( $existing_bypass === '' || $existing_bypass === false ) && ! empty( $existing_base_url ) ) {
+			\wp_cassify\WP_Cassify_Utils::wp_cassify_update_option(
+				$wp_cassify_network_activated,
+				'wp_cassify_enable_url_bypass',
+				'enabled'
+			);
+		}
+	}
+
+	// Persist the current plugin version so this migration only runs once.
+	if ( $wp_cassify_network_activated ) {
+		update_site_option( 'wp_cassify_plugin_version', WP_CASSIFY_VERSION );
+	} else {
+		update_option( 'wp_cassify_plugin_version', WP_CASSIFY_VERSION );
+	}
+}
+add_action( 'plugins_loaded', 'wp_cassify_maybe_migrate_options' );
 
 function wp_cassify_uninstall() {
 	

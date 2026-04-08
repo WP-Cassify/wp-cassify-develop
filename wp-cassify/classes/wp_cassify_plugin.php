@@ -175,6 +175,16 @@ class WP_Cassify_Plugin {
 
 		$wp_cassify_enable_url_bypass = apply_filters( 'wp_cassify_override_enable_url_bypass', $wp_cassify_enable_url_bypass );
 
+		// If WP_CASSIFY_ENABLE_URL_BYPASS is defined in wp-config.php it takes the highest
+		// priority and overrides both the database value and the filter above.
+		// This is the recommended way to guarantee URL bypass access for multisite super-admins
+		// who cannot authenticate through CAS (e.g. add to wp-config.php:
+		//   define( 'WP_CASSIFY_ENABLE_URL_BYPASS', true );
+		// ).
+		if ( defined( 'WP_CASSIFY_ENABLE_URL_BYPASS' ) ) {
+			$wp_cassify_enable_url_bypass = (bool) WP_CASSIFY_ENABLE_URL_BYPASS;
+		}
+
 		if ( $wp_cassify_enable_url_bypass === true ) {
 			$this->wp_cassify_enable_url_bypass = true;
 		}

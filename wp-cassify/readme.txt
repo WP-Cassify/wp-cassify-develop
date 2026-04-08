@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 6.9
 Requires PHP: 7.0
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -151,6 +151,8 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 = 2.4.1 =
 * Log debug/info messages only if debug mode is enabled in plugin settings or if WP_DEBUG is enabled. Fix some logs.
+* Fix(upgrade): restore URL bypass to 'enabled' on existing sites that never explicitly saved the option, preventing broken super-admin access after upgrade from pre-2.4.1.
+* Feat: add `WP_CASSIFY_ENABLE_URL_BYPASS` constant support in `wp-config.php` to force URL bypass independently of the UI setting. Recommended for multisite super-admins: `define( 'WP_CASSIFY_ENABLE_URL_BYPASS', true );`
 
 = 2.4.0 =
 * Fix : let 'name of the service validate servlet' be customized

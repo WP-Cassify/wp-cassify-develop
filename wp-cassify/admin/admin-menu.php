@@ -462,7 +462,9 @@ class WP_Cassify_Admin_Page {
 					<?php else : ?>
 						<input type="checkbox" id="wp_cassify_enable_url_bypass" name="wp_cassify_enable_url_bypass" class="post_form" value="enabled" />
 					<?php endif; ?>
-					<br /><span class="description">Security option. Disabled by default. Enable only if you need WordPress login fallback through URL parameter.</span>
+					<br /><span class="description">Security option. Disabled by default. Enable only if you need WordPress login fallback through URL parameter (e.g. <code>?wp_cassify_bypass=bypass</code>).
+					For multisite super-admins who must bypass CAS at server level, you can also define the following constant in <code>wp-config.php</code>, which takes priority over this checkbox and the <code>wp_cassify_override_enable_url_bypass</code> filter:
+					<br /><code>define( 'WP_CASSIFY_ENABLE_URL_BYPASS', true );</code></span>
 				</td>
 			</tr>
 			<tr valign="top">
