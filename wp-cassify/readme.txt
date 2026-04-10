@@ -149,6 +149,9 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 == Changelog ==
 
+= 2.4.2 =
+* Fix undefined array key warnings by replacing @ operator with isset() checks
+
 = 2.4.1 =
 * Log debug/info messages only if debug mode is enabled in plugin settings or if WP_DEBUG is enabled. Fix some logs.
 * Fix(upgrade): restore URL bypass to 'enabled' on existing sites that never explicitly saved the option, preventing broken super-admin access after upgrade from pre-2.4.1.

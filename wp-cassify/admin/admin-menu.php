@@ -1399,7 +1399,7 @@ class WP_Cassify_Admin_Page {
 				// Send test notification message.
 				if (! empty( $_POST['wp_cassify_send_notification_test_message'] ) ){
 					
-					$wp_cassify_send_notification_to = sanitize_text_field( $_POST[ 'wp_cassify_notifications_send_to_test' ] );
+					$wp_cassify_send_notification_to = sanitize_text_field( isset( $_POST[ 'wp_cassify_notifications_send_to_test' ] ) ? $_POST[ 'wp_cassify_notifications_send_to_test' ] : '' );
 					$wp_cassify_notifications_subject_prefix = esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_notifications_subject_prefix' ) );
 					$wp_cassify_send_notification_subject =  $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_subject' ];
 					$wp_cassify_send_notification_message = $this->wp_cassify_default_notifications_options[ 'wp_cassify_default_notifications_message' ];

@@ -113,8 +113,8 @@ class WP_Cassify_Utils {
 	 */   
 	public static function wp_cassify_get_current_url( $wp_cassify_default_wordpress_blog_http_port = 80, $wp_cassify_default_wordpress_blog_https_port = 443 ) {
 		
-		$current_url = ( @$_SERVER[ 'HTTPS' ] === 'on' ) ? 'https://' : 'http://';
-		
+		$current_url = ( isset( $_SERVER[ 'HTTPS' ] ) && $_SERVER[ 'HTTPS' ] === 'on' ) ? 'https://' : 'http://';
+
 		// // If cassified application is hosted behind reverse proxy.
 		// if ( isset( $_SERVER[ 'HTTP_X_FORWARDED_HOST' ] ) ) {
 		// 	$current_url .= $_SERVER[ 'HTTP_X_FORWARDED_HOST' ];
@@ -138,7 +138,8 @@ class WP_Cassify_Utils {
 			$current_url .= $_SERVER[ 'SERVER_NAME' ];
 		}
 
-		if( ( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) &&
+		if( isset( $_SERVER[ 'SERVER_PORT' ] ) &&
+			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) &&
 			( $_SERVER[ 'SERVER_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) &&
 			!isset( $_ENV['PANTHEON_SITE'] ) ) // Don't use the port if we're on Pantheon
 		  {
@@ -151,10 +152,11 @@ class WP_Cassify_Utils {
 			isset( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] ) && 
 			isset( $_SERVER[ 'HTTP_X_FORWARDED_PROTO' ] ) ) {
 			
-			$current_url = ( @$_SERVER[ 'HTTPS' ] === 'on' ? 'https://' : 'http://' ) . $_SERVER[ 'HTTP_HOST' ];
+			$current_url = ( isset( $_SERVER[ 'HTTPS' ] ) && $_SERVER[ 'HTTPS' ] === 'on' ? 'https://' : 'http://' ) . $_SERVER[ 'HTTP_HOST' ];
 				
 			if( ( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_http_port ) && 
-				( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) ) {
+				( $_SERVER[ 'HTTP_X_FORWARDED_PORT' ] != $wp_cassify_default_wordpress_blog_https_port ) &&
+				isset( $_SERVER[ 'SERVER_PORT' ] ) ) {
 				$current_url .= ':' . $_SERVER[ 'SERVER_PORT' ];
 			} 	
 			
@@ -163,7 +165,7 @@ class WP_Cassify_Utils {
 			}
 		}
 
-		$current_url .= $_SERVER[ 'REQUEST_URI' ];
+		$current_url .= isset( $_SERVER[ 'REQUEST_URI' ] ) ? $_SERVER[ 'REQUEST_URI' ] : '/';
 		
 		return $current_url;
 	}

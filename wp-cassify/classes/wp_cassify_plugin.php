@@ -797,7 +797,11 @@ class WP_Cassify_Plugin {
                     	"|<samlp:SessionIndex>(.*)</samlp:SessionIndex>|",
                     	$decoded_logout_rq, $tick, PREG_OFFSET_CAPTURE, 3
                     );
-                    
+
+                    if ( ! isset( $tick[0][0] ) ) {
+                        exit();
+                    }
+
                     $wrappedSamlSessionIndex = preg_replace( '|<samlp:SessionIndex>|', '', $tick[0][0] );
                     
                     $ticket2logout = preg_replace( '|</samlp:SessionIndex>|', '', $wrappedSamlSessionIndex );
