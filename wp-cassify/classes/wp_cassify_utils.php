@@ -293,6 +293,23 @@ class WP_Cassify_Utils {
 		if ( username_exists( $cas_user_id ) ) {
 			$user = get_user_by( 'login', $cas_user_id );
 
+			// In multisite, a user can exist at network level (wp_users) but not
+			// be a member of the current sub-site. Without blog membership,
+			// is_user_member_of_blog() stays false after authentication, which
+			// causes wp_cassify_grab_service_ticket() to re-enter the auth flow
+			// on every page load, creating an infinite redirect loop.
+			// Role rules (wp_cassify_get_roles_to_push) already run before this
+			// function and may have added the user via add_role(). We only fall
+			// back to add_user_to_blog() when the user is still not a member
+			// (no role rules matched, or the plugin is not network-activated).
+			if ( is_multisite() && ! is_user_member_of_blog( $user->ID, get_current_blog_id() ) ) {
+				add_user_to_blog( get_current_blog_id(), $user->ID, get_option( 'default_role', 'subscriber' ) );
+				wp_cassify\WP_Cassify_Utils::wp_cassify_log(
+					'Multisite: user ' . $cas_user_id . ' added to blog ' . get_current_blog_id() . ' with default role.',
+					'INFO'
+				);
+			}
+
 			wp_set_current_user( $user->ID, $user->user_login );
 			wp_set_auth_cookie( $user->ID );
 			

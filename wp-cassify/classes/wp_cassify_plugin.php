@@ -407,7 +407,29 @@ class WP_Cassify_Plugin {
 
 		$gateway_mode = $this->wp_cassify_is_gateway_request( null );
 
-		if ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) {		
+		if ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) {
+
+			// Multisite: user is network-authenticated (valid cookie) but not yet a member
+			// of this specific sub-site and there is no service ticket to process.
+			// This happens when a user who authenticated via CAS on one sub-site navigates
+			// to another sub-site they never joined.
+			// Without this branch the outer condition stays TRUE on every request
+			// (because !is_user_member_of_blog() is still TRUE), WordPress redirects
+			// the user to wp-login.php for private content, but wp_cassify_redirect()
+			// refuses to forward to CAS (user IS logged in), creating an infinite
+			// wp-login ↔ private-page redirect loop.
+			// Solution: grant sub-site membership directly with the blog's default role.
+			if ( is_multisite() && is_user_logged_in() && ! is_user_member_of_blog() && empty( $service_ticket ) ) {
+				$_current_user = wp_get_current_user();
+				if ( $_current_user && $_current_user->ID > 0 ) {
+					add_user_to_blog( get_current_blog_id(), $_current_user->ID, get_option( 'default_role', 'subscriber' ) );
+					WP_Cassify_Utils::wp_cassify_log(
+						'Multisite: network user (ID=' . $_current_user->ID . ') added to blog ' . get_current_blog_id() . ' with default role (no service ticket).',
+						'INFO'
+					);
+				}
+			}
+
 			if (! empty( $service_ticket ) ) {
 				// Ensure session is started
 				$this->wp_cassify_session_start( true );
@@ -907,13 +929,15 @@ class WP_Cassify_Plugin {
                 $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] = -2;
             }				
 			
-			if ( ( ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] != -2 ) && ( (int) $this->wp_cassify_get_cache_times_for_auth_recheck() === -1 ) ) ||
-            	 ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] >= 0  && $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] < $this->wp_cassify_cache_times_for_auth_recheck )
+			$cache_times = (int) $this->wp_cassify_get_cache_times_for_auth_recheck();
+
+			if ( ( ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] != -2 ) && ( $cache_times === -1 ) ) ||
+            	 ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] >= 0  && $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] < $cache_times )
             ) {
 				$auth = false;
 
-                if ( $this->wp_cassify_cache_times_for_auth_recheck != -1 ) {
-                    $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count']++;;
+                if ( $cache_times !== -1 ) {
+                    $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count']++;
                 }
             }
 			else {
