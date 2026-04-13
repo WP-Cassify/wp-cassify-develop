@@ -150,6 +150,7 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 == Changelog ==
 
 = 2.4.2 =
+* Fix multisite support (bugs introduced in 2.4.0)
 * Fix undefined array key warnings by replacing @ operator with isset() checks
 
 = 2.4.1 =
