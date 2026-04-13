@@ -907,7 +907,7 @@ class WP_Cassify_Plugin {
                 $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] = -2;
             }				
 			
-			if ( ( ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] != -2 ) && ( $this->wp_cassify_get_cache_times_for_auth_recheck() === -1 ) ) ||
+			if ( ( ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] != -2 ) && ( (int) $this->wp_cassify_get_cache_times_for_auth_recheck() === -1 ) ) ||
             	 ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] >= 0  && $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['unauth_count'] < $this->wp_cassify_cache_times_for_auth_recheck )
             ) {
 				$auth = false;
@@ -1775,7 +1775,7 @@ class WP_Cassify_Plugin {
 					if ( ( is_array( $role_rule_parts ) ) && ( count( $role_rule_parts ) === 3 ) ) {
 						$role_rule_key = $role_rule_parts[0];
 						// Determine scope of the rule if network activated
-						$role_rule_blog_id = $role_rule_parts[1]; 
+						$role_rule_blog_id = (int) $role_rule_parts[1]; 
 						$role_rule_expression = stripslashes( $role_rule_parts[2] );
 						
 						// role_rule_blog_id == 0 match "ALL BLOGS"
