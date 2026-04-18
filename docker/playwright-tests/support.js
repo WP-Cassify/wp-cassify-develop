@@ -198,7 +198,10 @@ async function logoutWordPress(page) {
   const myAccount = page.locator('#wp-admin-bar-my-account');
   await expect(myAccount).toBeVisible();
   await myAccount.hover();
-  await page.locator('#wp-admin-bar-logout a').click();
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'load' }),
+    page.locator('#wp-admin-bar-logout a').click(),
+  ]);
   await expect(page.locator('body')).toBeVisible();
 }
 
