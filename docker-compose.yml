@@ -74,12 +74,9 @@ services:
            condition: service_healthy
        cas:
            condition: service_healthy
-     command: ["sh", "-lc", "xvfb-run -a npm run test:e2e:headed && npm run show-report:docker"]
-     ports:
-       - "9323:9323"
+     command: ["sh", "-lc", "xvfb-run -a npm run test:e2e:headed"]
      volumes:
        - ./docker/playwright-tests/playwright-report:/work/playwright-report
-       - ./docker/playwright-tests/test-results:/work/test-results
      shm_size: 1gb
 
 
