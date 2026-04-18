@@ -1,0 +1,15 @@
+{
+  "name": "wp-cassify-develop-playwright",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Playwright E2E tests for WP-CASSIFY",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "show-report": "playwright show-report playwright-report",
+    "show-report:docker": "playwright show-report playwright-report --host 0.0.0.0 --port 9323"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.59.1"
+  }
+}

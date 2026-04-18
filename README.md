@@ -30,28 +30,27 @@ The docker-compose file sets up
  * with an OpenLDAP server
 
 The same docker-compose provides also 
- * a selenium chrome node
- * and a selenium runner that runs the tests
+ * a `playwright-tests` service that runs the end-to-end tests
 
-The tests are edited with Selenium IDE.
-There are currently six tests files:
- * one that make the install of wordpress and the plugin and a simple configuration of the plugin (wp-cassify)
- * one that make the login with CAS on wordpress
- * one that make the login with the gateway feature of the CAS protocol
- * one that make the logout  with the Single Logout feature of the CAS protocol
- * one that checks additional plugin settings behavior (disable authentication for local login, create-user toggle, and URL settings persistence)
- * one that checks URL bypass security behavior (disabled by default), custom bypass parameter name/value support, and re-disabling bypass
+The tests are now written with Playwright.
+They cover the same critical flows:
+ * WordPress install + plugin activation + baseline configuration
+ * CAS login on WordPress
+ * Gateway mode on/off
+ * Single Logout on/off
+ * Local login, create-user toggle, and URL settings persistence
+ * URL bypass security behavior (disabled by default, configurable, and reset)
 
 ## Usage
 
-To launch all the dockers, included the selenium tests, with wordpress (on php8), simply run:
+To launch all the dockers, including the Playwright tests, with wordpress (on php8), simply run:
 ```
-docker compose up 
+docker compose up --build --abort-on-container-exit
 ```
 
 If you want to test with wordpress on php7, use instead :
 ```
-docker compose -f docker-compose.yml -f docker-compose-php7.yml up 
+docker compose -f docker-compose.yml -f docker-compose-php7.yml up --build --abort-on-container-exit
 ```
 
 ## Requirements
@@ -62,18 +61,16 @@ For debian for example, see the [official documentation](https://docs.docker.com
 
 ## Ports and URLs
 
-Ports 80, 8080 and 4444 are exposed on the host machine and must be free.
+Ports 80 and 8080 are exposed on the host machine and must be free.
 
-The WordPress instance is available at http://localhost but to be compliant with selenium tests, it is better to modify the /etc/hosts file to add the following line:
+The WordPress instance is available at http://localhost but to be compliant with the Playwright tests, it is better to modify the /etc/hosts file to add the following line:
 ```
 127.0.0.1 cas.example.org wordpress.example.org wordpress1.example.org wordpress2.example.org
 ```
 
-With this, you can access the WordPress instance at http://wordpress.example.org and the CAS server at http://cas.example.org:8080/cas
+With this, you can access the WordPress instance at http://wordpress.example.org and the CAS server at http://cas.example.org:8080/cas.
 
-Selenium Grid is available at http://localhost:4444.
-
-On the WordPress instance, the Selenium Test configured Administrators are users with id joe on CAS/OpenLdap.
+On the WordPress instance, the Playwright test configured Administrators are users with id joe on CAS/OpenLdap.
 So you can log in with the following credentials:
 ```
 username: joe
@@ -93,29 +90,43 @@ If you want to reset the WordPress instance, after launched docker-compose, you 
 docker compose rm db
 ```
 
-You can relaunch the selenium tests with Selenium IDE :
-* docker/selenium-sides/01-wp-cassify-setup.side
-* docker/selenium-sides/02-wp-cassify-cas-login.side
-* docker/selenium-sides/03-test-gateway-on-and-off.side
-* docker/selenium-sides/04-single-sign-on-off.side
-* docker/selenium-sides/05-disable-authentication-local-login.side
-* docker/selenium-sides/06-url-bypass-security-and-configurable.side
-
-... or you can also relaunch the tests via the docker 'selenium-runner' with the following command:
+The recommended one-step Docker command is:
 ```
-docker compose up selenium-runner 
+docker compose up --build playwright-suite
 ```
 
-... or you can also relaunch some tests via selenium-runner directly with the following command for example:
+This runs Playwright in headed mode inside an Xvfb display, so it does not require an XServer on your host.
+You can follow the execution step by step through the browser actions and the Playwright trace/report.
+If you want to actually see the browser window on your desktop, you would need an X11/VNC setup.
+
+If you only want to run the tests headless, use:
 ```
-selenium-side-runner -d -s http://localhost:4444 docker/selenium-sides/03-test-gateway-on-and-off.side
+docker compose up --build --abort-on-container-exit
 ```
 
-## Continuous integration tests with GitHub Actions, docker compose and selenium
+The HTML report and test results are mounted on the host under:
+* `docker/playwright-tests/playwright-report`
+* `docker/playwright-tests/test-results`
 
-The project is also configured to run the tests on GitHub Actions. 
-The workflow is defined in the file `.github/workflows/docker-selenium-tests.yml` and `.github/workflows/docker-selenium-tests-php7.yml` 
-(to keep compatibility with WordPress on php7)
+After a run, you can open the HTML report directly at `docker/playwright-tests/playwright-report/index.html`,
+or serve the report only through Docker with:
+```
+docker compose up --build playwright-report
+```
+
+This starts the report viewer on port `9323`.
+
+
+If you want to run the tests directly from the container image with a specific command, for example:
+```
+npm run test:e2e -- wp-cassify.spec.js
+```
+
+## Continuous integration tests with GitHub Actions, docker compose and Playwright
+
+The project is also configured to run the tests on GitHub Actions.
+The workflow is defined in the files `.github/workflows/docker-playwright-tests.yml` and `.github/workflows/docker-playwright-tests-php7.yml`.
+The PHP7 workflow keeps compatibility with WordPress on php7 while sharing the same Playwright test suite.
 
 ## Development environment
 

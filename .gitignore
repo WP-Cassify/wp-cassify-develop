@@ -1,3 +1,8 @@
 .idea
 wp-cassify/.project
 wordpress
+node_modules
+playwright-report
+test-results
+docker/playwright-tests/playwright-report
+docker/playwright-tests/test-results

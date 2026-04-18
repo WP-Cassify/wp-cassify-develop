@@ -1,0 +1,30 @@
+name: Docker Playwright Tests for wordpress (php8)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: php8 run playwright tests in dockers env and stop it
+      run: docker compose up --build --abort-on-container-exit
+    - name: Upload Playwright report and results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report-php8
+        path: |
+          docker/playwright-tests/playwright-report
+          docker/playwright-tests/test-results
+        if-no-files-found: ignore
+
