@@ -288,9 +288,20 @@ class WP_Cassify_Plugin {
 	    $wp_cassify_enable_gateway_mode = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_gateway_mode' );
 	    
 	    if ( $force || isset( $_COOKIE[ session_name() ] ) || $wp_cassify_enable_gateway_mode ) {
-		    if(!session_id() && !wp_doing_ajax() && !wp_doing_cron() && !is_admin() && !headers_sent() && php_sapi_name() !== 'cli' ) {
+		    if(!session_id() && !wp_doing_ajax() && !wp_doing_cron() && !headers_sent() && php_sapi_name() !== 'cli' && ( !is_admin() || $force ) ) {
 				session_start();
 			}
+		}
+	}
+
+	/**
+	 * Safely destroy the PHP session only when one is active.
+	 */
+	private function wp_cassify_destroy_session() {
+
+		if ( function_exists( 'session_status' ) && session_status() === PHP_SESSION_ACTIVE ) {
+			session_unset();
+			session_destroy();
 		}
 	}
 
@@ -316,11 +327,8 @@ class WP_Cassify_Plugin {
 		// Hash the ticket to ensure that the value meets the PHP 7.1 requirement
 		$session_id = hash( 'sha256', $this->wp_cassify_service_ticket_salt . $service_ticket_uid );
 
-		if ( session_id() !== "" ) {
-		    session_unset();
-		    session_destroy();
-		}
-		
+		$this->wp_cassify_destroy_session();
+
         session_id( $session_id );
         session_start();
         
@@ -532,6 +540,10 @@ class WP_Cassify_Plugin {
 					);
 				}
 				else {
+				    WP_Cassify_Utils::wp_cassify_log(
+                          'CAS Authentication successful for user: ' . $cas_user_datas['cas_user_id'],
+                          'INFO'
+                    );
 					$this->wp_cassify_set_authenticated( true );
 				}
 				
@@ -747,6 +759,9 @@ class WP_Cassify_Plugin {
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 		$wp_cassify_redirect_url_after_logout = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_after_logout' );
 
+		// Ensure the CAS session is available even when the logout is triggered from wp-admin.
+		$this->wp_cassify_session_start( true );
+
 		$current_url = WP_Cassify_Utils::wp_cassify_get_current_url( $this->wp_cassify_default_wordpress_blog_http_port, $this->wp_cassify_default_wordpress_blog_https_port );
 		$redirect_to = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $current_url , $this->wp_cassify_default_redirect_parameter_name );
 		
@@ -784,17 +799,23 @@ class WP_Cassify_Plugin {
 			}			
 		}
 
-		// Destroy wordpress session;
-		session_destroy();
+		// Destroy the PHP session only if it is active.
+		$this->wp_cassify_destroy_session();
 
 		if ( $authenticated_by_cas ) {
-			// Redirect to the logout CAS end point.
+			WP_Cassify_Utils::wp_cassify_log(
+                'User logged out from CAS. Redirecting to CAS logout endpoint.',
+                'INFO'
+            );
 			$redirect_url = $wp_cassify_base_url .
 				$wp_cassify_logout_servlet . '?' .
 				$this->wp_cassify_default_service_service_parameter_name . '=' . urlencode( $wp_cassify_redirect_url_after_logout );
 		}
 		else {
-			// If user not authenticated by CAS redirect to home_url.
+			WP_Cassify_Utils::wp_cassify_log(
+			    'User logged out from WordPress (not authenticated by CAS). Redirecting to home page.',
+                'INFO'
+            );
 			$redirect_url = home_url();
 		}
 		
@@ -843,10 +864,9 @@ class WP_Cassify_Plugin {
 	                	}
 	                }
 	                
-	                // Overwrite current session
-	                session_unset();
-	                session_destroy();
-	                
+	                // Overwrite current session.
+	                $this->wp_cassify_destroy_session();
+
 	                do_action( 'wp_cassify_slo_after' );
 	                
                     exit();
@@ -1364,9 +1384,12 @@ class WP_Cassify_Plugin {
 			}			
 		}
 
-		// Destroy wordpress session;
-		session_destroy();
-		
+		// Ensure the CAS session is available so we can reliably logout from CAS.
+		$this->wp_cassify_session_start( true );
+
+		// Destroy the PHP session only if it is active.
+		$this->wp_cassify_destroy_session();
+
 		$redirect_url = $wp_cassify_base_url .
 			$wp_cassify_logout_servlet . '?' .
 			$this->wp_cassify_default_service_service_parameter_name . '=' . $wp_cassify_redirect_url_if_not_allowed;
