@@ -304,7 +304,7 @@ class WP_Cassify_Utils {
 			// (no role rules matched, or the plugin is not network-activated).
 			if ( is_multisite() && ! is_user_member_of_blog( $user->ID, get_current_blog_id() ) ) {
 				add_user_to_blog( get_current_blog_id(), $user->ID, get_option( 'default_role', 'subscriber' ) );
-				wp_cassify\WP_Cassify_Utils::wp_cassify_log(
+				self::wp_cassify_log(
 					'Multisite: user ' . $cas_user_id . ' added to blog ' . get_current_blog_id() . ' with default role.',
 					'INFO'
 				);
