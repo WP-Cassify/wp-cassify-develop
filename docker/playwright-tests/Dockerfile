@@ -6,6 +6,6 @@ COPY package.json playwright.config.js support.js wp-cassify.spec.js wp-cassify-
 
 RUN npm install
 
-CMD ["npm", "run", "test:e2e"]
+CMD ["npm", "run", "test"]
 
 
