@@ -1,0 +1,22 @@
+services:
+  wordpress:
+    environment:
+      WORDPRESS_CONFIG_EXTRA: |
+        define('DISABLE_WP_CRON', true);
+        define('COOKIE_DOMAIN', '.example.org');
+        define('WP_ALLOW_MULTISITE', true);
+
+    volumes:
+      - ./wordpress:/var/www/html
+      - ./wp-cassify:/var/www/html/wp-content/plugins/wp-cassify
+
+  playwright-suite:
+    environment:
+      PLAYWRIGHT_MULTISITE: "true"
+      PLAYWRIGHT_WORDPRESS_VOLUME_PATH: /work/wordpress
+    command: ["sh", "-lc", "xvfb-run -a npx playwright test --headed wp-cassify-multisite.spec.js"]
+    volumes:
+      - ./wordpress:/work/wordpress
+      - ./docker/playwright-tests/playwright-report:/work/playwright-report
+      - ./docker/playwright-tests/test-results:/work/test-results
+

@@ -6,6 +6,8 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:multisite": "playwright test wp-cassify-multisite.spec.js",
+    "test:e2e:multisite:headed": "playwright test --headed wp-cassify-multisite.spec.js",
     "show-report": "playwright show-report playwright-report",
     "show-report:docker": "playwright show-report playwright-report --host 0.0.0.0 --port 9323"
   },

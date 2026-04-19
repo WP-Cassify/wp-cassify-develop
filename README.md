@@ -40,6 +40,7 @@ They cover the same critical flows:
  * Single Logout on/off
  * Local login, create-user toggle, and URL settings persistence
  * URL bypass security behavior (disabled by default, configurable, and reset)
+ * Multisite bootstrap, network activation, and CAS login on sub-sites
 
 ## Usage
 
@@ -51,6 +52,16 @@ docker compose up --build --abort-on-container-exit
 If you want to test with wordpress on php7, use instead :
 ```
 docker compose -f docker-compose.yml -f docker-compose-php7.yml up --build --abort-on-container-exit
+```
+
+To run the multisite Playwright suite, use the dedicated override:
+```
+docker compose -f docker-compose.yml -f docker-compose-multisite.yml up --build --abort-on-container-exit
+```
+
+If you want the multisite suite on php7, combine the php7 and multisite overrides:
+```
+docker compose -f docker-compose.yml -f docker-compose-php7.yml -f docker-compose-multisite.yml up --build --abort-on-container-exit
 ```
 
 ## Requirements
@@ -108,24 +119,18 @@ The HTML report and test results are mounted on the host under:
 * `docker/playwright-tests/playwright-report`
 * `docker/playwright-tests/test-results`
 
-After a run, you can open the HTML report directly at `docker/playwright-tests/playwright-report/index.html`,
-or serve the report only through Docker with:
-```
-docker compose up --build playwright-report
-```
+After a run, you can open the HTML report directly at `docker/playwright-tests/playwright-report/index.html`.
 
-This starts the report viewer on port `9323`.
-
-
-If you want to run the tests directly from the container image with a specific command, for example:
-```
-npm run test:e2e -- wp-cassify.spec.js
+The multisite suite uses the same `wordpress/` bind mount to edit `wp-config.php` and `.htaccess` during the network bootstrap. If you want to reset the multisite state manually, remove the database container and wordpress:
+```bash
+docker compose rm -sf db
+rm -rf wordpress
 ```
 
 ## Continuous integration tests with GitHub Actions, docker compose and Playwright
 
 The project is also configured to run the tests on GitHub Actions.
-The workflow is defined in the files `.github/workflows/docker-playwright-tests.yml` and `.github/workflows/docker-playwright-tests-php7.yml`.
+The workflows are defined in the files `.github/workflows/docker-playwright-tests.yml`, `.github/workflows/docker-playwright-tests-php7.yml`, and `.github/workflows/docker-playwright-tests-multisite.yml`.
 The PHP7 workflow keeps compatibility with WordPress on php7 while sharing the same Playwright test suite.
 
 ## Development environment
