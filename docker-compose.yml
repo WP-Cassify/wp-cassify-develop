@@ -74,7 +74,7 @@ services:
            condition: service_healthy
        cas:
            condition: service_healthy
-     command: ["sh", "-lc", "xvfb-run -a npm run test:e2e:headed"]
+     command: ["sh", "-lc", "xvfb-run -a npx playwright test --headed wp-cassify.spec.js"]
      volumes:
        - ./docker/playwright-tests/playwright-report:/work/playwright-report
      shm_size: 1gb
