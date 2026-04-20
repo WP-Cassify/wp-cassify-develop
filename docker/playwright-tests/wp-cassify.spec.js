@@ -55,6 +55,7 @@ test('gateway mode can be enabled and disabled without breaking the SSO flow', a
 
   await loginCasDirectly(page);
   await expect(page.locator('#main-content')).toBeVisible();
+  await page.waitForTimeout(1000);
   await page.goto('/');
   await expect(page.locator('#wp-admin-bar-my-account')).toHaveCount(0);
 
@@ -64,6 +65,7 @@ test('gateway mode can be enabled and disabled without breaking the SSO flow', a
 
   await loginCasDirectly(page);
   await expect(page.locator('#main-content')).toBeVisible();
+  await page.waitForTimeout(1000);
   await page.goto('/');
   await expect(page.locator('#wp-admin-bar-my-account')).toBeVisible();
 
