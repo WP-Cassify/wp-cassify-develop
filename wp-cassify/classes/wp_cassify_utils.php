@@ -767,12 +767,12 @@ class WP_Cassify_Utils {
 		global $phpmailer;
 		
 		// (Re)create it, if it's gone missing
-		if ( ! ( $phpmailer instanceof \PHPMailer ) ) {
-		    require_once ABSPATH . WPINC . '/class-phpmailer.php';
-		    require_once ABSPATH . WPINC . '/class-smtp.php';
+		if ( ! ( $phpmailer instanceof \PHPMailer\PHPMailer\PHPMailer ) ) {
+		    require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+		    require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
 		}
 		
-		$phpmailer = new \PHPMailer;
+		$phpmailer = new \PHPMailer\PHPMailer\PHPMailer();
 		
 		// SMTP configuration
 		$phpmailer->isSMTP();                    

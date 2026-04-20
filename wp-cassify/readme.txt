@@ -150,7 +150,8 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 == Changelog ==
 
 =2.4.4 =
-* Fix notifications
+* Fix deprecated WordPress PHPMailer includes
+* Fix mails notifications
 * Fix a multisite authentication crash caused by an incorrect class reference.
 * Fix destroy Session on logout
 
