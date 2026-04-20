@@ -191,6 +191,7 @@ $GLOBALS['wp-cassify']->init_parameters(
 		$wp_cassify_default_login_servlet,
 		$wp_cassify_default_logout_servlet,
 		$wp_cassify_default_service_validate_servlet,
+		$wp_cassify_default_notifications_options,
 		$wp_cassify_default_allow_deny_order,
 		$wp_cassify_match_first_level_parenthesis_group_pattern,
 		$wp_cassify_match_second_level_parenthesis_group_pattern,

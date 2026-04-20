@@ -22,6 +22,7 @@ class WP_Cassify_Plugin {
 	public $wp_cassify_default_login_servlet;
 	public $wp_cassify_default_logout_servlet;
 	public $wp_cassify_default_service_validate_servlet;
+	public $wp_cassify_default_notifications_options;
 	
 	public $wp_cassify_default_allow_deny_order;
 	
@@ -70,6 +71,7 @@ class WP_Cassify_Plugin {
 	 * @param 	string 	$wp_cassify_default_login_servlet
 	 * @param 	string 	$wp_cassify_default_logout_servlet
 	 * @param 	string 	$wp_cassify_default_service_validate_servlet
+	 * @param 	array 	$wp_cassify_default_notifications_options
 	 * @param 	string 	$wp_cassify_default_allow_deny_order
 	 * @param 	string 	$wp_cassify_match_first_level_parenthesis_group_pattern
 	 * @param 	string 	$wp_cassify_match_second_level_parenthesis_group_pattern
@@ -100,6 +102,7 @@ class WP_Cassify_Plugin {
 		$wp_cassify_default_login_servlet,
 		$wp_cassify_default_logout_servlet,
 		$wp_cassify_default_service_validate_servlet,
+		$wp_cassify_default_notifications_options,
 		$wp_cassify_default_allow_deny_order,
 		$wp_cassify_match_first_level_parenthesis_group_pattern,
 		$wp_cassify_match_second_level_parenthesis_group_pattern,
@@ -129,6 +132,7 @@ class WP_Cassify_Plugin {
 		$this->wp_cassify_default_login_servlet = $wp_cassify_default_login_servlet;
 		$this->wp_cassify_default_logout_servlet = $wp_cassify_default_logout_servlet;
 		$this->wp_cassify_default_service_validate_servlet = $wp_cassify_default_service_validate_servlet;
+		$this->wp_cassify_default_notifications_options = $wp_cassify_default_notifications_options;
 		$this->wp_cassify_default_allow_deny_order = $wp_cassify_default_allow_deny_order;
 		$this->wp_cassify_match_first_level_parenthesis_group_pattern = $wp_cassify_match_first_level_parenthesis_group_pattern;
 		$this->wp_cassify_match_second_level_parenthesis_group_pattern = $wp_cassify_match_second_level_parenthesis_group_pattern;
