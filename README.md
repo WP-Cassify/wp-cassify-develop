@@ -101,6 +101,11 @@ If you want to reset the WordPress instance, after launched docker-compose and w
 docker compose exec db mariadb -ppass -e "DROP DATABASE wordpress; CREATE DATABASE wordpress;"
 ```
 
+If your docker is stopped, juste remove the db container :
+```
+docker compose rm -s -f db
+```
+
 The multisite suite uses the same `wordpress/` bind mount to edit `wp-config.php` and `.htaccess` during the network bootstrap. If you want to reset the multisite state manually, remove the database container and wordpress:
 ```bash
 docker compose exec db mariadb -ppass -e "DROP DATABASE wordpress; CREATE DATABASE wordpress;"

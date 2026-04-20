@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Current plugin version. Used for option migration tracking.
  */
-define( 'WP_CASSIFY_VERSION', '2.4.3' );
+define( 'WP_CASSIFY_VERSION', '2.4.4' );
 
 if (! function_exists( 'get_plugin_data' ) ) {
 	require_once ABSPATH . '/wp-admin/includes/plugin.php';
