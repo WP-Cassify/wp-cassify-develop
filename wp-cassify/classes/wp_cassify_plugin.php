@@ -208,7 +208,8 @@ class WP_Cassify_Plugin {
 			add_filter( 'query_vars', array( $this , 'add_custom_query_var' ) );
 			add_filter( 'login_url', array( $this, 'wp_cassify_clear_reauth' ) );
 			add_filter( 'the_content', array( $this, 'wp_cassify_display_message' ) );			
-			
+			add_action( 'login_init', array( $this, 'wp_cassify_login_init' ), 1 );
+
 			// Start PHP Session.
 			add_action( 'wp_loaded', array( $this , 'wp_cassify_session_start' ), 1 ); 
 
@@ -283,7 +284,35 @@ class WP_Cassify_Plugin {
         $login_url = remove_query_arg( 'reauth', $login_url );
         return $login_url;
     }	
-	
+
+	/**
+	 * Redirect direct access to wp-login.php to CAS when authentication is enabled.
+	 * Keeps bypass available and avoids interfering with logout/reset flows.
+	 */
+	public function wp_cassify_login_init() {
+
+		if ( $this->wp_cassify_is_url_bypass_request() ) {
+			return;
+		}
+
+		$login_action = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'login';
+
+		if ( in_array( $login_action, array( 'logout', 'lostpassword', 'retrievepassword', 'rp', 'resetpass' ), true ) ) {
+			return;
+		}
+
+		// If the user is already authenticated through CAS, do not expose the
+		// native WordPress login screen: redirect away from wp-login.php so a
+		// local login cannot overwrite the current CAS-backed session.
+		if ( $this->wp_cassify_is_authenticated() ) {
+			WP_Cassify_Utils::wp_cassify_redirect_url( home_url() );
+		}
+
+		if ( ! is_user_logged_in() ) {
+			$this->wp_cassify_redirect();
+		}
+	}
+
 	/**
 	 * Start the php session inside the plugin because session is needed to store callback url.
 	 */	 

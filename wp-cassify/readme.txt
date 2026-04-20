@@ -149,7 +149,8 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 == Changelog ==
 
-=2.4.4 =
+= 2.4.4 =
+* Block wp-login.php form when CAS session is already authenticated
 * Fix deprecated WordPress PHPMailer includes
 * Fix mails notifications
 * Fix a multisite authentication crash caused by an incorrect class reference.
