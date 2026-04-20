@@ -46,22 +46,22 @@ They cover the same critical flows:
 
 To launch all the dockers, including the Playwright tests, with wordpress (on php8), simply run:
 ```
-docker compose up --build --abort-on-container-exit
+docker compose up
 ```
 
 If you want to test with wordpress on php7, use instead :
 ```
-docker compose -f docker-compose.yml -f docker-compose-php7.yml up --build --abort-on-container-exit
+docker compose -f docker-compose.yml -f docker-compose-php7.yml up
 ```
 
 To run the multisite Playwright suite, use the dedicated override:
 ```
-docker compose -f docker-compose.yml -f docker-compose-multisite.yml up --build --abort-on-container-exit
+docker compose -f docker-compose.yml -f docker-compose-multisite.yml up
 ```
 
 If you want the multisite suite on php7, combine the php7 and multisite overrides:
 ```
-docker compose -f docker-compose.yml -f docker-compose-php7.yml -f docker-compose-multisite.yml up --build --abort-on-container-exit
+docker compose -f docker-compose.yml -f docker-compose-php7.yml -f docker-compose-multisite.yml up
 ```
 
 ## Requirements
@@ -96,10 +96,18 @@ password: pass
 
 ## Reset the WordPress instance
 
-If you want to reset the WordPress instance, after launched docker-compose, you can simply remove the db container :
+If you want to reset the WordPress instance, after launched docker-compose and without stopping it, you can run the following command to reset the database:
 ```
-docker compose rm db
+docker compose exec db mariadb -ppass -e "DROP DATABASE wordpress; CREATE DATABASE wordpress;"
 ```
+
+The multisite suite uses the same `wordpress/` bind mount to edit `wp-config.php` and `.htaccess` during the network bootstrap. If you want to reset the multisite state manually, remove the database container and wordpress:
+```bash
+docker compose exec db mariadb -ppass -e "DROP DATABASE wordpress; CREATE DATABASE wordpress;"
+rm -rf wordpress
+```
+
+## Playwright tests
 
 The recommended one-step Docker command is:
 ```
@@ -107,25 +115,13 @@ docker compose up --build playwright-suite
 ```
 
 This runs Playwright in headed mode inside an Xvfb display, so it does not require an XServer on your host.
-You can follow the execution step by step through the browser actions and the Playwright trace/report.
-If you want to actually see the browser window on your desktop, you would need an X11/VNC setup.
-
-If you only want to run the tests headless, use:
-```
-docker compose up --build --abort-on-container-exit
-```
 
 The HTML report and test results are mounted on the host under:
 * `docker/playwright-tests/playwright-report`
-* `docker/playwright-tests/test-results`
 
 After a run, you can open the HTML report directly at `docker/playwright-tests/playwright-report/index.html`.
 
-The multisite suite uses the same `wordpress/` bind mount to edit `wp-config.php` and `.htaccess` during the network bootstrap. If you want to reset the multisite state manually, remove the database container and wordpress:
-```bash
-docker compose rm -sf db
-rm -rf wordpress
-```
+If you want to rerun the tests without relaunching the whole docker-compose, reset the wordpress instance (see above) and then rerun the Playwright tests.
 
 ## Continuous integration tests with GitHub Actions, docker compose and Playwright
 

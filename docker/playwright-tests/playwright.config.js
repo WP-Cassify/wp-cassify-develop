@@ -8,7 +8,6 @@ module.exports = defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   timeout: 120000,
-  outputDir: 'test-results',
   expect: {
     timeout: 15000,
   },
@@ -21,7 +20,7 @@ module.exports = defineConfig({
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'on',
     viewport: { width: 1432, height: 1484 },
   },
 });

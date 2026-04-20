@@ -23,8 +23,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: playwright-report-php7
-        path: |
-          docker/playwright-tests/playwright-report
-          docker/playwright-tests/test-results
+        path: docker/playwright-tests/playwright-report
         if-no-files-found: ignore
 

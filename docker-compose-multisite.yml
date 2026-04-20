@@ -18,5 +18,4 @@ services:
     volumes:
       - ./wordpress:/work/wordpress
       - ./docker/playwright-tests/playwright-report:/work/playwright-report
-      - ./docker/playwright-tests/test-results:/work/test-results
 
