@@ -459,15 +459,37 @@ class WP_Cassify_Plugin {
 			// the user to wp-login.php for private content, but wp_cassify_redirect()
 			// refuses to forward to CAS (user IS logged in), creating an infinite
 			// wp-login ↔ private-page redirect loop.
-			// Solution: grant sub-site membership directly with the blog's default role.
+			// Solution: grant sub-site membership directly with the blog's default role,
+			// but ONLY if the user does not already have capabilities on this blog.
+			// NOTE: is_user_member_of_blog() returns false for archived/spam/deleted blogs
+			// even when the user IS already a member (e.g. a blog admin). In that case,
+			// calling add_user_to_blog() would invoke WP_User::set_role() and replace
+			// the existing admin role with the default subscriber role. We therefore
+			// check the user capabilities meta directly, independently of the blog status,
+			// to avoid destroying the roles of existing members on archived blogs.
 			if ( is_multisite() && is_user_logged_in() && ! is_user_member_of_blog() && empty( $service_ticket ) ) {
 				$_current_user = wp_get_current_user();
 				if ( $_current_user && $_current_user->ID > 0 ) {
-					add_user_to_blog( get_current_blog_id(), $_current_user->ID, get_option( 'default_role', 'subscriber' ) );
-					WP_Cassify_Utils::wp_cassify_log(
-						'Multisite: network user (ID=' . $_current_user->ID . ') added to blog ' . get_current_blog_id() . ' with default role (no service ticket).',
-						'INFO'
-					);
+					$_blog_id_for_check = get_current_blog_id();
+					global $wpdb;
+					$_capabilities_meta_key = $wpdb->get_blog_prefix( $_blog_id_for_check ) . 'capabilities';
+					$_existing_capabilities = get_user_meta( $_current_user->ID, $_capabilities_meta_key, true );
+
+					if ( empty( $_existing_capabilities ) ) {
+						// User is genuinely not a member of this blog: add with default role.
+						add_user_to_blog( $_blog_id_for_check, $_current_user->ID, get_option( 'default_role', 'subscriber' ) );
+						WP_Cassify_Utils::wp_cassify_log(
+							'Multisite: network user (ID=' . $_current_user->ID . ') added to blog ' . $_blog_id_for_check . ' with default role (no service ticket).',
+							'INFO'
+						);
+					} else {
+						// User already has capabilities on this blog (blog may be archived).
+						// Do not overwrite existing roles.
+						WP_Cassify_Utils::wp_cassify_log(
+							'Multisite: network user (ID=' . $_current_user->ID . ') already has capabilities on blog ' . $_blog_id_for_check . ' (blog may be archived). Skipping add_user_to_blog to preserve existing roles.',
+							'INFO'
+						);
+					}
 				}
 			}
 
