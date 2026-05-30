@@ -151,6 +151,7 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 = 2.4.6 =
 * Fix: add 'postpass' to the list of excluded login actions so that WordPress password-protected pages work correctly without being redirected to CAS (regression introduced in 2.4.4).
+* Fix: add 'register' and 'confirmaction' to the list of excluded login actions to avoid CAS redirect on the registration form and GDPR privacy confirmation links.
 
 = 2.4.5 =
 * Fix archived blog stripping user roles via add_user_to_blog(); skip if capabilities already exist.
