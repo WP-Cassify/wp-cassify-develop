@@ -297,7 +297,7 @@ class WP_Cassify_Plugin {
 
 		$login_action = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : 'login';
 
-		if ( in_array( $login_action, array( 'logout', 'lostpassword', 'retrievepassword', 'rp', 'resetpass' ), true ) ) {
+		if ( in_array( $login_action, array( 'logout', 'lostpassword', 'retrievepassword', 'rp', 'resetpass', 'postpass' ), true ) ) {
 			return;
 		}
 
