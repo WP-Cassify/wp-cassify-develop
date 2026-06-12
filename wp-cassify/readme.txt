@@ -4,7 +4,7 @@ Contributors: aaf017,vbonamy
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.0
 Stable tag: 2.4.6
 License: GPLv2
