@@ -51,6 +51,37 @@ test('CAS login opens the admin area and the profile page', async ({ page }) => 
   await logoutWordPress(page);
 });
 
+test('stale CAS PHP session does not trap users away from wp-admin when WordPress auth cookies are missing', async ({ page, context }) => {
+  await loginThroughWordPress(page, '/wp-admin/');
+  await expect(page.locator('#wpadminbar')).toBeVisible();
+
+  const isPhpSessionCookie = ({ name }) => /^(PHPSESSID|SSESS)/.test(name);
+  const isWordPressAdminAuthCookie = ({ name }) => /^wordpress_(?:sec_)?[0-9a-f]{32}$/.test(name);
+  const isWordPressLoggedInCookie = ({ name }) => /^wordpress_logged_in_[0-9a-f]{32}$/.test(name);
+
+  const cookiesBeforeExpiry = await context.cookies();
+  expect(cookiesBeforeExpiry.some(isPhpSessionCookie)).toBeTruthy();
+  expect(cookiesBeforeExpiry.some(isWordPressAdminAuthCookie)).toBeTruthy();
+  expect(cookiesBeforeExpiry.some(isWordPressLoggedInCookie)).toBeTruthy();
+
+  await context.clearCookies({ name: /^wordpress_(?:sec_)?[0-9a-f]{32}$/ });
+
+  const cookiesAfterAdminAuthExpiry = await context.cookies();
+  expect(cookiesAfterAdminAuthExpiry.some(isPhpSessionCookie)).toBeTruthy();
+  expect(cookiesAfterAdminAuthExpiry.some(isWordPressAdminAuthCookie)).toBeFalsy();
+  expect(cookiesAfterAdminAuthExpiry.some(isWordPressLoggedInCookie)).toBeTruthy();
+
+  await page.goto('/wp-admin/');
+  if (await page.locator('#username').isVisible().catch(() => false)) {
+    await fillAndSubmitCasLogin(page);
+  }
+
+  await expect(page.locator('#wpadminbar')).toBeVisible();
+  await expect(page).toHaveURL(/\/wp-admin\//);
+
+  await logoutWordPress(page);
+});
+
 test('gateway mode can be enabled and disabled without breaking the SSO flow', async ({ page }) => {
 
   await loginCasDirectly(page);
@@ -188,6 +219,4 @@ test('URL bypass is disabled by default, configurable, and can be turned off aga
   await expect(page.locator('#username')).toBeVisible();
   await expect(page.locator('#user_login')).toHaveCount(0);
 });
-
-
 
