@@ -1,6 +1,6 @@
 services:
    db:
-     image: mariadb
+     image: mariadb:12.3.2
      environment:
        MARIADB_ROOT_PASSWORD: pass
        MARIADB_DATABASE: wordpress
