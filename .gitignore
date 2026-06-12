@@ -4,3 +4,4 @@ wordpress
 node_modules
 playwright-report
 docker/playwright-tests/playwright-report
+docker/playwright-tests/package-lock.json
