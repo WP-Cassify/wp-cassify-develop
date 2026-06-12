@@ -301,10 +301,24 @@ class WP_Cassify_Plugin {
 			return;
 		}
 
-		// If the user is already authenticated through CAS, do not expose the
-		// native WordPress login screen: redirect away from wp-login.php so a
-		// local login cannot overwrite the current CAS-backed session.
 		if ( $this->wp_cassify_is_authenticated() ) {
+			$admin_auth_scheme = is_ssl() ? 'secure_auth' : 'auth';
+
+			// If WordPress no longer has the admin auth cookie, the CAS PHP
+			// session and WordPress auth cookies are out of sync. Reset the
+			// local WordPress/CAS state and start a fresh CAS login instead of
+			// trapping the user on the front page.
+			if ( ! wp_validate_auth_cookie( '', $admin_auth_scheme ) ) {
+				$this->wp_cassify_set_authenticated( false );
+				wp_clear_auth_cookie();
+				wp_set_current_user( 0 );
+				$this->wp_cassify_redirect();
+				return;
+			}
+
+			// If the user is already authenticated through CAS and WordPress
+			// still has a valid admin auth cookie, do not expose the native
+			// WordPress login screen.
 			WP_Cassify_Utils::wp_cassify_redirect_url( home_url() );
 		}
 
