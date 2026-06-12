@@ -851,6 +851,14 @@ class WP_Cassify_Plugin {
 			$wp_cassify_redirect_url_after_logout = get_home_url();
 		}
 
+		$wp_cassify_redirect_url_after_logout = apply_filters(
+			'wp_cassify_logout_redirect_url',
+			$wp_cassify_redirect_url_after_logout,
+			$current_url,
+			$redirect_to,
+			$authenticated_by_cas
+		);
+
 		// Send logout notification if rule is matched.	
 		if ( isset(	$_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['wp_cassify_cas_user_datas'] ) ) {
 

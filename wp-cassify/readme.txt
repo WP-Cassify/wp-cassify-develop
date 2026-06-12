@@ -151,6 +151,7 @@ Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Mak
 
 = 2.4.7 =
 * Fix: restart CAS authentication when a stale PHP CAS session remains after the WordPress admin authentication cookie expires.
+* Add: filter the CAS logout redirect URL before redirecting to the CAS logout endpoint.
 
 = 2.4.6 =
 * Fix: add 'postpass' to the list of excluded login actions so that WordPress password-protected pages work correctly without being redirected to CAS (regression introduced in 2.4.4).
