@@ -289,7 +289,7 @@ class WP_Cassify_Utils {
 	 *  @param $cas_user_id			Id of user provided by CAS Server response.
 	 */ 
 	public static function wp_cassify_auth_user_wordpress( $cas_user_id ) {
-		
+
 		if ( username_exists( $cas_user_id ) ) {
 			$user = get_user_by( 'login', $cas_user_id );
 
@@ -303,11 +303,25 @@ class WP_Cassify_Utils {
 			// back to add_user_to_blog() when the user is still not a member
 			// (no role rules matched, or the plugin is not network-activated).
 			if ( is_multisite() && ! is_user_member_of_blog( $user->ID, get_current_blog_id() ) ) {
-				add_user_to_blog( get_current_blog_id(), $user->ID, get_option( 'default_role', 'subscriber' ) );
-				self::wp_cassify_log(
-					'Multisite: user ' . $cas_user_id . ' added to blog ' . get_current_blog_id() . ' with default role.',
-					'INFO'
-				);
+				$current_blog_id = get_current_blog_id();
+
+				if ( is_super_admin( $user->ID ) ) {
+					self::wp_cassify_log(
+						'Multisite: super admin user ' . $cas_user_id . ' was not added to blog ' . $current_blog_id . '.',
+						'INFO'
+					);
+				} elseif ( ! self::wp_cassify_user_has_blog_capabilities( $user->ID, $current_blog_id ) ) {
+					add_user_to_blog( $current_blog_id, $user->ID, get_option( 'default_role', 'subscriber' ) );
+					self::wp_cassify_log(
+						'Multisite: user ' . $cas_user_id . ' added to blog ' . $current_blog_id . ' with default role.',
+						'INFO'
+					);
+				} else {
+					self::wp_cassify_log(
+						'Multisite: user ' . $cas_user_id . ' already has capabilities on blog ' . $current_blog_id . ' (blog may be archived). Skipping add_user_to_blog to preserve existing roles.',
+						'INFO'
+					);
+				}
 			}
 
 			wp_set_current_user( $user->ID, $user->user_login );
@@ -322,7 +336,24 @@ class WP_Cassify_Utils {
 				array( 'response' => 403 )
 			);
 		}
-	}	
+	}
+
+	/**
+	 * Check whether the user already has capabilities stored for a blog.
+	 *
+	 * is_user_member_of_blog() returns false for archived/spam/deleted blogs,
+	 * even when the capabilities meta still proves that the user belongs to
+	 * the blog. This helper is intentionally based on user meta, so callers can
+	 * avoid replacing existing roles with the default role through add_user_to_blog().
+	 */
+	public static function wp_cassify_user_has_blog_capabilities( $user_id, $blog_id ) {
+		global $wpdb;
+
+		$capabilities_meta_key = $wpdb->get_blog_prefix( $blog_id ) . 'capabilities';
+		$existing_capabilities = get_user_meta( $user_id, $capabilities_meta_key, true );
+
+		return ! empty( $existing_capabilities );
+	}
 	
 	/**
 	 * Create wordpress user account if not exist.

@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 2.4.7
+Stable tag: 2.4.8
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -148,6 +148,9 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
 == Changelog ==
+
+= 2.4.8 =
+* Fix: preserve existing multisite roles when authenticating users on archived child blogs.
 
 = 2.4.7 =
 * Fix: restart CAS authentication when a stale PHP CAS session remains after the WordPress admin authentication cookie expires.

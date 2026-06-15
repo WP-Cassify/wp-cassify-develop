@@ -11,6 +11,7 @@ const {
   loginThroughWordPress,
   logoutCas,
   logoutWordPress,
+  runWordPressTestAction,
 } = require('./support');
 
 test.describe.configure({ mode: 'serial' });
@@ -73,3 +74,15 @@ test('CAS login on wordpress2.example.org also works after multisite bootstrap',
   await logoutWordPress(page);
 });
 
+test('CAS authentication preserves an existing child-site admin role when the blog is archived', async ({ page }) => {
+  const result = await runWordPressTestAction(page, 'auth_archived_blog_user', {
+    blog_id: '2',
+    user_login: CAS_USER,
+    role: 'administrator',
+  });
+
+  expect(result.before.is_member_of_blog).toBe(false);
+  expect(result.before.roles).toContain('administrator');
+  expect(result.after.roles).toContain('administrator');
+  expect(result.after.roles).not.toContain('subscriber');
+});

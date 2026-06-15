@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { expect } = require('@playwright/test');
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://wordpress.example.org';
@@ -16,6 +17,10 @@ const BASELINE_ROLE_RULE_OPTION = MULTISITE_MODE
 const WORDPRESS_VOLUME_PATH = process.env.PLAYWRIGHT_WORDPRESS_VOLUME_PATH || '/work/wordpress';
 const WORDPRESS_CONFIG_PATH = path.join(WORDPRESS_VOLUME_PATH, 'wp-config.php');
 const WORDPRESS_HTACCESS_PATH = path.join(WORDPRESS_VOLUME_PATH, '.htaccess');
+const WORDPRESS_MU_PLUGINS_PATH = path.join(WORDPRESS_VOLUME_PATH, 'wp-content', 'mu-plugins');
+const WORDPRESS_TEST_HELPER_PATH = path.join(WORDPRESS_MU_PLUGINS_PATH, 'wp-cassify-playwright-helper.php');
+const WORDPRESS_TEST_HELPER_TOKEN_PATH = path.join(WORDPRESS_MU_PLUGINS_PATH, 'wp-cassify-playwright-helper.token');
+const WORDPRESS_TEST_HELPER_TOKEN = process.env.PLAYWRIGHT_WORDPRESS_TEST_HELPER_TOKEN || crypto.randomBytes(24).toString('hex');
 
 function buildRoleRuleOption(roleKey, ruleExpression, blogId = null) {
   if (MULTISITE_MODE) {
@@ -36,6 +41,87 @@ function readWordPressFile(filePath) {
 function writeWordPressFile(filePath, content) {
   ensureWordPressFileDirectory(filePath);
   fs.writeFileSync(filePath, content, 'utf8');
+}
+
+function installWordPressTestHelper() {
+  const helperSource = `<?php
+add_action( 'init', function () {
+    if ( 'auth_archived_blog_user' !== ( $_REQUEST['wp_cassify_playwright_action'] ?? '' ) ) {
+        return;
+    }
+
+    $expected_token = trim( (string) @file_get_contents( __DIR__ . '/wp-cassify-playwright-helper.token' ) );
+    $actual_token = isset( $_REQUEST['token'] ) ? (string) $_REQUEST['token'] : '';
+    if ( empty( $expected_token ) || ! hash_equals( $expected_token, $actual_token ) ) {
+        status_header( 403 );
+        wp_send_json_error( array( 'message' => 'Invalid Playwright helper token.' ) );
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/ms.php';
+
+    $blog_id = isset( $_REQUEST['blog_id'] ) ? absint( $_REQUEST['blog_id'] ) : 0;
+    $user_login = isset( $_REQUEST['user_login'] ) ? sanitize_user( wp_unslash( $_REQUEST['user_login'] ), true ) : '';
+    $role = isset( $_REQUEST['role'] ) ? sanitize_key( $_REQUEST['role'] ) : 'administrator';
+    $user = get_user_by( 'login', $user_login );
+    if ( ! $blog_id || ! $user ) {
+        wp_send_json_error( array( 'message' => 'Missing blog or user.' ) );
+    }
+
+    $snapshot = function () use ( $blog_id, $user ) {
+        global $wpdb;
+
+        $key = $wpdb->get_blog_prefix( $blog_id ) . 'capabilities';
+        $capabilities = get_user_meta( $user->ID, $key, true );
+
+        return array(
+            'is_member_of_blog' => is_user_member_of_blog( $user->ID, $blog_id ),
+            'roles' => is_array( $capabilities ) ? array_keys( array_filter( $capabilities ) ) : array(),
+        );
+    };
+
+    $result = add_user_to_blog( $blog_id, $user->ID, $role );
+    if ( is_wp_error( $result ) ) {
+        wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+    }
+
+    update_blog_status( $blog_id, 'archived', 1 );
+    $before = $snapshot();
+
+    switch_to_blog( $blog_id );
+    \\wp_cassify\\WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $user_login );
+    restore_current_blog();
+    wp_clear_auth_cookie();
+
+    $after = $snapshot();
+    update_blog_status( $blog_id, 'archived', 0 );
+
+    wp_send_json_success( array(
+        'before' => $before,
+        'after' => $after,
+    ) );
+} );
+`;
+
+  fs.mkdirSync(WORDPRESS_MU_PLUGINS_PATH, { recursive: true });
+  fs.writeFileSync(WORDPRESS_TEST_HELPER_PATH, helperSource, 'utf8');
+  fs.writeFileSync(WORDPRESS_TEST_HELPER_TOKEN_PATH, WORDPRESS_TEST_HELPER_TOKEN, 'utf8');
+}
+
+async function runWordPressTestAction(page, action, params = {}) {
+  installWordPressTestHelper();
+
+  const response = await page.request.post(`${BASE_URL}/?wp_cassify_playwright_action=${encodeURIComponent(action)}`, {
+    form: {
+      token: WORDPRESS_TEST_HELPER_TOKEN,
+      ...params,
+    },
+  });
+  const body = await response.json();
+
+  expect(response.ok(), JSON.stringify(body)).toBeTruthy();
+  expect(body.success, JSON.stringify(body)).toBeTruthy();
+
+  return body.data;
 }
 
 async function setInputValueAtomically(page, selector, value) {
@@ -136,14 +222,20 @@ async function fillAndSubmitLocalLogin(page, { username = ADMIN_USER, password =
   await expect(page.locator('#user_login')).toBeVisible();
   await page.locator('#user_login').fill(username);
   await page.locator('#user_pass').fill(password);
-  await page.locator('#wp-submit').click();
+  await Promise.all([
+    page.waitForNavigation({waitUntil: 'load'}),
+    page.locator('#wp-submit').click(),
+  ]);
 }
 
 async function fillAndSubmitCasLogin(page, { username = CAS_USER, password = CAS_PASSWORD } = {}) {
   await expect(page.locator('#username')).toBeVisible();
   await page.locator('#username').fill(username);
   await page.locator('#password').fill(password);
-  await page.locator('[name="submitBtn"]').click();
+  await Promise.all([
+    page.waitForNavigation({waitUntil: 'load'}),
+    page.locator('[name="submitBtn"]').click(),
+  ]);
 }
 
 async function installFreshWordPressIfNeeded(page) {
@@ -173,6 +265,11 @@ async function installFreshWordPressIfNeeded(page) {
     await page.locator('#submit').click();
     await page.getByRole('link', { name: 'Log In' }).click();
     await fillAndSubmitLocalLogin(page);
+  } else if (await page.getByRole('link', { name: 'Log In' }).isVisible().catch(() => false)) {
+    await Promise.all([
+      page.waitForNavigation({waitUntil: 'load'}),
+      page.getByRole('link', { name: 'Log In' }).click(),
+    ]);
   }
 }
 
@@ -374,9 +471,8 @@ module.exports = {
   logoutCas,
   logoutWordPress,
   openPluginSettings,
+  runWordPressTestAction,
   WORDPRESS_CONFIG_PATH,
   WORDPRESS_HTACCESS_PATH,
   WORDPRESS_VOLUME_PATH,
 };
-
-

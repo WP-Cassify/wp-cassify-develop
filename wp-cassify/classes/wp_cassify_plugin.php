@@ -485,11 +485,13 @@ class WP_Cassify_Plugin {
 				$_current_user = wp_get_current_user();
 				if ( $_current_user && $_current_user->ID > 0 ) {
 					$_blog_id_for_check = get_current_blog_id();
-					global $wpdb;
-					$_capabilities_meta_key = $wpdb->get_blog_prefix( $_blog_id_for_check ) . 'capabilities';
-					$_existing_capabilities = get_user_meta( $_current_user->ID, $_capabilities_meta_key, true );
 
-					if ( empty( $_existing_capabilities ) ) {
+					if ( is_super_admin( $_current_user->ID ) ) {
+						WP_Cassify_Utils::wp_cassify_log(
+							'Multisite: super admin user (ID=' . $_current_user->ID . ') was not added to blog ' . $_blog_id_for_check . ' (no service ticket).',
+							'INFO'
+						);
+					} elseif ( ! WP_Cassify_Utils::wp_cassify_user_has_blog_capabilities( $_current_user->ID, $_blog_id_for_check ) ) {
 						// User is genuinely not a member of this blog: add with default role.
 						add_user_to_blog( $_blog_id_for_check, $_current_user->ID, get_option( 'default_role', 'subscriber' ) );
 						WP_Cassify_Utils::wp_cassify_log(
