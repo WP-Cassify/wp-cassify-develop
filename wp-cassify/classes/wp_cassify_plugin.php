@@ -401,7 +401,7 @@ class WP_Cassify_Plugin {
 		
 		$is_authenticated = false;
 
-		if ( isset( $_SESSION['wp_cassify'] ) ) {
+		if ( isset( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ] ) && is_array( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ] ) ) {
 			if ( array_key_exists('user_auth', $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ] ) ) {
 				if ( $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ]['user_auth'] === true ) {
 					$is_authenticated = true;

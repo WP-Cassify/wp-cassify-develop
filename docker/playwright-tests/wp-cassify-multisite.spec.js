@@ -27,7 +27,7 @@ test('bootstrap multisite, network-activate WP Cassify, and write the WordPress 
     enableUrlBypass: false,
     createUserIfNotExist: true,
     enableGatewayMode: false,
-    enableSlo: false,
+    enableSlo: true,
   });
 
   await createNetworkSite(page, {
@@ -72,6 +72,21 @@ test('CAS login on wordpress2.example.org also works after multisite bootstrap',
   await expect(page.locator('#wp-admin-bar-my-account')).toBeVisible();
 
   await logoutWordPress(page);
+});
+
+test('CAS logout from a different multisite child site does not crash when SLO is enabled', async ({ page }) => {
+  await logoutCas(page);
+  await loginThroughWordPress(page, 'http://wordpress1.example.org/wp-admin/');
+  await expect(page.locator('span.display-name').filter({ hasText: CAS_USER }).first()).toBeVisible();
+
+  await page.goto('http://wordpress2.example.org/wp-admin/');
+  await expect(page.locator('#wp-admin-bar-my-account')).toBeVisible();
+
+  await logoutWordPress(page);
+  await expect(page.locator('body')).not.toContainText('Fatal error');
+  await expect(page.locator('body')).not.toContainText('Undefined array key');
+
+  await logoutCas(page);
 });
 
 test('CAS authentication preserves an existing child-site admin role when the blog is archived', async ({ page }) => {

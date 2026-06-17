@@ -182,20 +182,22 @@ async function ensureMultisiteNetwork(page, { siteName = 'wp-cassify-network', a
   if (await page.locator('#user_login').isVisible().catch(() => false)) {
     await fillAndSubmitLocalLogin(page);
   }
-  await page.goto('/wp-admin/network/site-new.php');
-  if (await page.locator('#user_login').isVisible().catch(() => false)) {
-    await fillAndSubmitLocalLogin(page);
-  }
   const siteAddress = page.locator('#site-address');
-  if (!(await siteAddress.isVisible().catch(() => false))) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     await page.goto('/wp-admin/network/site-new.php');
 
     if (await page.locator('#user_login').isVisible().catch(() => false)) {
       await fillAndSubmitLocalLogin(page);
     }
 
-    await expect(siteAddress).toBeVisible();
+    if (await siteAddress.isVisible().catch(() => false)) {
+      return;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
   }
+
+  await expect(siteAddress).toBeVisible();
 }
 
 async function createNetworkSite(page, { domain, title, email = `${ADMIN_USER}@example.org` }) {
