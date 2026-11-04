@@ -299,6 +299,8 @@ class WP_Cassify_Admin_Page {
 			'high'
 		);		
 		
+        add_meta_box( 'wp_cassify_metabox_user_cleanup', 'Manual CAS Account Tools', array( '\wp_cassify\WP_Cassify_User_Cleanup', 'render' ), $this->wp_cassify_admin_page_hook, 'normal', 'low' );
+
 		// Side boxes
 		add_meta_box( 
 			'wp_cassify_metabox_plugin_brand', 

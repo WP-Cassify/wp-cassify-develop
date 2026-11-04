@@ -43,7 +43,10 @@ function writeWordPressFile(filePath, content) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
+let wordpressTestHelperInstalled = false;
+
 function installWordPressTestHelper() {
+  if (wordpressTestHelperInstalled) return;
   const helperSource = `<?php
 add_action( 'init', function () {
     if ( 'auth_archived_blog_user' !== ( $_REQUEST['wp_cassify_playwright_action'] ?? '' ) ) {
@@ -104,7 +107,16 @@ add_action( 'init', function () {
 
   fs.mkdirSync(WORDPRESS_MU_PLUGINS_PATH, { recursive: true });
   fs.writeFileSync(WORDPRESS_TEST_HELPER_PATH, helperSource, 'utf8');
+  const fixtureSource = fs.readFileSync(path.join(__dirname, 'cleanup-fixtures.php'), 'utf8');
+  const fixtureName = `wp-cassify-cleanup-fixtures-${crypto.createHash('sha256').update(fixtureSource).digest('hex').slice(0, 12)}.php`;
+  for (const file of fs.readdirSync(WORDPRESS_MU_PLUGINS_PATH)) {
+    if (/^wp-cassify-cleanup-fixtures(?:-[a-f0-9]+)?\.php$/.test(file) && file !== fixtureName) {
+      fs.unlinkSync(path.join(WORDPRESS_MU_PLUGINS_PATH, file));
+    }
+  }
+  fs.writeFileSync(path.join(WORDPRESS_MU_PLUGINS_PATH, fixtureName), fixtureSource, 'utf8');
   fs.writeFileSync(WORDPRESS_TEST_HELPER_TOKEN_PATH, WORDPRESS_TEST_HELPER_TOKEN, 'utf8');
+  wordpressTestHelperInstalled = true;
 }
 
 async function runWordPressTestAction(page, action, params = {}) {
@@ -116,6 +128,8 @@ async function runWordPressTestAction(page, action, params = {}) {
       ...params,
     },
   });
+  const contentType = response.headers()['content-type'] || '';
+  expect(contentType, `Helper ${action}: HTTP ${response.status()} at ${response.url()}. Is the WordPress volume shared with the test container?`).toContain('application/json');
   const body = await response.json();
 
   expect(response.ok(), JSON.stringify(body)).toBeTruthy();
@@ -179,14 +193,14 @@ async function ensureMultisiteNetwork(page, { siteName = 'wp-cassify-network', a
   }
 
   await page.goto('/wp-login.php');
-  if (await page.locator('#user_login').isVisible().catch(() => false)) {
+  if (await page.locator('#loginform #user_login').isVisible().catch(() => false)) {
     await fillAndSubmitLocalLogin(page);
   }
   const siteAddress = page.locator('#site-address');
   for (let attempt = 0; attempt < 5; attempt++) {
     await page.goto('/wp-admin/network/site-new.php');
 
-    if (await page.locator('#user_login').isVisible().catch(() => false)) {
+    if (await page.locator('#loginform #user_login').isVisible().catch(() => false)) {
       await fillAndSubmitLocalLogin(page);
     }
 
@@ -280,7 +294,7 @@ async function ensureAdminAccess(page) {
 
   if (await page.locator('#username').isVisible().catch(() => false)) {
     await fillAndSubmitCasLogin(page);
-  } else if (await page.locator('#user_login').isVisible().catch(() => false)) {
+  } else if (await page.locator('#loginform #user_login').isVisible().catch(() => false)) {
     await fillAndSubmitLocalLogin(page);
   }
 
@@ -291,7 +305,7 @@ async function activatePluginIfNeeded(page) {
   await page.goto(MULTISITE_MODE ? '/wp-admin/network/plugins.php' : '/wp-admin/plugins.php');
 
   const pluginRow = page.locator('tr').filter({ hasText: 'WP Cassify' });
-  const activateLink = pluginRow.getByRole('link', { name: MULTISITE_MODE ? /Network Activate|Activate/i : /Activate/i });
+  const activateLink = pluginRow.getByRole('link', { name: MULTISITE_MODE ? /^Network Activate\b/i : /^Activate\b/i });
   if (await activateLink.isVisible().catch(() => false)) {
     await activateLink.click();
   }
@@ -304,7 +318,7 @@ async function openPluginSettings(page) {
 
   if (await page.locator('#username').isVisible().catch(() => false)) {
     await fillAndSubmitCasLogin(page);
-  } else if (await page.locator('#user_login').isVisible().catch(() => false)) {
+  } else if (await page.locator('#loginform #user_login').isVisible().catch(() => false)) {
     await fillAndSubmitLocalLogin(page);
   }
 
@@ -416,7 +430,7 @@ async function loginThroughWordPress(page, path = '/wp-admin/') {
 
   if (await page.locator('#username').isVisible().catch(() => false)) {
     await fillAndSubmitCasLogin(page);
-  } else if (await page.locator('#user_login').isVisible().catch(() => false)) {
+  } else if (await page.locator('#loginform #user_login').isVisible().catch(() => false)) {
     await fillAndSubmitLocalLogin(page);
   }
 }

@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 7.1
 Requires PHP: 7.0
-Stable tag: 2.4.9
+Stable tag: 2.5.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,7 @@ Don't hesitate to contribute to this project. You can fork it and make pull requ
 
 = Features included =
 
+* Manual CAS account marking (all accounts or by role) and inactive-account purge with a configurable period in days (730 by default), preview, optional inclusion of accounts without a login date, content reassignment and resumable batches. No scheduled deletion.
 * SLO (Single Log Out) support (thanks to dedotombo and me)
 * Adding NCONTAINS operator (thanks to blandman)
 * Fix bug on Gateway mode (autologin) (thanks to dedotombo again). Now it's now necessary to hack theme files to fire it.
@@ -148,6 +149,11 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
 == Changelog ==
+
+= 2.5.0 =
+* Add: manual CAS account marking (all accounts or by role) and resumable inactive-account purge with preview, configurable duration, optional missing login dates and content reassignment.
+* Add: successful login tracking, network administration support and Playwright cleanup scenarios.
+* No scheduled purge. WordPress core restrictions on network super administrator deletion are reported.
 
 = 2.4.9 =
 * Fix: avoid a PHP 8 TypeError when logging out from a different multisite child site than the CAS login site while SLO is enabled.

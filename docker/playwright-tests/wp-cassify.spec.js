@@ -10,6 +10,7 @@ const {
   configureUrlSettings,
   ensureAdminAccess,
   fillAndSubmitLocalLogin,
+  fillAndSubmitCasLogin,
   loginCasDirectly,
   loginLocalDirectly,
   loginThroughWordPress,
@@ -49,6 +50,13 @@ test('CAS login opens the admin area and the profile page', async ({ page }) => 
   await expect(page.locator('#wp-admin-bar-new-content')).toBeVisible();
 
   await logoutWordPress(page);
+});
+
+test('direct wp-login.php access without redirect_to completes CAS login once', async ({ page }) => {
+  await page.goto('/wp-login.php');
+  await fillAndSubmitCasLogin(page);
+  await expect(page).toHaveURL(/\/wp-admin\//);
+  await expect(page.locator('#wpadminbar')).toBeVisible();
 });
 
 test('stale CAS PHP session does not trap users away from wp-admin when WordPress auth cookies are missing', async ({ page, context }) => {
@@ -220,3 +228,5 @@ test('URL bypass is disabled by default, configurable, and can be turned off aga
   await expect(page.locator('#user_login')).toHaveCount(0);
 });
 
+
+require('./cleanup-tests')();

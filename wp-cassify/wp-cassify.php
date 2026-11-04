@@ -4,7 +4,7 @@
  * Plugin Name: WP Cassify
  * Plugin URI: https://wpcassify.wordpress.com/
  * Description: CAS Authentication Client for Wordpress. Also, it handle custom authorizations rules from cas user attributes.
- * Version: 2.4.9
+ * Version: 2.5.0
  * Requires PHP: 7.0
  * Author: Alain-Aymerick FRANCOIS
  * Author URI: https://wpcassify.wordpress.com/about-me/
@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Current plugin version. Used for option migration tracking.
  */
-define( 'WP_CASSIFY_VERSION', '2.4.9' );
+define( 'WP_CASSIFY_VERSION', '2.5.0' );
 
 if (! function_exists( 'get_plugin_data' ) ) {
 	require_once ABSPATH . '/wp-admin/includes/plugin.php';
@@ -28,6 +28,8 @@ $wp_cassify_network_activated = false;
 
 include( plugin_dir_path( __FILE__ ) . 'config.php' );
 include( plugin_dir_path( __FILE__ ) . 'classes/wp_cassify_utils.php' );
+include( plugin_dir_path( __FILE__ ) . 'classes/wp_cassify_user_cleanup.php' );
+\wp_cassify\WP_Cassify_User_Cleanup::init();
 include( plugin_dir_path( __FILE__ ) . 'classes/wp_cassify_rule_solver.php' );
 include( plugin_dir_path( __FILE__ ) . 'classes/wp_cassify_plugin.php' );
 include( plugin_dir_path( __FILE__ ) . 'classes/wp_cassify_shortcodes.php' );
@@ -108,6 +110,7 @@ function wp_cassify_maybe_migrate_options() {
 add_action( 'plugins_loaded', 'wp_cassify_maybe_migrate_options' );
 
 function wp_cassify_uninstall() {
+    \wp_cassify\WP_Cassify_User_Cleanup::uninstall();
 	
 	global $wpdb;
 	$option_prefix_like = 'wp_cassify%';

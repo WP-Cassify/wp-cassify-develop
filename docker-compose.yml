@@ -27,6 +27,7 @@ services:
         define('DISABLE_WP_CRON', true);
         define('COOKIE_DOMAIN', '.example.org');
      volumes:
+       - wordpress-test-data:/var/www/html
        - ./wp-cassify:/var/www/html/wp-content/plugins/wp-cassify
      networks:
        default:
@@ -76,7 +77,11 @@ services:
            condition: service_healthy
      command: ["sh", "-lc", "xvfb-run -a npx playwright test --headed wp-cassify.spec.js"]
      volumes:
+       - wordpress-test-data:/work/wordpress
        - ./docker/playwright-tests/playwright-report:/work/playwright-report
      shm_size: 1gb
 
 
+
+volumes:
+  wordpress-test-data:

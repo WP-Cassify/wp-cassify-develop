@@ -1,7 +1,4 @@
 FROM wordpress:php7.4-apache
 
-RUN apt-get update
-
-RUN apt-get -y install libcurl4-openssl-dev
-RUN docker-php-ext-install curl
-RUN docker-php-ext-enable curl
+# The official image already supplies cURL; avoid rebuilding it against obsolete APT packages.
+RUN php -r "exit(extension_loaded('curl') ? 0 : 1);"

@@ -101,3 +101,5 @@ test('CAS authentication preserves an existing child-site admin role when the bl
   expect(result.after.roles).toContain('administrator');
   expect(result.after.roles).not.toContain('subscriber');
 });
+
+require('./cleanup-tests')();
