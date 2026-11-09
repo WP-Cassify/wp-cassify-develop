@@ -14,6 +14,10 @@ $days = self::configured_days();
 wp_enqueue_script( 'wp-cassify-cleanup', plugins_url( '../js/user-cleanup.js', __FILE__ ), array(), WP_CASSIFY_VERSION, true );
 wp_localize_script( 'wp-cassify-cleanup', 'wpCassifyCleanup', array( 'url' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'wp_cassify_cleanup' ) ) );
 ?>
+<style>
+    /* WordPress button styles override the browser default for [hidden]. */
+    #wp-cassify-cleanup [hidden] { display: none !important; }
+</style>
 <div id="wp-cassify-cleanup">
     <p>Manual operations only. No scheduled purge. Administrators, the current operator, accounts with active browser sessions and application passwords are protected from deletion.</p>
     <p>Marking changes which accounts may be purged later; it does not authenticate them with CAS. Previous CAS connections cannot be reconstructed. Mark pre-created CAS accounts explicitly before including accounts without a connection date.</p>
@@ -31,8 +35,6 @@ wp_localize_script( 'wp-cassify-cleanup', 'wpCassifyCleanup', array( 'url' => ad
         <p>The date measures successful logins, not all activity. Third-party data may be deleted by other plugins. Interrupted operations can retain partial content transfers; recreating a CAS account does not restore its previous data.</p>
         <label>Inactivity (days) <input id="cassify-cleanup-days" type="number" min="1" max="36600" step="1" value="<?php echo esc_attr( $days ); ?>" /></label>
         <p><label><input id="cassify-cleanup-missing" type="checkbox" /> Include CAS accounts without a connection date only after their CAS marking is older than the selected period; accounts with an unknown marking date are kept</label></p>
-        <label>Reassign content to username <input id="cassify-cleanup-target" type="text" autocomplete="off" spellcheck="false" /></label>
-        <p>The recipient must be outside the purge preview. Posts, attachments, custom post types and links are reassigned; comments are retained.</p>
         <button type="button" class="button" id="cassify-cleanup-purge">Preview purge</button>
     </fieldset>
     <p id="cassify-cleanup-status" role="status" aria-live="polite"></p>
@@ -42,6 +44,10 @@ wp_localize_script( 'wp-cassify-cleanup', 'wpCassifyCleanup', array( 'url' => ad
     <ul id="cassify-cleanup-users"></ul>
     <button type="button" class="button" id="cassify-cleanup-prev" hidden>Previous page</button>
     <button type="button" class="button" id="cassify-cleanup-next" hidden>Next page</button>
+    <fieldset id="cassify-cleanup-recipient" hidden>
+        <label>Reassign content to username <input id="cassify-cleanup-target" type="text" autocomplete="off" spellcheck="false" /></label>
+        <p>The recipient must be outside the purge preview. Posts, attachments, custom post types and links are reassigned; comments are retained.</p>
+    </fieldset>
     <p id="cassify-cleanup-backup-row" hidden><label><input type="checkbox" id="cassify-cleanup-backup" /> I have created a complete backup of the database and all site files and verified that it can be restored.</label></p>
     <button type="button" class="button button-primary" id="cassify-cleanup-confirm" hidden>Confirm operation</button>
     <button type="button" class="button" id="cassify-cleanup-resume" hidden>Resume operation</button>

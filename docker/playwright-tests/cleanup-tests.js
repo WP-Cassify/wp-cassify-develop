@@ -103,6 +103,48 @@ module.exports = function registerCleanupTests() {
       expect(snapshot.cron).toBe(false);
     });
 
+    test('purge controls reflect the saved phase and reject an empty recipient without AJAX', async ({ page }) => {
+      await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'old', cas: true, date: 'old' },
+      ]) });
+      for (const name of ['confirm', 'resume', 'prev', 'next', 'recipient', 'backup-row', 'history-first', 'history-next']) {
+        await expect(page.locator(`#cassify-cleanup-${name}`)).toBeHidden();
+      }
+      await page.locator('#cassify-cleanup-purge').click();
+      await expect(page.locator('#cassify-cleanup-confirm')).toBeVisible();
+      await expect(page.locator('#cassify-cleanup-recipient')).toBeVisible();
+      await expect(page.locator('#cassify-cleanup-target')).toBeEditable();
+      await expect(page.locator('#cassify-cleanup-resume')).toBeHidden();
+      await page.reload();
+      await expect(page.locator('#cassify-cleanup-confirm')).toHaveText('Review content recipient');
+      await expect(page.locator('#cassify-cleanup-target')).toBeVisible();
+      await expect(page.locator('#cassify-cleanup-resume')).toBeHidden();
+      const prepares = [];
+      page.on('request', request => {
+        if (new URLSearchParams(request.postData() || '').get('operation') === 'prepare') prepares.push(request);
+      });
+      await page.locator('#cassify-cleanup-backup').check();
+      await page.locator('#cassify-cleanup-confirm').click();
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('existing WordPress username');
+      await expect(page.locator('#cassify-cleanup-target')).toBeFocused();
+      expect(prepares).toHaveLength(0);
+      await page.locator('#cassify-cleanup-target').fill('cassify_cleanup_e2e_target');
+      await page.locator('#cassify-cleanup-confirm').click();
+      await expect(page.locator('#cassify-cleanup-confirm')).toHaveText('Confirm deletion and content recipient');
+      await page.reload();
+      await expect(page.locator('#cassify-cleanup-target')).toHaveValue('cassify_cleanup_e2e_target');
+      await expect(page.locator('#cassify-cleanup-target')).toBeDisabled();
+      await page.locator('#cassify-cleanup-backup').check();
+      await page.locator('#cassify-cleanup-confirm').click();
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('completed');
+      await expect(page.locator('#cassify-cleanup-confirm')).toBeHidden();
+      await expect(page.locator('#cassify-cleanup-resume')).toBeHidden();
+      await expect(page.locator('#cassify-cleanup-recipient')).toBeHidden();
+      await page.locator('#cassify-cleanup-discard').click();
+      await expect(page.locator('#cassify-cleanup-status')).toHaveText('No saved operation.');
+      await expect(page.locator('#cassify-cleanup-confirm')).toBeHidden();
+    });
+
     test('content recipient is entered as a username and unknown usernames cannot delete accounts', async ({ page }) => {
       const ids = await fixture(page, 'create', { users: JSON.stringify([
         { name: 'target', date: 'recent' }, { name: 'old', cas: true, date: 'old', posts: true },

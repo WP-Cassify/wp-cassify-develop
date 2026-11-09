@@ -28,7 +28,7 @@
       el('status').textContent = 'No saved operation.';
       el('target').disabled = false;
       for (const name of ['users', 'errors']) el(name).replaceChildren();
-      for (const name of ['prev', 'next', 'confirm', 'resume']) el(name).hidden = true;
+      for (const name of ['prev', 'next', 'confirm', 'resume', 'recipient']) el(name).hidden = true;
       el('warning').textContent = '';
       el('summary').textContent = '';
       el('backup-row').hidden = true;
@@ -43,14 +43,16 @@
         li.textContent = message;
         el('errors').appendChild(li);
       }
-      for (const name of ['prev', 'next', 'confirm', 'resume', 'backup-row']) el(name).hidden = true;
+      for (const name of ['prev', 'next', 'confirm', 'resume', 'backup-row', 'recipient']) el(name).hidden = true;
       el('summary').textContent = '';
       el('warning').textContent = '';
       el('target').disabled = false;
       return;
     }
     el('target').disabled = Boolean(job.target);
-    el('backup-row').hidden = job.mode !== 'purge' || job.phase !== 'ready';
+    el('recipient').hidden = job.mode !== 'purge' || job.phase !== 'ready' || !job.total;
+    if (job.target_login) el('target').value = job.target_login;
+    el('backup-row').hidden = !job.total || job.mode !== 'purge' || job.phase !== 'ready';
     const mode = job.mode === 'mark' ? 'CAS marking' : 'CAS purge';
     el('status').textContent = `${mode}: ${job.phase}. Selected: ${job.total}. Old: ${job.old}. Without date: ${job.missing_count}. Invalid dates: ${job.invalid}. Protected: ${job.protected || 0}. Completed: ${job.success}. Skipped: ${job.skipped}. Failed: ${job.failed}.`;
     const date = value => {
@@ -81,17 +83,22 @@
   async function run(fn) {
     if (busy) return;
     busy = true;
+    let focusField = null;
     root.querySelectorAll('button').forEach(button => { button.disabled = true; });
     el('settings').disabled = true;
+    el('recipient').disabled = true;
     try {
       await fn();
     } catch (error) {
+      focusField = error.field;
       el('status').textContent = `Operation paused: ${error.message}`;
       if (job && ['scanning', 'executing'].includes(job.phase)) el('resume').hidden = false;
     } finally {
       busy = false;
       root.querySelectorAll('button').forEach(button => { button.disabled = false; });
       el('settings').disabled = false;
+      el('recipient').disabled = false;
+      if (focusField) el(focusField).focus();
     }
   }
 
@@ -118,7 +125,13 @@
   el('confirm').addEventListener('click', () => run(async () => {
     if (job.mode === 'purge' && !el('backup').checked) throw new Error('Create a complete backup of the database and all site files, verify it can be restored, and confirm the backup checkbox before purging.');
     if (job.mode === 'purge' && !job.target) {
-      await request('prepare', { target_username: el('target').value.trim() });
+      const username = el('target').value.trim();
+      if (!username) {
+        const error = new Error('Enter an existing WordPress username for content reassignment.');
+        error.field = 'target';
+        throw error;
+      }
+      await request('prepare', { target_username: username });
       return;
     }
     await request('confirm', { target_username: job.target_login || '', backup_confirmed: el('backup').checked ? '1' : '' });

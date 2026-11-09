@@ -255,7 +255,8 @@ async function fillAndSubmitCasLogin(page, { username = CAS_USER, password = CAS
 }
 
 async function installFreshWordPressIfNeeded(page) {
-  await page.goto('/wp-admin/install.php');
+  // Installed sites must enter through admin, not the installer callback URL.
+  await page.goto('/wp-admin/');
   await page.waitForLoadState('domcontentloaded');
 
   if (await page.locator('#language-continue').isVisible().catch(() => false)) {
