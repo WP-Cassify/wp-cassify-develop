@@ -15,7 +15,7 @@ module.exports = function registerCleanupTests() {
   async function api(page, operation, values = {}, expectedStatus = 200) {
     const nonce = await page.evaluate(() => wpCassifyCleanup.nonce);
     const response = await page.request.post('/wp-admin/admin-ajax.php', {
-      form: { action: 'wp_cassify_cleanup', nonce, operation, ...values },
+      form: { action: 'wp_cassify_cleanup', nonce, operation, ...(operation === 'confirm' ? { backup_confirmed: '1' } : {}), ...values },
     });
     expect(response.status()).toBe(expectedStatus);
     const body = await response.json();
@@ -79,19 +79,26 @@ module.exports = function registerCleanupTests() {
         { name: 'future', cas: true, date: 'future' },
       ]) });
       const job = await preview(page);
-      expect(job.old).toBe(2);
+      expect(job.old).toBe(1);
       expect(job.missing_count).toBe(0);
       expect(job.invalid).toBe(2);
       expect((await fixture(page, 'snapshot')).users.old).toBeDefined();
       expect((await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_old' }, 400)).message).toContain('candidate');
       const result = await execute(page, job, 'cassify_cleanup_e2e_target');
-      expect(result.success).toBe(2);
+      expect(result.success).toBe(1);
       const snapshot = await fixture(page, 'snapshot');
       expect(snapshot.users.old).toBeUndefined();
-      expect(snapshot.users.admin).toBeUndefined();
+      expect(snapshot.users.admin).toBeDefined();
       for (const name of ['recent', 'missing', 'local', 'invalid', 'future']) expect(snapshot.users[name]).toBeDefined();
       expect(snapshot.posts).toHaveLength(4);
-      for (const post of snapshot.posts) expect(Number(post.post_author)).toBe(ids.target);
+      expect(snapshot.posts.find(post => post.post_type === 'attachment').file_exists).toBe(true);
+      for (const post of snapshot.posts) {
+        expect(Number(post.post_author)).toBe(ids.target);
+        expect(post.meta).toBe('preserved');
+        expect(post.terms).toContain('cassify_cleanup_fixture');
+      }
+      expect(snapshot.links).toHaveLength(1);
+      expect(Number(snapshot.links[0].link_owner)).toBe(ids.target);
       expect(snapshot.comments).toBe(1);
       expect(snapshot.cron).toBe(false);
     });
@@ -104,6 +111,7 @@ module.exports = function registerCleanupTests() {
       await page.locator('#cassify-cleanup-purge').click();
       await expect(page.locator('#cassify-cleanup-confirm')).toBeVisible();
       await page.locator('#cassify-cleanup-target').fill('cassify_cleanup_e2e_unknown');
+      await page.locator('#cassify-cleanup-backup').check();
       await page.locator('#cassify-cleanup-confirm').click();
       await expect(page.locator('#cassify-cleanup-status')).toContainText('existing WordPress username');
       expect((await fixture(page, 'snapshot')).users.old).toBeDefined();
@@ -111,11 +119,15 @@ module.exports = function registerCleanupTests() {
       const job = await api(page, 'status');
       await api(page, 'confirm', { token: job.token, target_username: String(ids.target) }, 400);
       await page.locator('#cassify-cleanup-target').fill('  cassify_cleanup_e2e_target  ');
+      await page.locator('#cassify-cleanup-backup').check();
+      await page.locator('#cassify-cleanup-confirm').click();
+      await expect(page.locator('#cassify-cleanup-warning')).toContainText(`#${ids.target}`);
       await page.locator('#cassify-cleanup-confirm').click();
       await expect(page.locator('#cassify-cleanup-status')).toContainText('done');
       const snapshot = await fixture(page, 'snapshot');
       expect(snapshot.users.old).toBeUndefined();
       expect(snapshot.posts).toHaveLength(4);
+      expect(snapshot.posts.find(post => post.post_type === 'attachment').file_exists).toBe(true);
       for (const post of snapshot.posts) expect(Number(post.post_author)).toBe(ids.target);
     });
 
@@ -147,13 +159,13 @@ module.exports = function registerCleanupTests() {
       expect(snapshot.users.subscriber.cas).toBe('1');
       expect(snapshot.users.subscriber.date).toBe(before.users.subscriber.date);
       expect(snapshot.users.editor.cas).toBe('');
-      job = await preview(page, { mode: 'mark' });
+      job = await preview(page, { mode: 'mark', all_accounts: '1' });
       await execute(page, job);
       snapshot = await fixture(page, 'snapshot');
       expect(snapshot.users.editor.cas).toBe('1');
       expect(snapshot.users.editor.date).toBe('');
       expect(Object.keys(snapshot.users)).toHaveLength(2);
-      expect((await preview(page, { mode: 'mark' })).total).toBe(0);
+      expect((await preview(page, { mode: 'mark', all_accounts: '1' })).total).toBe(0);
     });
 
     test('day cutoff is strict across leap days and duration persists', async ({ page }) => {
@@ -171,11 +183,7 @@ module.exports = function registerCleanupTests() {
       await expect(page.locator('#cassify-cleanup-days')).toHaveValue('1');
     });
 
-    test('short inactivity periods are applied in days and legacy year settings are converted', async ({ page }) => {
-      await fixture(page, 'legacy_duration');
-      await page.reload();
-      const migrated = Number(await page.locator('#cassify-cleanup-days').inputValue());
-      expect([730, 731]).toContain(migrated);
+    test('short inactivity periods are applied in days', async ({ page }) => {
       await fixture(page, 'create', { users: JSON.stringify([
         { name: 'fortyfive', cas: true, date: Math.floor(Date.now() / 1000) - 45 * 86400 },
       ]) });
@@ -193,7 +201,12 @@ module.exports = function registerCleanupTests() {
       job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
       job = await api(page, 'batch', { token: job.token });
       expect(job.phase).toBe('executing');
-      expect(job.success).toBe(20);
+      if (multisite) {
+        expect(job.success).toBe(0); // one site step per request
+      } else {
+        expect(job.success).toBeGreaterThan(0);
+        expect(job.success).toBeLessThanOrEqual(20);
+      }
       await page.reload();
       await expect(page.locator('#cassify-cleanup-resume')).toBeVisible();
       await page.locator('#cassify-cleanup-resume').click();
@@ -222,7 +235,7 @@ module.exports = function registerCleanupTests() {
       expect(denied.status()).toBe(403);
     });
 
-    test('multisite preserves child-site content and reports the core super-admin refusal', async ({ page }) => {
+    test('multisite preserves child-site content and excludes super administrators', async ({ page }) => {
       test.skip(!multisite, 'Network only');
       const ids = await fixture(page, 'create', { users: JSON.stringify([
         { name: 'target', date: 'recent' },
@@ -231,11 +244,51 @@ module.exports = function registerCleanupTests() {
       ]) });
       const result = await execute(page, await preview(page), 'cassify_cleanup_e2e_target');
       expect(result.success).toBe(1);
-      expect(result.failed).toBe(1);
-      expect(result.errors.join(' ')).toContain('super administrator');
+      expect(result.failed).toBe(0);
+      expect(result.protected).toBeGreaterThan(0);
       const child = await fixture(page, 'child_snapshot', { blog: '2' });
       expect(child.posts.some(post => Number(post.post_author) === ids.target)).toBe(true);
       expect((await fixture(page, 'snapshot')).users.super).toBeDefined();
+    });
+
+    test('multisite reassigns content on an archived site without author membership', async ({ page }) => {
+      test.skip(!multisite, 'Network only');
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target', date: 'recent' },
+        { name: 'orphan', cas: true, date: 'old', blog: 2, orphan: true, archived: true },
+      ]) });
+      const result = await execute(page, await preview(page), 'cassify_cleanup_e2e_target');
+      expect(result.success).toBe(1);
+      expect(result.failed).toBe(0);
+      const child = await fixture(page, 'child_snapshot', { blog: '2' });
+      expect(child.posts).toHaveLength(1);
+      expect(Number(child.posts[0].post_author)).toBe(ids.target);
+      expect((await fixture(page, 'snapshot')).users.orphan).toBeUndefined();
+    });
+
+    test('a silent reassignment failure pauses deletion and permits a safe retry', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target', date: 'recent' },
+        { name: 'failure', cas: true, date: 'old', posts: true },
+      ]) });
+      await fixture(page, 'fail_reassignment', { id: String(ids.failure) });
+      let job = await preview(page);
+      job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+      const error = await api(page, 'batch', { token: job.token }, 400);
+      expect(error.message).toMatch(/reassignment/i);
+      const paused = await fixture(page, 'audit', { job: job.token, event: 'paused', id: '0' });
+      expect(paused.message).toMatch(/reassignment/i);
+      expect((await api(page, 'status')).phase).toBe('executing');
+      const snapshot = await fixture(page, 'snapshot');
+      expect(snapshot.posts).toHaveLength(4);
+      expect(snapshot.posts.find(post => post.post_type === 'attachment').file_exists).toBe(true);
+      for (const post of snapshot.posts) expect(Number(post.post_author)).toBe(ids.failure);
+      expect(snapshot.users.failure).toBeDefined();
+      await fixture(page, 'fail_reassignment', { id: '0' });
+      job = await api(page, 'status');
+      while (job.phase === 'executing') job = await api(page, 'batch', { token: job.token });
+      expect(job.success).toBe(1);
+      expect((await fixture(page, 'snapshot')).users.failure).toBeUndefined();
     });
 
     test('a missing content recipient pauses deletion and the saved operation can be discarded', async ({ page }) => {
@@ -252,24 +305,65 @@ module.exports = function registerCleanupTests() {
       expect((await preview(page)).old).toBe(1);
     });
 
-    test('the operator is deleted last when their own CAS account is eligible', async ({ page }) => {
-      test.skip(multisite, 'A network operator is a super administrator protected by WordPress');
+    test('the operator and administrators remain protected even with old dates', async ({ page }) => {
       const ids = await fixture(page, 'create', { users: JSON.stringify([
-        { name: 'operator', cas: true, role: 'administrator' },
-        { name: 'target', date: 'recent' }, { name: 'other', cas: true, date: 'old' },
+        { name: 'operator', cas: true, date: 'old', role: 'administrator', super: multisite },
+        { name: 'other', cas: true, date: 'old', role: 'administrator' },
       ]) });
       await fixture(page, 'signin', { name: 'operator' });
       await page.goto(settings);
-      await expect(page.locator('#cassify-cleanup-settings')).toBeEnabled();
       await fixture(page, 'setdate', { id: String(ids.operator) });
       const job = await preview(page);
-      expect(job.self).toBe(true);
-      const result = await execute(page, job, 'cassify_cleanup_e2e_target');
-      expect(result.success).toBe(2);
-      expect(result.session_ended).toBe(true);
+      expect(job.total).toBe(0);
+      expect(job.protected).toBeGreaterThanOrEqual(2);
       const snapshot = await fixture(page, 'snapshot');
-      expect(snapshot.users.operator).toBeUndefined();
-      expect(snapshot.users.other).toBeUndefined();
+      expect(snapshot.users.operator).toBeDefined();
+      expect(snapshot.users.other).toBeDefined();
+    });
+
+    test('complete backup acknowledgement is required in the UI and on the server', async ({ page }) => {
+      await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'old', cas: true, date: 'old' },
+      ]) });
+      await page.locator('#cassify-cleanup-purge').click();
+      await expect(page.locator('#cassify-cleanup-confirm')).toBeVisible();
+      await expect(page.locator('#cassify-cleanup-backup-row')).toContainText('complete backup');
+      await page.locator('#cassify-cleanup-target').fill('cassify_cleanup_e2e_target');
+      await page.locator('#cassify-cleanup-confirm').click();
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('backup');
+      const job = await api(page, 'status');
+      expect(job.phase).toBe('ready');
+      expect((await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target', backup_confirmed: '' }, 400)).message).toContain('backup');
+      expect((await fixture(page, 'snapshot')).users.old).toBeDefined();
+    });
+
+    test('active sessions, new CAS markings and unknown marking dates are retained', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' },
+        { name: 'session', cas: true, date: 'old' },
+        { name: 'newmark', cas: true, marked: Math.floor(Date.now() / 1000) },
+        { name: 'unknownmark', cas: true, marked: '' },
+        { name: 'oldmark', cas: true },
+      ]) });
+      await fixture(page, 'session', { id: String(ids.session) });
+      const job = await preview(page, { missing: '1' });
+      expect(job.total).toBe(1);
+      const result = await execute(page, job, 'cassify_cleanup_e2e_target');
+      expect(result.success).toBe(1);
+      const snapshot = await fixture(page, 'snapshot');
+      for (const name of ['session', 'newmark', 'unknownmark']) expect(snapshot.users[name]).toBeDefined();
+      expect(snapshot.users.oldmark).toBeUndefined();
+    });
+
+    test('a live session opened after preview protects its account', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'active', cas: true, date: 'old' },
+      ]) });
+      const job = await preview(page);
+      await fixture(page, 'session', { id: String(ids.active) });
+      const result = await execute(page, job, 'cassify_cleanup_e2e_target');
+      expect(result.skipped).toBe(1);
+      expect((await fixture(page, 'snapshot')).users.active).toBeDefined();
     });
 
     test('a CAS account can log in locally and its activity remains protective', async ({ page }) => {
@@ -292,6 +386,263 @@ module.exports = function registerCleanupTests() {
       expect(snapshot.users.main.cas).toBe('');
     });
 
+    test('content transfers are bounded, resumable, and leave the account until completion', async ({ page }) => {
+      await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'large', cas: true, date: 'old', extra_posts: 65 },
+      ]) });
+      let job = await preview(page);
+      job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+      job = await api(page, 'batch', { token: job.token });
+      expect(job.phase).toBe('executing');
+      expect(job.success).toBe(0);
+      expect((await fixture(page, 'snapshot')).users.large).toBeDefined();
+      await page.reload();
+      await page.locator('#cassify-cleanup-resume').click();
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('done');
+      const snapshot = await fixture(page, 'snapshot');
+      expect(snapshot.users.large).toBeUndefined();
+      expect(snapshot.posts).toHaveLength(65);
+      for (const post of snapshot.posts) expect(Number(post.post_author)).toBe(snapshot.users.target.id);
+    });
+
+    test('a failed confirmation-state write cannot begin deletion', async ({ page }) => {
+      await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'old', cas: true, date: 'old' },
+      ]) });
+      const job = await preview(page);
+      await fixture(page, 'fail_state', { enabled: '1' });
+      const error = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' }, 400);
+      expect(error.message).toContain('saved');
+      await fixture(page, 'fail_state', { enabled: '' });
+      expect((await api(page, 'status')).phase).toBe('ready');
+      expect((await fixture(page, 'snapshot')).users.old).toBeDefined();
+    });
+
+    test('a missing preview page stops execution without deleting accounts', async ({ page }) => {
+      await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'old', cas: true, date: 'old' },
+      ]) });
+      let job = await preview(page);
+      job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+      await fixture(page, 'remove_page');
+      expect((await api(page, 'batch', { token: job.token }, 400)).message).toContain('missing');
+      expect((await fixture(page, 'snapshot')).users.old).toBeDefined();
+    });
+
+    test('a connection-owned lock rejects concurrent requests and is released afterwards', async ({ page }) => {
+      const holding = fixture(page, 'hold_lock');
+      let held = false;
+      for (let i = 0; i < 50 && !held; i++) {
+        held = (await fixture(page, 'lock_status')).held;
+      }
+      expect(held).toBe(true);
+      expect((await api(page, 'status', {}, 400)).message).toContain('Another request');
+      await holding;
+      expect((await api(page, 'status')).phase).toBe('idle');
+    });
+
+    test('marking all accounts requires an explicit server-side acknowledgement', async ({ page }) => {
+      expect((await api(page, 'start', { mode: 'mark', days: '730' }, 400)).message).toContain('explicitly');
+    });
+
+    test('application-password accounts are protected from purge', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'api', cas: true, date: 'old' },
+      ]) });
+      expect((await fixture(page, 'application_password', { id: String(ids.api) })).ok).toBe(true);
+      expect((await preview(page)).total).toBe(0);
+      expect((await fixture(page, 'snapshot')).users.api).toBeDefined();
+    });
+
+    test('the operation audit is exportable and survives discarding the preview', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'old', cas: true, date: 'old' },
+      ]) });
+      const job = await execute(page, await preview(page), 'cassify_cleanup_e2e_target');
+      const exported = await api(page, 'export', { token: job.token });
+      expect(exported.audit.some(row => row.event === 'deleted' && row.user === ids.old)).toBe(true);
+      expect(exported.audit.find(row => row.event === 'confirmed').backup_confirmed_at).toBeGreaterThan(0);
+      await page.reload();
+      const downloaded = page.waitForEvent('download', { timeout: 30000 });
+      await page.locator('#cassify-cleanup-export').click();
+      const download = await downloaded;
+      const data = JSON.parse(require('fs').readFileSync(await download.path(), 'utf8'));
+      expect(data.events.some(row => row.event === 'deleted' && row.user === ids.old)).toBe(true);
+      await api(page, 'discard');
+      const retained = await fixture(page, 'audit', { job: job.token, event: 'deleted', id: String(ids.old) });
+      expect(retained.event).toBe('deleted');
+    });
+
+    test('a protected administrator outside the preview can receive the content', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'targetadmin', cas: true, date: 'old', role: 'administrator' },
+        { name: 'old', cas: true, date: 'old', posts: true },
+      ]) });
+      const job = await execute(page, await preview(page), 'cassify_cleanup_e2e_targetadmin');
+      expect(job.success).toBe(1);
+      const snapshot = await fixture(page, 'snapshot');
+      expect(snapshot.users.targetadmin).toBeDefined();
+      expect(snapshot.users.old).toBeUndefined();
+      for (const post of snapshot.posts) expect(Number(post.post_author)).toBe(ids.targetadmin);
+    });
+
+    test('an explicit re-mark establishes a grace period for a legacy CAS marker', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([{ name: 'legacy', cas: true }]) });
+      await fixture(page, 'forget_marked', { id: String(ids.legacy) });
+      expect((await preview(page, { missing: '1' })).total).toBe(0);
+      const job = await preview(page, { mode: 'mark', role: 'subscriber', blog: '1' });
+      expect(job.total).toBeGreaterThan(0);
+      await execute(page, job);
+      expect((await preview(page, { missing: '1' })).total).toBe(0);
+      expect((await fixture(page, 'snapshot')).users.legacy).toBeDefined();
+    });
+
+    test('a lost connection lock stops a confirmed batch before deletion', async ({ page }) => {
+      await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'old', cas: true, date: 'old', posts: true },
+      ]) });
+      let job = await preview(page);
+      job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+      await fixture(page, 'fail_lock', { enabled: '1' });
+      expect((await api(page, 'batch', { token: job.token }, 400)).message).toContain('lock was lost');
+      await fixture(page, 'fail_lock', { enabled: '' });
+      expect((await fixture(page, 'snapshot')).users.old).toBeDefined();
+      expect((await api(page, 'status')).phase).toBe('executing');
+    });
+
+    for (const change of ['touch', 'promote']) {
+      test(`a ${change} during a partial transfer protects the account`, async ({ page }) => {
+        const ids = await fixture(page, 'create', { users: JSON.stringify([
+          { name: 'target' }, { name: 'partial', cas: true, date: 'old', extra_posts: 65 },
+        ]) });
+        let job = await preview(page);
+        job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+        await api(page, 'batch', { token: job.token });
+        await fixture(page, change, { id: String(ids.partial) });
+        job = await api(page, 'batch', { token: job.token });
+        expect(job.skipped).toBe(1);
+        const snapshot = await fixture(page, 'snapshot');
+        expect(snapshot.users.partial).toBeDefined();
+        expect(snapshot.posts).toHaveLength(65);
+        expect(snapshot.posts.some(post => Number(post.post_author) === ids.target)).toBe(true);
+      });
+    }
+
+    test('new content on a transferred network site blocks global deletion', async ({ page }) => {
+      test.skip(!multisite, 'Network only');
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'late', cas: true, date: 'old', posts: true },
+      ]) });
+      let job = await preview(page);
+      job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+      job = await api(page, 'batch', { token: job.token }); // main site transferred
+      await fixture(page, 'late_post', { id: String(ids.late), blog: '1' });
+      while (job.site_offset < job.site_count) job = await api(page, 'batch', { token: job.token });
+      expect((await api(page, 'batch', { token: job.token }, 400)).message).toContain('previously transferred');
+      const snapshot = await fixture(page, 'snapshot');
+      expect(snapshot.users.late).toBeDefined();
+      expect(snapshot.posts).toHaveLength(5);
+    });
+
+    for (const mode of ['late', 'delete_attachment', 'delete_post', 'trash_post', 'delete_link', 'touch']) {
+      test(`deletion hooks cannot bypass safety checks: ${mode}`, async ({ page }) => {
+        await fixture(page, 'create', { users: JSON.stringify([
+          { name: 'target' }, { name: 'hook', cas: true, date: 'old', posts: true },
+        ]) });
+        await fixture(page, 'deletion_hook', { mode });
+        let job = await preview(page);
+        job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+        if (multisite) {
+          for (let site = 0; site < job.site_count; site++) job = await api(page, 'batch', { token: job.token });
+        }
+        const error = await api(page, 'batch', { token: job.token }, 400);
+        expect(error.message).toMatch(/content|eligibility/i);
+        const snapshot = await fixture(page, 'snapshot');
+        expect(snapshot.users.hook).toBeDefined();
+        expect(snapshot.posts).toHaveLength(mode === 'late' ? 5 : 4);
+        expect(snapshot.links).toHaveLength(1);
+        expect(snapshot.posts.find(post => post.post_type === 'attachment').file_exists).toBe(true);
+        await fixture(page, 'deletion_hook', { mode: '' });
+      });
+    }
+
+    for (const mode of ['transfer', 'delete']) {
+      test(`state-write failure after ${mode} is safe to retry`, async ({ page }) => {
+        await fixture(page, 'create', { users: JSON.stringify([
+          { name: 'target' }, { name: 'interrupted', cas: true, date: 'old', posts: true },
+        ]) });
+        let job = await preview(page);
+        job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+        if (multisite && mode === 'delete') {
+          for (let site = 0; site < job.site_count; site++) job = await api(page, 'batch', { token: job.token });
+        }
+        await fixture(page, 'fail_after_change', { mode });
+        expect((await api(page, 'batch', { token: job.token }, 400)).message).toContain('saved');
+        await fixture(page, 'fail_after_change', { mode: '' });
+        job = await api(page, 'status');
+        while (job.phase === 'executing') job = await api(page, 'batch', { token: job.token });
+        const snapshot = await fixture(page, 'snapshot');
+        expect(snapshot.users.interrupted).toBeUndefined();
+        expect(snapshot.posts).toHaveLength(4);
+        expect(snapshot.posts.find(post => post.post_type === 'attachment').file_exists).toBe(true);
+        const audit = await api(page, 'export', { token: job.token });
+        expect(audit.audit.filter(row => row.event === 'deleted')).toHaveLength(1);
+        expect(job.success).toBe(1);
+      });
+    }
+
+    test('retained audit includes the frozen selection and repeated pause events after discard', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'audit', cas: true, date: 'old', posts: true },
+      ]) });
+      let job = await preview(page);
+      job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+      await fixture(page, 'fail_reassignment', { id: String(ids.audit) });
+      for (let i = 0; i < 2; i++) await api(page, 'batch', { token: job.token }, 400);
+      await fixture(page, 'fail_reassignment', { id: '0' });
+      while (job.phase === 'executing') job = await api(page, 'batch', { token: job.token });
+      await api(page, 'discard');
+      const history = await api(page, 'history');
+      expect(history.operations.some(row => row.token === job.token)).toBe(true);
+      const exported = await api(page, 'archive', { archive_token: job.token });
+      expect(exported.selection).toHaveLength(1);
+      expect(exported.selection[0]).toMatchObject({ id: ids.audit, login: 'cassify_cleanup_e2e_audit', reason: 'old' });
+      expect(Number(exported.selection[0].last_login_at)).toBeGreaterThan(0);
+      expect(exported.audit.filter(row => row.event === 'paused')).toHaveLength(2);
+      expect(exported.operation.target_login).toBe('cassify_cleanup_e2e_target');
+      await page.reload();
+      const downloaded = page.waitForEvent('download', { timeout: 30000 });
+      await page.getByRole('button', { name: /^Download purge audit:/ }).click();
+      const saved = JSON.parse(require('fs').readFileSync(await (await downloaded).path(), 'utf8'));
+      expect(saved.selection).toEqual(exported.selection);
+      expect(saved.events.filter(row => row.event === 'paused')).toHaveLength(2);
+    });
+
+    test('a reviewed recipient cannot silently resolve to a replacement account', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' }, { name: 'candidate', cas: true, date: 'old' },
+      ]) });
+      const job = await preview(page);
+      await api(page, 'prepare', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
+      await fixture(page, 'remove', { id: String(ids.target) });
+      await fixture(page, 'create', { users: JSON.stringify([{ name: 'target' }]) });
+      expect((await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' }, 400)).message).toContain('recipient changed');
+      expect((await fixture(page, 'snapshot')).users.candidate).toBeDefined();
+    });
+
+    test('retained audit downloads remain restricted to the original operator', async ({ page }) => {
+      await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'otheradmin', role: 'administrator', super: multisite },
+        { name: 'old', cas: true, date: 'old' },
+      ]) });
+      const job = await preview(page);
+      await api(page, 'discard');
+      await fixture(page, 'signin', { name: 'otheradmin' });
+      await page.goto(settings);
+      expect((await api(page, 'archive', { archive_token: job.token }, 400)).message).toContain('operator');
+      expect((await api(page, 'history')).operations).toHaveLength(0);
+    });
+
     test('volume exercise with 600 accounts', async ({ page }) => {
       test.skip(process.env.PLAYWRIGHT_CLEANUP_VOLUME !== 'true', 'Opt in to the volume fixture');
       test.setTimeout(3600000);
@@ -302,6 +653,13 @@ module.exports = function registerCleanupTests() {
       const job = await preview(page);
       expect(job.total).toBe(600);
       expect((await execute(page, job, 'cassify_cleanup_e2e_target')).success).toBe(600);
+      await page.reload();
+      const downloaded = page.waitForEvent('download', { timeout: 30000 });
+      await page.locator('#cassify-cleanup-export').click();
+      const data = JSON.parse(require('fs').readFileSync(await (await downloaded).path(), 'utf8'));
+      expect(data.selection).toHaveLength(600);
+      expect(new Set(data.selection.map(row => row.id)).size).toBe(600);
+      expect(data.events.filter(row => row.event === 'deleted')).toHaveLength(600);
     });
   });
 };

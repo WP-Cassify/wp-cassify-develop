@@ -87,7 +87,6 @@ $wp_cassify_default_expirations_options = array(
 );
 
 $wp_cassify_plugin_options_list = array(
-    'wp_cassify_cleanup_years',
     'wp_cassify_cleanup_days',
 	'wp_cassify_base_url',
 	'wp_cassify_protocol_version',

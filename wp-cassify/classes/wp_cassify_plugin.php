@@ -731,14 +731,8 @@ class WP_Cassify_Plugin {
 					do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' is logged in' );							
 				}
 
-                // A direct wp-login.php request has no redirect_to. Validate its CAS
-                // ticket against the original service, then land in wp-admin where
-                // the browser sends the admin auth cookie (it is path-scoped).
-                $destination = $service_url;
-                if ( wp_parse_url( $service_url, PHP_URL_PATH ) === wp_parse_url( site_url( 'wp-login.php' ), PHP_URL_PATH ) ) {
-                    $destination = admin_url();
-                }
-                WP_Cassify_Utils::wp_cassify_redirect_url( $destination );
+				// Redirect to the service url.
+				WP_Cassify_Utils::wp_cassify_redirect_url( $service_url );
 			}
 		}
 	}		

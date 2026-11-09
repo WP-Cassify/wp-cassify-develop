@@ -148,12 +148,55 @@ Install WordPress Access Control Plugin. And mark page as "Only accessible by me
 * How to protect all website ?
 Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
 
+== Manual account cleanup ==
+
+Before every purge, make a complete backup of the database and all site files
+(uploads, plugins, themes and configuration) and verify that it can be restored.
+On multisite, back up the entire network. The backup checkbox is an administrator
+acknowledgement: WP Cassify does not create or validate backups.
+
+Cleanup is manual and requires a preview and confirmation. Administrators,
+the operator, accounts with live WordPress browser sessions and accounts with
+application passwords are excluded. The date tracks successful logins, not all
+activity; authentication performed by third-party systems may not be tracked.
+Accounts without a login date are kept unless explicitly included AND their
+known CAS marking date is older than the selected period. No historical CAS
+login dates are inferred when upgrading.
+
+Content ownership is transferred in small steps and checked before deletion.
+An interruption can leave partial transfers or removed site memberships; resume
+or inspect the operation before starting another. Other plugins can delete their
+own data through WordPress deletion hooks. Recreating a CAS account does not
+restore the old WordPress identity or its data.
+
+Download the JSON operation audit to retain the complete preview selection,
+including account identifiers, usernames, login/marking dates, confirmed settings
+and append-only execution events. Retained audits remain downloadable by their
+original operator after the working preview is discarded, until plugin
+uninstallation. These records contain personal data; include them in your site's
+retention policy. Discarding a preview does not undo completed changes.
+
+The database lock serializes Cassify requests only. Pause imports and other
+writers during cleanup. All network sites are checked again before global
+account deletion. During the final core deletion, attempts to delete posts,
+attachments or links through the guarded WordPress APIs stop the operation.
+This does not isolate concurrent authentication, direct SQL, direct file deletion
+or arbitrary third-party hook side effects. Use a maintenance window and a
+verified backup; this tool cannot guarantee preservation of third-party data.
+
+The tools require WordPress 4.9+ and database connection-owned named locks;
+unsupported locking fails closed. Multi-network installations are excluded.
+No purge is scheduled or triggered by an upgrade. Inactivity is measured in
+24-hour days (730 by default); a login exactly at the cutoff is retained.
+Marking accounts manually changes their future purge eligibility and does not
+prove their CAS identity. For accounts without a login date, the grace period
+starts when their CAS marking date is first recorded.
+
 == Changelog ==
 
 = 2.5.0 =
-* Add: manual CAS account marking (all accounts or by role) and resumable inactive-account purge with preview, configurable duration, optional missing login dates and content reassignment.
-* Add: successful login tracking, network administration support and Playwright cleanup scenarios.
-* No scheduled purge. WordPress core restrictions on network super administrator deletion are reported.
+* Add: manual tools to mark CAS accounts and purge inactive CAS accounts, including WordPress multisite support. Includes preview and confirmation, protected-account exclusions, content reassignment, resumable processing and downloadable audits. Backup acknowledgement is required before purging.
+* Add: successful login tracking to determine CAS account inactivity. No automatic purge or reconstruction of historical login dates.
 
 = 2.4.9 =
 * Fix: avoid a PHP 8 TypeError when logging out from a different multisite child site than the CAS login site while SLO is enabled.

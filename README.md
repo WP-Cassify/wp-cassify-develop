@@ -41,6 +41,8 @@ They cover the same critical flows:
  * Local login, create-user toggle, and URL settings persistence
  * URL bypass security behavior (disabled by default, configurable, and reset)
  * Multisite bootstrap, network activation, and CAS login on sub-sites
+ * Manual account marking and purge: eligibility, content/file preservation, interrupted
+   writes, resume, deletion hooks, database locks and retained audit exports
 
 ## Usage
 
@@ -106,11 +108,12 @@ If your docker is stopped, juste remove the db container :
 docker compose rm -s -f db
 ```
 
-The multisite suite uses the same `wordpress/` bind mount to edit `wp-config.php` and `.htaccess` during the network bootstrap. If you want to reset the multisite state manually, remove the database container and wordpress:
-```bash
-docker compose exec db mariadb -ppass -e "DROP DATABASE wordpress; CREATE DATABASE wordpress;"
-rm -rf wordpress
-```
+The default suite uses the named `wordpress-test-data` volume shared between
+WordPress and Playwright. The multisite override uses the `./wordpress` bind mount
+for both containers so the suite can edit `wp-config.php` and `.htaccess`.
+Run the two suites in separate Compose projects when you need to preserve each
+other's database and filesystem state. Resetting a database or removing a volume
+destroys that test environment; do not use these commands against production.
 
 ## Playwright tests
 
@@ -125,6 +128,17 @@ The HTML report and test results are mounted on the host under:
 * `docker/playwright-tests/playwright-report`
 
 After a run, you can open the HTML report directly at `docker/playwright-tests/playwright-report/index.html`.
+
+To run only the cleanup scenarios after the environment has been initialized:
+```bash
+docker compose run --rm playwright-suite npx playwright test wp-cassify.spec.js --grep 'Manual CAS account tools'
+```
+
+Set `PLAYWRIGHT_CLEANUP_VOLUME=true` on the test container to include the optional
+600-account exercise. The single-site and multisite suites share the same cleanup
+scenarios; network-specific cases are skipped on single-site installations.
+Fixtures install a token-protected test MU plugin in the shared test volume;
+never copy that test environment or its MU plugins to production.
 
 If you want to rerun the tests without relaunching the whole docker-compose, reset the wordpress instance (see above) and then rerun the Playwright tests.
 

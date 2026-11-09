@@ -52,13 +52,6 @@ test('CAS login opens the admin area and the profile page', async ({ page }) => 
   await logoutWordPress(page);
 });
 
-test('direct wp-login.php access without redirect_to completes CAS login once', async ({ page }) => {
-  await page.goto('/wp-login.php');
-  await fillAndSubmitCasLogin(page);
-  await expect(page).toHaveURL(/\/wp-admin\//);
-  await expect(page.locator('#wpadminbar')).toBeVisible();
-});
-
 test('stale CAS PHP session does not trap users away from wp-admin when WordPress auth cookies are missing', async ({ page, context }) => {
   await loginThroughWordPress(page, '/wp-admin/');
   await expect(page.locator('#wpadminbar')).toBeVisible();

@@ -324,7 +324,7 @@ class WP_Cassify_Utils {
 				}
 			}
 
-			update_user_meta( $user->ID, WP_Cassify_User_Cleanup::CAS_META, '1' );
+			WP_Cassify_User_Cleanup::mark_cas( $user->ID );
 			wp_set_current_user( $user->ID, $user->user_login );
 			wp_set_auth_cookie( $user->ID );
 			
