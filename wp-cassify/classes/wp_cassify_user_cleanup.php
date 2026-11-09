@@ -145,37 +145,26 @@ class WP_Cassify_User_Cleanup {
     }
 
     private static function archive_job( $job ) {
-        self::persist( self::archive_key( $job['token'] ), $job );
+        if ( ! in_array( $job['phase'], array( 'executing', 'done' ), true ) ) { return; }
+        $summary = array_intersect_key( $job, array_flip( array( 'token', 'owner', 'mode', 'now', 'phase', 'success', 'skipped', 'failed' ) ) );
+        self::persist( self::archive_key( $job['token'] ), $summary );
     }
 
     private static function discard( $job ) {
         if ( $job ) {
             self::archive_job( $job );
+            // Execution events are temporary recovery data, not retained audits.
+            global $wpdb;
+            $prefix = 'wp_cassify_cleanup_audit_' . $job['token'] . '_';
+            $keys = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( $prefix ) . '%' ) );
+            if ( $wpdb->last_error ) { self::error( 'Could not clear temporary operation data.' ); }
+            foreach ( $keys as $key ) { delete_option( $key ); }
             for ( $page = 0; $page < $job['pages']; $page++ ) {
                 delete_option( self::page_key( $job, $page ) );
+                delete_option( self::archive_key( $job['token'] ) . '_page_' . $page );
             }
         }
         delete_option( self::STATE );
-    }
-
-    /** Audit snapshots survive discarding/replacing the working preview. */
-    private static function export_archive( $request, $owner ) {
-        global $wpdb;
-        $token = isset( $request['archive_token'] ) ? $request['archive_token'] : '';
-        if ( ! preg_match( '/^[a-f0-9-]{36}$/D', $token ) ) { self::error( 'Invalid audit identifier.' ); }
-        $job = get_option( self::archive_key( $token ), array() );
-        if ( ! $job || $job['owner'] !== $owner ) { self::error( 'Audit unavailable for this operator.' ); }
-        // Retained previews are immutable; progress comes from the latest working state.
-        $working = get_option( self::STATE, array() );
-        if ( $working && $working['token'] === $token && $working['owner'] === $owner ) { $job = $working; }
-        $offset = isset( $request['audit_offset'] ) ? max( 0, (int) $request['audit_offset'] ) : 0;
-        $prefix = 'wp_cassify_cleanup_audit_' . $token . '_';
-        $keys = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s ORDER BY option_id LIMIT 200 OFFSET %d", $wpdb->esc_like( $prefix ) . '%', $offset ) );
-        if ( $wpdb->last_error ) { self::error( 'Could not read the operation audit.' ); }
-        $page = isset( $request['selection_page'] ) ? max( 0, (int) $request['selection_page'] ) : 0;
-        $selection = $page < $job['pages'] ? get_option( self::archive_key( $token ) . '_page_' . $page, false ) : array();
-        if ( ! is_array( $selection ) ) { self::error( 'An archived selection page is missing.' ); }
-        return array( 'operation' => $job, 'audit' => array_map( 'get_option', $keys ), 'selection' => $selection );
     }
 
     private static function history( $request, $owner ) {
@@ -188,8 +177,8 @@ class WP_Cassify_User_Cleanup {
         $items = array();
         foreach ( $keys as $key ) {
             $job = get_option( $key );
-            if ( $job && $job['owner'] === $owner ) {
-                $items[] = array( 'token' => $job['token'], 'mode' => $job['mode'], 'time' => $job['now'], 'phase' => $job['phase'] );
+            if ( $job && $job['owner'] === $owner && in_array( $job['phase'], array( 'executing', 'done' ), true ) ) {
+                $items[] = array( 'mode' => $job['mode'], 'time' => $job['now'], 'phase' => $job['phase'], 'success' => $job['success'], 'skipped' => $job['skipped'], 'failed' => $job['failed'] );
             }
         }
         return array( 'operations' => $items, 'next_offset' => count( $keys ) === 20 ? $offset + 20 : null );
@@ -201,6 +190,7 @@ class WP_Cassify_User_Cleanup {
 
     private static function save( $job ) {
         self::persist( self::STATE, $job );
+        self::archive_job( $job );
     }
 
     private static function persist( $key, $value ) {
@@ -307,7 +297,7 @@ class WP_Cassify_User_Cleanup {
         $action = isset( $request['operation'] ) ? $request['operation'] : '';
         $owner = get_current_user_id();
         if ( 'history' === $action ) { return self::history( $request, $owner ); }
-        if ( 'archive' === $action ) { return self::export_archive( $request, $owner ); }
+        if ( in_array( $action, array( 'archive', 'export' ), true ) ) { self::error( 'Operation exports are no longer available.' ); }
         $job = get_option( self::STATE, array() );
         if ( $job && $job['owner'] !== $owner && $job['phase'] !== 'done' ) {
             self::error( 'Another administrator owns the current operation.' );
@@ -331,7 +321,7 @@ class WP_Cassify_User_Cleanup {
                 self::confirm( $job, $request, $action );
             } elseif ( 'batch' === $action && 'executing' === $job['phase'] ) {
                 self::batch( $job );
-            } elseif ( ! in_array( $action, array( 'preview', 'export' ), true ) ) {
+            } elseif ( ! in_array( $action, array( 'preview' ), true ) ) {
                 self::error( 'Invalid operation phase. Refresh the status.' );
             }
             self::save( $job );
@@ -348,11 +338,6 @@ class WP_Cassify_User_Cleanup {
         $page = isset( $request['preview_page'] ) ? max( 0, (int) $request['preview_page'] ) : 0;
         $result['preview_page'] = $page;
         $result['users'] = $job['pages'] ? self::entries( $job, min( $page, $job['pages'] - 1 ) ) : array();
-        if ( 'export' === $action ) {
-            self::archive_job( $job );
-            $export = self::export_archive( array_merge( $request, array( 'archive_token' => $job['token'] ) ), $owner );
-            $result = array_merge( $result, $export );
-        }
         return $result;
     }
 
@@ -444,7 +429,6 @@ class WP_Cassify_User_Cleanup {
         }
         if ( $entries ) {
             self::persist( self::page_key( $job, $job['pages'] ), $entries );
-            self::persist( self::archive_key( $job['token'] ) . '_page_' . $job['pages'], $entries );
             $job['pages']++;
         }
         if ( count( $ids ) < self::SCAN_SIZE ) {

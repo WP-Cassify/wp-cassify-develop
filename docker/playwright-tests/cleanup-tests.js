@@ -123,7 +123,7 @@ module.exports = function registerCleanupTests() {
       await page.locator('#cassify-cleanup-confirm').click();
       await expect(page.locator('#cassify-cleanup-warning')).toContainText(`#${ids.target}`);
       await page.locator('#cassify-cleanup-confirm').click();
-      await expect(page.locator('#cassify-cleanup-status')).toContainText('done');
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('completed');
       const snapshot = await fixture(page, 'snapshot');
       expect(snapshot.users.old).toBeUndefined();
       expect(snapshot.posts).toHaveLength(4);
@@ -210,7 +210,7 @@ module.exports = function registerCleanupTests() {
       await page.reload();
       await expect(page.locator('#cassify-cleanup-resume')).toBeVisible();
       await page.locator('#cassify-cleanup-resume').click();
-      await expect(page.locator('#cassify-cleanup-status')).toContainText('done');
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('completed');
       job = await api(page, 'status');
       expect(job.success).toBe(45);
       expect(job.failed).toBe(0);
@@ -226,7 +226,7 @@ module.exports = function registerCleanupTests() {
       await expect(page.locator('#cassify-cleanup-confirm')).toBeVisible();
       expect((await fixture(page, 'snapshot')).users.editor.cas).toBe('');
       await page.locator('#cassify-cleanup-confirm').click();
-      await expect(page.locator('#cassify-cleanup-status')).toContainText('done');
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('completed');
       expect((await fixture(page, 'snapshot')).users.editor.cas).toBe('1');
       const invalidNonce = await page.request.post('/wp-admin/admin-ajax.php', { form: { action: 'wp_cassify_cleanup', operation: 'status', nonce: 'invalid' } });
       expect(invalidNonce.status()).toBe(403);
@@ -398,7 +398,7 @@ module.exports = function registerCleanupTests() {
       expect((await fixture(page, 'snapshot')).users.large).toBeDefined();
       await page.reload();
       await page.locator('#cassify-cleanup-resume').click();
-      await expect(page.locator('#cassify-cleanup-status')).toContainText('done');
+      await expect(page.locator('#cassify-cleanup-status')).toContainText('completed');
       const snapshot = await fixture(page, 'snapshot');
       expect(snapshot.users.large).toBeUndefined();
       expect(snapshot.posts).toHaveLength(65);
@@ -454,23 +454,23 @@ module.exports = function registerCleanupTests() {
       expect((await fixture(page, 'snapshot')).users.api).toBeDefined();
     });
 
-    test('the operation audit is exportable and survives discarding the preview', async ({ page }) => {
+    test('only executed tasks retain a simple result after clearing', async ({ page }) => {
       const ids = await fixture(page, 'create', { users: JSON.stringify([
         { name: 'target' }, { name: 'old', cas: true, date: 'old' },
       ]) });
-      const job = await execute(page, await preview(page), 'cassify_cleanup_e2e_target');
-      const exported = await api(page, 'export', { token: job.token });
-      expect(exported.audit.some(row => row.event === 'deleted' && row.user === ids.old)).toBe(true);
-      expect(exported.audit.find(row => row.event === 'confirmed').backup_confirmed_at).toBeGreaterThan(0);
-      await page.reload();
-      const downloaded = page.waitForEvent('download', { timeout: 30000 });
-      await page.locator('#cassify-cleanup-export').click();
-      const download = await downloaded;
-      const data = JSON.parse(require('fs').readFileSync(await download.path(), 'utf8'));
-      expect(data.events.some(row => row.event === 'deleted' && row.user === ids.old)).toBe(true);
+      let job = await preview(page);
+      expect((await api(page, 'history')).operations).toEqual([]);
       await api(page, 'discard');
-      const retained = await fixture(page, 'audit', { job: job.token, event: 'deleted', id: String(ids.old) });
-      expect(retained.event).toBe('deleted');
+      expect((await api(page, 'history')).operations).toEqual([]);
+      job = await execute(page, await preview(page), 'cassify_cleanup_e2e_target');
+      await api(page, 'discard');
+      const results = (await api(page, 'history')).operations;
+      expect(results).toHaveLength(1);
+      expect(results[0]).toEqual({ mode: 'purge', time: job.now, phase: 'done', success: 1, skipped: 0, failed: 0 });
+      expect(await fixture(page, 'audit', { job: job.token, event: 'deleted', id: String(ids.old) })).toEqual([]);
+      await page.reload();
+      await expect(page.locator('#cassify-cleanup-history')).toContainText('1 completed, 0 skipped, 0 failed');
+      await expect(page.locator('#cassify-cleanup-export')).toHaveCount(0);
     });
 
     test('a protected administrator outside the preview can receive the content', async ({ page }) => {
@@ -585,37 +585,25 @@ module.exports = function registerCleanupTests() {
         expect(snapshot.users.interrupted).toBeUndefined();
         expect(snapshot.posts).toHaveLength(4);
         expect(snapshot.posts.find(post => post.post_type === 'attachment').file_exists).toBe(true);
-        const audit = await api(page, 'export', { token: job.token });
-        expect(audit.audit.filter(row => row.event === 'deleted')).toHaveLength(1);
+        expect((await api(page, 'history')).operations[0].success).toBe(1);
         expect(job.success).toBe(1);
       });
     }
 
-    test('retained audit includes the frozen selection and repeated pause events after discard', async ({ page }) => {
+    test('an interrupted task retains its result after clearing', async ({ page }) => {
       const ids = await fixture(page, 'create', { users: JSON.stringify([
-        { name: 'target' }, { name: 'audit', cas: true, date: 'old', posts: true },
+        { name: 'target' }, { name: 'interrupted', cas: true, date: 'old', posts: true },
       ]) });
       let job = await preview(page);
       job = await api(page, 'confirm', { token: job.token, target_username: 'cassify_cleanup_e2e_target' });
-      await fixture(page, 'fail_reassignment', { id: String(ids.audit) });
-      for (let i = 0; i < 2; i++) await api(page, 'batch', { token: job.token }, 400);
+      await fixture(page, 'fail_reassignment', { id: String(ids.interrupted) });
+      await api(page, 'batch', { token: job.token }, 400);
       await fixture(page, 'fail_reassignment', { id: '0' });
-      while (job.phase === 'executing') job = await api(page, 'batch', { token: job.token });
       await api(page, 'discard');
-      const history = await api(page, 'history');
-      expect(history.operations.some(row => row.token === job.token)).toBe(true);
-      const exported = await api(page, 'archive', { archive_token: job.token });
-      expect(exported.selection).toHaveLength(1);
-      expect(exported.selection[0]).toMatchObject({ id: ids.audit, login: 'cassify_cleanup_e2e_audit', reason: 'old' });
-      expect(Number(exported.selection[0].last_login_at)).toBeGreaterThan(0);
-      expect(exported.audit.filter(row => row.event === 'paused')).toHaveLength(2);
-      expect(exported.operation.target_login).toBe('cassify_cleanup_e2e_target');
-      await page.reload();
-      const downloaded = page.waitForEvent('download', { timeout: 30000 });
-      await page.getByRole('button', { name: /^Download purge audit:/ }).click();
-      const saved = JSON.parse(require('fs').readFileSync(await (await downloaded).path(), 'utf8'));
-      expect(saved.selection).toEqual(exported.selection);
-      expect(saved.events.filter(row => row.event === 'paused')).toHaveLength(2);
+      expect((await api(page, 'history')).operations).toEqual([
+        { mode: 'purge', time: job.now, phase: 'executing', success: 0, skipped: 0, failed: 0 },
+      ]);
+      expect((await fixture(page, 'snapshot')).users.interrupted).toBeDefined();
     });
 
     test('a reviewed recipient cannot silently resolve to a replacement account', async ({ page }) => {
@@ -630,16 +618,16 @@ module.exports = function registerCleanupTests() {
       expect((await fixture(page, 'snapshot')).users.candidate).toBeDefined();
     });
 
-    test('retained audit downloads remain restricted to the original operator', async ({ page }) => {
+    test('task results remain restricted to the original operator', async ({ page }) => {
       await fixture(page, 'create', { users: JSON.stringify([
         { name: 'otheradmin', role: 'administrator', super: multisite },
         { name: 'old', cas: true, date: 'old' },
       ]) });
-      const job = await preview(page);
+      await execute(page, await preview(page), ADMIN_USER);
+      expect((await api(page, 'history')).operations).toHaveLength(1);
       await api(page, 'discard');
       await fixture(page, 'signin', { name: 'otheradmin' });
       await page.goto(settings);
-      expect((await api(page, 'archive', { archive_token: job.token }, 400)).message).toContain('operator');
       expect((await api(page, 'history')).operations).toHaveLength(0);
     });
 
@@ -654,12 +642,7 @@ module.exports = function registerCleanupTests() {
       expect(job.total).toBe(600);
       expect((await execute(page, job, 'cassify_cleanup_e2e_target')).success).toBe(600);
       await page.reload();
-      const downloaded = page.waitForEvent('download', { timeout: 30000 });
-      await page.locator('#cassify-cleanup-export').click();
-      const data = JSON.parse(require('fs').readFileSync(await (await downloaded).path(), 'utf8'));
-      expect(data.selection).toHaveLength(600);
-      expect(new Set(data.selection.map(row => row.id)).size).toBe(600);
-      expect(data.events.filter(row => row.event === 'deleted')).toHaveLength(600);
+      await expect(page.locator('#cassify-cleanup-history')).toContainText('600 completed, 0 skipped, 0 failed');
     });
   });
 };

@@ -169,12 +169,10 @@ or inspect the operation before starting another. Other plugins can delete their
 own data through WordPress deletion hooks. Recreating a CAS account does not
 restore the old WordPress identity or its data.
 
-Download the JSON operation audit to retain the complete preview selection,
-including account identifiers, usernames, login/marking dates, confirmed settings
-and append-only execution events. Retained audits remain downloadable by their
-original operator after the working preview is discarded, until plugin
-uninstallation. These records contain personal data; include them in your site's
-retention policy. Discarding a preview does not undo completed changes.
+Task results show the date, operation type and counts of completed, skipped and
+failed accounts. Previews are not retained in this history. Clearing a task keeps
+its result summary and does not undo completed changes. Detailed execution events
+are used internally for recovery until the task is cleared.
 
 The database lock serializes Cassify requests only. Pause imports and other
 writers during cleanup. All network sites are checked again before global
@@ -195,7 +193,7 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.5.0 =
-* Add: manual tools to mark CAS accounts and purge inactive CAS accounts, including WordPress multisite support. Includes preview and confirmation, protected-account exclusions, content reassignment, resumable processing and downloadable audits. Backup acknowledgement is required before purging.
+* Add: manual tools to mark CAS accounts and purge inactive CAS accounts, including WordPress multisite support. Includes preview and confirmation, protected-account exclusions, content reassignment, resumable processing and simple task results. Backup acknowledgement is required before purging.
 * Add: successful login tracking to determine CAS account inactivity. No automatic purge or reconstruction of historical login dates.
 
 = 2.4.9 =

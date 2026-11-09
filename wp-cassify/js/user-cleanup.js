@@ -28,13 +28,27 @@
       el('status').textContent = 'No saved operation.';
       el('target').disabled = false;
       for (const name of ['users', 'errors']) el(name).replaceChildren();
-      for (const name of ['prev', 'next', 'confirm', 'resume', 'export']) el(name).hidden = true;
+      for (const name of ['prev', 'next', 'confirm', 'resume']) el(name).hidden = true;
       el('warning').textContent = '';
       el('summary').textContent = '';
       el('backup-row').hidden = true;
       return;
     }
-    el('export').hidden = false;
+    if (job.phase === 'done') {
+      const mode = job.mode === 'mark' ? 'CAS marking' : 'CAS purge';
+      el('status').textContent = `${mode} completed: ${job.success} completed, ${job.skipped} skipped, ${job.failed} failed.`;
+      for (const name of ['users', 'errors']) el(name).replaceChildren();
+      for (const message of job.errors || []) {
+        const li = document.createElement('li');
+        li.textContent = message;
+        el('errors').appendChild(li);
+      }
+      for (const name of ['prev', 'next', 'confirm', 'resume', 'backup-row']) el(name).hidden = true;
+      el('summary').textContent = '';
+      el('warning').textContent = '';
+      el('target').disabled = false;
+      return;
+    }
     el('target').disabled = Boolean(job.target);
     el('backup-row').hidden = job.mode !== 'purge' || job.phase !== 'ready';
     const mode = job.mode === 'mark' ? 'CAS marking' : 'CAS purge';
@@ -109,36 +123,17 @@
     }
     await request('confirm', { target_username: job.target_login || '', backup_confirmed: el('backup').checked ? '1' : '' });
     await advance();
+    await loadHistory();
   }));
-  async function downloadAudit(token) {
-    const events = [];
-    const selection = [];
-    let result;
-    let page = 0;
-    do {
-      result = await request('archive', { archive_token: token, selection_page: page, audit_offset: events.length }, false);
-      events.push(...result.audit);
-      selection.push(...result.selection);
-      page++;
-    } while (result.audit.length === 200 || page < result.operation.pages);
-    const url = URL.createObjectURL(new Blob([JSON.stringify({ operation: result.operation, selection, events }, null, 2)], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `wp-cassify-cleanup-${token}.json`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
   async function loadHistory(offset = 0) {
     const result = await request('history', { history_offset: offset }, false);
     el('history').replaceChildren();
+    if (!result.operations.length) el('history').textContent = 'No tasks performed.';
     for (const item of result.operations) {
       const li = document.createElement('li');
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'button';
-      button.textContent = `Download ${item.mode} audit: ${new Date(item.time * 1000).toISOString()} (${item.phase})`;
-      button.addEventListener('click', () => run(() => downloadAudit(item.token)));
-      li.appendChild(button);
+      const mode = item.mode === 'mark' ? 'CAS marking' : 'CAS purge';
+      const state = item.phase === 'done' ? 'Completed' : 'Interrupted or in progress';
+      li.textContent = `${new Date(item.time * 1000).toLocaleString()} — ${mode}: ${item.success} completed, ${item.skipped} skipped, ${item.failed} failed. ${state}.`;
       el('history').appendChild(li);
     }
     el('history-next').hidden = result.next_offset === null;
@@ -146,15 +141,11 @@
     el('history-first').hidden = offset === 0;
   }
   el('history-first').addEventListener('click', () => run(() => loadHistory()));
-  el('history-refresh').addEventListener('click', () => run(() => loadHistory()));
-  el('export').addEventListener('click', () => run(async () => {
-    await request('export'); // Refresh the retained operation summary before download.
-    await downloadAudit(job.token);
-  }));
   el('discard').addEventListener('click', () => run(async () => { await request('discard'); await loadHistory(); }));
   el('resume').addEventListener('click', () => run(async () => {
     await request('status');
     await advance();
+    await loadHistory();
   }));
   for (const [name, direction] of [['prev', -1], ['next', 1]]) {
     el(name).addEventListener('click', () => run(() => request('preview', { preview_page: previewPage + direction })));

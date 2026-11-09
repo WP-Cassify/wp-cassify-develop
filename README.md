@@ -42,7 +42,7 @@ They cover the same critical flows:
  * URL bypass security behavior (disabled by default, configurable, and reset)
  * Multisite bootstrap, network activation, and CAS login on sub-sites
  * Manual account marking and purge: eligibility, content/file preservation, interrupted
-   writes, resume, deletion hooks, database locks and retained audit exports
+   writes, resume, deletion hooks, database locks and task result summaries
 
 ## Usage
 

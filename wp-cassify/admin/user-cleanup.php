@@ -45,14 +45,12 @@ wp_localize_script( 'wp-cassify-cleanup', 'wpCassifyCleanup', array( 'url' => ad
     <p id="cassify-cleanup-backup-row" hidden><label><input type="checkbox" id="cassify-cleanup-backup" /> I have created a complete backup of the database and all site files and verified that it can be restored.</label></p>
     <button type="button" class="button button-primary" id="cassify-cleanup-confirm" hidden>Confirm operation</button>
     <button type="button" class="button" id="cassify-cleanup-resume" hidden>Resume operation</button>
-    <button type="button" class="button" id="cassify-cleanup-export" hidden>Download operation audit (JSON)</button>
-    <button type="button" class="button" id="cassify-cleanup-discard">Discard saved operation (completed changes are kept)</button>
-    <p>Audits and selection snapshots remain downloadable by their operator after discarding the preview, until plugin uninstallation. A failed or interrupted operation may already have transferred some content or removed site memberships.</p>
-    <h3>Retained operation audits</h3>
-    <button type="button" class="button" id="cassify-cleanup-history-refresh">Refresh retained audits</button>
+    <button type="button" class="button" id="cassify-cleanup-discard">Clear current task</button>
+    <p>Clearing a task keeps its results and does not undo completed changes.</p>
+    <h3>Task results</h3>
     <ul id="cassify-cleanup-history"></ul>
-    <button type="button" class="button" id="cassify-cleanup-history-first" hidden>Newest audits</button>
-    <button type="button" class="button" id="cassify-cleanup-history-next" hidden>Older audits</button>
+    <button type="button" class="button" id="cassify-cleanup-history-first" hidden>Latest results</button>
+    <button type="button" class="button" id="cassify-cleanup-history-next" hidden>Older results</button>
     <p>The database lock only serializes Cassify requests. Pause imports and other writers while purging. Direct SQL and third-party deletion hooks can have effects outside these safeguards.</p>
     <p>Keep this page open while processing. After an interruption, reopen it and click Resume. A deleted CAS account may be recreated on its next CAS login if automatic account creation is enabled.</p>
 </div>
