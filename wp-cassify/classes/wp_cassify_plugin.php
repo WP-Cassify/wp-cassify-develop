@@ -386,39 +386,73 @@ class WP_Cassify_Plugin {
 		}
 	}
 
-	/**
-	 * Replace current session id with service ticket UID.
-	 * to handle SLO requests
-	 * 
-	 * @param	string	$service_ticket	ST provided by CAS Server in callback URL.
-	 * @param	boolean	$restore		if true, attach current session values to new session id.
-	 */
-    private function wp_cassify_switch_session_id( $service_ticket, $restore = false ) {
+	/** Full tickets are opaque; never derive a PHP session ID from them. */
+	private function wp_cassify_slo_key( $ticket ) {
+		if ( ! is_string( $ticket ) || ! preg_match( '/\AST-[\x21-\x7e]{1,4093}\z/D', $ticket ) ) {
+			return false;
+		}
+		return 'wp_cassify_slo_' . hash( 'sha256', $ticket );
+	}
 
-        $this->wp_cassify_session_start();
- 		// Backup current session vars
-        $current_session = isset($_SESSION) ? $_SESSION : null;
-        
-        // Extract service ticket unique ID. Service ticket is structured by default
-        // like this : ST-index-XXXXXXX-host
-        // For more information see this : 
-        // https://apereo.github.io/cas/4.1.x/installation/Configuring-Ticketing-Components.html
-        $service_ticket_uid = explode( '-', $service_ticket )[ 2 ];
+	/** Called only by the cookie hook after CAS validation and authorization. */
+	private function wp_cassify_register_slo( $ticket, $user_id, $token, $expiration ) {
+		$key = $this->wp_cassify_slo_key( $ticket );
+		if ( $key === false || empty( $token ) || $expiration <= time() ) {
+			return;
+		}
+		set_transient( $key, array(
+			'user_id' => (int) $user_id,
+			'token' => $token,
+			'session_id' => session_id(),
+		), $expiration - time() );
+	}
 
-		// Hash the ticket to ensure that the value meets the PHP 7.1 requirement
-		$session_id = hash( 'sha256', $this->wp_cassify_service_ticket_salt . $service_ticket_uid );
+	/** Parse a bounded SAML logout request without DTDs or external entities. */
+	private function wp_cassify_slo_ticket( $request ) {
+		if ( ! is_string( $request ) || $request === '' || strlen( $request ) > 16384 || stripos( $request, '<!DOCTYPE' ) !== false || stripos( $request, '<!ENTITY' ) !== false ) {
+			return false;
+		}
+		$previous = libxml_use_internal_errors( true );
+		$xml = new \DOMDocument();
+		$loaded = $xml->loadXML( $request, LIBXML_NONET );
+		libxml_clear_errors();
+		libxml_use_internal_errors( $previous );
+		$namespace = 'urn:oasis:names:tc:SAML:2.0:protocol';
+		if ( ! $loaded || $xml->documentElement->localName !== 'LogoutRequest' || $xml->documentElement->namespaceURI !== $namespace ) {
+			return false;
+		}
+		$indices = $xml->getElementsByTagNameNS( $namespace, 'SessionIndex' );
+		if ( $indices->length !== 1 || $indices->item( 0 )->parentNode !== $xml->documentElement || $indices->item( 0 )->getElementsByTagName( '*' )->length !== 0 ) {
+			return false;
+		}
+		$ticket = $indices->item( 0 )->textContent;
+		return $this->wp_cassify_slo_key( $ticket ) !== false ? $ticket : false;
+	}
 
-		$this->wp_cassify_destroy_session();
+	/** Revoke only a previously registered CAS login, without using caller cookies. */
+	private function wp_cassify_revoke_slo( $ticket ) {
+		$key = $this->wp_cassify_slo_key( $ticket );
+		if ( $key === false ) {
+			return false;
+		}
+		$login = get_transient( $key );
+		if ( ! is_array( $login ) || empty( $login['user_id'] ) || empty( $login['token'] ) ) {
+			return false;
+		}
+		delete_transient( $key );
+		\WP_Session_Tokens::get_instance( $login['user_id'] )->destroy( $login['token'] );
+		if ( ! empty( $login['session_id'] ) && ! headers_sent() ) {
+			if ( session_status() === PHP_SESSION_ACTIVE ) {
+				session_write_close();
+			}
+			session_id( $login['session_id'] );
+			if ( session_start( array( 'use_cookies' => false, 'cache_limiter' => '' ) ) ) {
+				$this->wp_cassify_destroy_session();
+			}
+		}
+		return true;
+	}
 
-        session_id( $session_id );
-        session_start();
-        
-        // Restoring current session vars.
-        if ($restore && $current_session !== null) {
-           $_SESSION = $current_session;
-        }
-    }	
-	
 	/**
 	 * This function store CAS User authentication state into session.
 	 * @param bool $is_authenticated	If true, CAS User authentication state is set to true. 
@@ -540,11 +574,6 @@ class WP_Cassify_Plugin {
 				else {
 					$wp_cassify_autorization_rules = array();
 				}						
-				
-				// If SLO enabled, replace session_id with service ticket to handle logout requests.
-				if ( $wp_cassify_enable_slo === 'enable_slo') {	
-					$this->wp_cassify_switch_session_id( $service_ticket, true );
-				}
 				
 				$service_validate_url = $wp_cassify_base_url .
                     $wp_cassify_service_validate_servlet . '?' .
@@ -706,7 +735,20 @@ class WP_Cassify_Plugin {
 				do_action( 'wp_cassify_before_auth_user_wordpress', $cas_user_datas );
 				
 				// Auth user into wordpress
+				// The cookie hook supplies the exact WordPress token and its lifetime.
+				$slo_cookie_hook = function ( $cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $service_ticket ) {
+					$this->wp_cassify_register_slo( $service_ticket, $user_id, $token, $expiration );
+				};
+				if ( $wp_cassify_enable_slo === 'enable_slo' ) {
+					add_action( 'set_logged_in_cookie', $slo_cookie_hook, 10, 6 );
+				}
+				try {
 				WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
+				} finally {
+					if ( $wp_cassify_enable_slo === 'enable_slo' ) {
+						remove_action( 'set_logged_in_cookie', $slo_cookie_hook, 10 );
+					}
+				}
 				unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'] );
 
 				// Custom hook to perform action after wordpress authentication.
@@ -910,53 +952,15 @@ class WP_Cassify_Plugin {
      * Enable support for central logout (Single Sign Out).
      */
     public function wp_cassify_slo() {
-
-        $wp_cassify_enable_slo = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_slo' );
-        $wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
-        
-		if ( $wp_cassify_enable_slo === 'enable_slo' ) {
-            if ( !empty( $_POST['logoutRequest'] ) ) {
-            	
-                $decoded_logout_rq = urldecode( $_POST['logoutRequest'] );
-
-                if ( true ) {
-                    preg_match(
-                    	"|<samlp:SessionIndex>(.*)</samlp:SessionIndex>|",
-                    	$decoded_logout_rq, $tick, PREG_OFFSET_CAPTURE, 3
-                    );
-
-                    if ( ! isset( $tick[0][0] ) ) {
-                        exit();
-                    }
-
-                    $wrappedSamlSessionIndex = preg_replace( '|<samlp:SessionIndex>|', '', $tick[0][0] );
-                    
-                    $ticket2logout = preg_replace( '|</samlp:SessionIndex>|', '', $wrappedSamlSessionIndex );
-                    $ticket2logout = preg_replace('/[^a-zA-Z0-9\-]/', '', $ticket2logout);
-                    
-	                // Switch session ID with Service Ticket ID
-	                $this->wp_cassify_switch_session_id( $ticket2logout );
-
-	                $cas_user_datas = $this->wp_cassify_get_cas_user_datas();
-
-	                // Kill WP user session
-	                if ( $cas_user_datas !== false ) {
-	                	$wp_current_user = get_user_by( 'login', $cas_user_datas[ 'cas_user_id' ] );
-	                	if ( $wp_current_user ) {
-							wp_set_current_user ( $wp_current_user->ID );
-							wp_destroy_all_sessions();	
-	                	}
-	                }
-	                
-	                // Overwrite current session.
-	                $this->wp_cassify_destroy_session();
-
-	                do_action( 'wp_cassify_slo_after' );
-	                
-                    exit();
-                }
-            }
-        }
+		if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_slo' ) !== 'enable_slo' || ! isset( $_POST['logoutRequest'] ) ) {
+			return;
+		}
+		// PHP already decoded the form body; WordPress adds slashes once.
+		$ticket = $this->wp_cassify_slo_ticket( wp_unslash( $_POST['logoutRequest'] ) );
+		if ( $ticket !== false && $this->wp_cassify_revoke_slo( $ticket ) ) {
+			do_action( 'wp_cassify_slo_after' );
+		}
+		exit();
     }
 
 	/**

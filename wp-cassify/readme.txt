@@ -193,6 +193,7 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.5.1 =
+* Security: keep random PHP session IDs and register complete CAS tickets server-side only after successful authentication. Validate and bound SLO XML; ignore unknown tickets and revoke only the associated WordPress session. Existing logins must authenticate again to register for SLO after this update.
 * Fix: send direct CAS login callbacks to wp-admin when wp-login.php has no redirect target, avoiding repeated CAS redirects caused by admin cookies being scoped to wp-admin.
 * Fix: preserve public multisite access without granting membership from network cookies. Protected access starts CAS validation once per user/site session, with an explicit denial if it does not grant membership. Only explicit CAS role rules can grant new membership; existing site roles and super administrators are preserved.
 * Add: persistent administrator warning when CAS server certificate verification is disabled, including network administration. Add security guidance and a live warning beside the TLS setting to encourage HTTPS and trusted CA configuration. Existing TLS defaults and saved settings remain unchanged.
