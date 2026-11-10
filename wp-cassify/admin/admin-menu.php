@@ -70,6 +70,9 @@ class WP_Cassify_Admin_Page {
 		$this->wp_cassify_admin_page_slug = 'options-general.php';
     	$this->wp_cassify_multisite_admin_page_slug = 'settings.php';
 		
+        // Warn administrators until CAS certificate verification is enabled.
+        add_action( $this->wp_cassify_network_activated ? 'network_admin_notices' : 'admin_notices', array( $this, 'wp_cassify_tls_security_notice' ) );
+
         // Add the actions
         if ( $this->wp_cassify_network_activated ) {
             add_action( 'network_admin_menu', array( $this , 'wp_cassify_create_network_menu' ) );
@@ -78,6 +81,32 @@ class WP_Cassify_Admin_Page {
             add_action( 'admin_menu', array( $this , 'wp_cassify_create_menu' ) );
         }
 	}	
+
+    /**
+     * Display a persistent warning using the same TLS default as authentication.
+     */
+    public function wp_cassify_tls_security_notice() {
+        $capability = $this->wp_cassify_network_activated ? 'manage_network_options' : 'manage_options';
+        if ( ! current_user_can( $capability ) || $this->wp_cassify_is_certificate_check_enabled() ) {
+            return;
+        }
+
+        $settings_url = $this->wp_cassify_network_activated
+            ? network_admin_url( 'settings.php?page=wp-cassify.php' )
+            : admin_url( 'options-general.php?page=wp-cassify.php' );
+        ?>
+        <div class="notice notice-warning">
+            <p><strong>WP Cassify: CAS server certificate verification is disabled.</strong>
+            An attacker able to intercept the connection to CAS could forge authentication responses and gain access to WordPress accounts, including administrator accounts.</p>
+            <p><a href="<?php echo esc_url( $settings_url . '#wp_cassify_ssl_check_certificate' ); ?>">Enable CAS certificate verification in General settings</a> and save the options. Use an HTTPS CAS URL and configure a trusted CA bundle if needed.</p>
+        </div>
+        <?php
+    }
+
+    private function wp_cassify_is_certificate_check_enabled() {
+        $value = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_ssl_check_certificate' );
+        return ( empty( $value ) ? $this->wp_cassify_default_ssl_check_certificate : $value ) === 'enabled';
+    }
 
 	/**
 	 *  Multisite and single-site add_action statements
@@ -414,14 +443,7 @@ class WP_Cassify_Admin_Page {
             $wp_cassify_ssl_cipher_selected = '0';
         }
         
-        $is_ssl_check_certificate_enabled = FALSE;
-
-		if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_ssl_check_certificate' ) === 'enabled' ) {
-            $is_ssl_check_certificate_enabled = TRUE;
-        }
-        else {
-            $is_ssl_check_certificate_enabled = FALSE;
-        }	
+        $is_ssl_check_certificate_enabled = $this->wp_cassify_is_certificate_check_enabled();
 ?>
 		<table class="optiontable form-table">
 			<tr valign="top">
@@ -531,13 +553,17 @@ class WP_Cassify_Admin_Page {
 				</td>
 			</tr>
 			<tr valign="top">
-				<th scope="row">Enable SSL Certificate Check</th>
+				<th scope="row"><label for="wp_cassify_ssl_check_certificate">Verify CAS server TLS certificate (strongly recommended)</label></th>
 				<td>
 					<?php if ( $is_ssl_check_certificate_enabled ) : ?>
-						<input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" checked />
+						<input type="checkbox" id="wp_cassify_ssl_check_certificate" aria-describedby="wp_cassify_tls_help wp_cassify_tls_warning" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" checked />
 					<?php else : ?>
-						<input type="checkbox" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" />
+						<input type="checkbox" id="wp_cassify_ssl_check_certificate" aria-describedby="wp_cassify_tls_help wp_cassify_tls_warning" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" />
 					<?php endif; ?>
+                    <p class="description" id="wp_cassify_tls_help">Keep verification enabled in production and use an HTTPS CAS URL. If your CAS server uses a private CA, configure its trusted CA bundle (CAINFO) or CA directory (CAPATH) below instead of disabling verification. Leave these paths empty to use the system trust store.</p>
+                    <div id="wp_cassify_tls_warning" class="notice notice-warning inline" role="status"<?php echo $is_ssl_check_certificate_enabled ? ' hidden' : ''; ?>>
+                        <p><strong>Security risk: certificate verification is disabled.</strong> Intercepted CAS connections could allow an attacker to impersonate users, including administrators. Enable verification, save the options, then test CAS login. If verification fails, correct the certificate chain or trusted CA configuration.</p>
+                    </div>
 				</td>
 			</tr>
 			<tr valign="top">

@@ -1,6 +1,14 @@
 // Admin interactions implemented in vanilla JavaScript.
 
 document.addEventListener('DOMContentLoaded', function () {
+    var certificateCheck = document.getElementById('wp_cassify_ssl_check_certificate');
+    var tlsWarning = document.getElementById('wp_cassify_tls_warning');
+    if (certificateCheck && tlsWarning) {
+        certificateCheck.addEventListener('change', function () {
+            tlsWarning.hidden = certificateCheck.checked;
+        });
+    }
+
 	function byId(id) {
 		return document.getElementById(id);
 	}

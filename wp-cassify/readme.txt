@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 7.1
 Requires PHP: 7.0
-Stable tag: 2.5.0
+Stable tag: 2.5.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -191,6 +191,9 @@ prove their CAS identity. For accounts without a login date, the grace period
 starts when their CAS marking date is first recorded.
 
 == Changelog ==
+
+= 2.5.1 =
+* Add: persistent administrator warning when CAS server certificate verification is disabled, including network administration. Add security guidance and a live warning beside the TLS setting to encourage HTTPS and trusted CA configuration. Existing TLS defaults and saved settings remain unchanged.
 
 = 2.5.0 =
 * Add: manual tools to mark CAS accounts and purge inactive CAS accounts, including WordPress multisite support. Includes preview and confirmation, protected-account exclusions, content reassignment, resumable processing and simple task results. Backup acknowledgement is required before purging.
