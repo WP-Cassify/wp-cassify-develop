@@ -50,6 +50,46 @@ module.exports = function registerCleanupTests() {
       await fixture(page, 'reset');
     });
 
+    test('listed accounts ignore activity but retain protections and require a reviewed recipient', async ({ page }) => {
+      const ids = await fixture(page, 'create', { users: JSON.stringify([
+        { name: 'target' },
+        { name: 'recent', cas: true, date: 'recent', posts: true },
+        { name: 'unlisted', cas: true, date: 'old' },
+        { name: 'local' },
+        { name: 'admin', cas: true, role: 'administrator' },
+        { name: 'api', cas: true },
+      ]) });
+      await fixture(page, 'session', { id: ids.recent });
+      await fixture(page, 'application_password', { id: ids.api });
+      const prefix = 'cassify_cleanup_e2e_';
+      await page.locator('#cassify-cleanup-identifiers').fill(
+        ['recent', 'recent', 'local', 'admin', 'api', 'unknown'].map(name => prefix + name).join('\n')
+      );
+      await page.locator('#cassify-cleanup-list').click();
+      await expect(page.locator('#cassify-cleanup-confirm')).toBeVisible();
+      let job = await api(page, 'status');
+      expect(job.total).toBe(1);
+      expect(job.protected).toBe(2);
+      expect(job.input_report.join(' ')).toContain('duplicate');
+      expect(job.input_report.join(' ')).toContain('not found');
+      expect(job.input_report.join(' ')).toContain('not_cas');
+      expect((await fixture(page, 'snapshot')).users.recent).toBeDefined();
+      expect((await api(page, 'prepare', { token: job.token, target_username: prefix + 'recent' }, 400)).message).toContain('candidate');
+      await page.reload();
+      await expect(page.locator('#cassify-cleanup-confirm')).toBeVisible();
+      job = await execute(page, job, prefix + 'target');
+      expect(job.success).toBe(1);
+      const snapshot = await fixture(page, 'snapshot');
+      expect(snapshot.users.recent).toBeUndefined();
+      for (const name of ['unlisted', 'local', 'admin', 'api']) expect(snapshot.users[name]).toBeDefined();
+      for (const post of snapshot.posts) expect(Number(post.post_author)).toBe(ids.target);
+      job = await preview(page, { selection: 'list', identifier_type: 'id', identifiers: `${ids.unlisted}\n${ids.unlisted}\n${ids.local}\n123invalid` });
+      expect(job.total).toBe(1);
+      expect(job.users[0].id).toBe(ids.unlisted);
+      expect(job.input_report.join(' ')).toContain('duplicate');
+      expect(job.input_report.join(' ')).toContain('not found');
+    });
+
     test('CAS login records its origin; local login records activity without claiming CAS', async ({ page }) => {
       await fixture(page, 'create', { users: JSON.stringify([{ name: 'local' }]) });
       expect((await fixture(page, 'signin', { name: 'local', wrong: '1' })).ok).toBe(false);
@@ -508,7 +548,7 @@ module.exports = function registerCleanupTests() {
       await api(page, 'discard');
       const results = (await api(page, 'history')).operations;
       expect(results).toHaveLength(1);
-      expect(results[0]).toEqual({ mode: 'purge', time: job.now, phase: 'done', success: 1, skipped: 0, failed: 0 });
+      expect(results[0]).toEqual({ mode: 'purge', selection: 'inactive', time: job.now, phase: 'done', success: 1, skipped: 0, failed: 0 });
       expect(await fixture(page, 'audit', { job: job.token, event: 'deleted', id: String(ids.old) })).toEqual([]);
       await page.reload();
       await expect(page.locator('#cassify-cleanup-history')).toContainText('1 completed, 0 skipped, 0 failed');
@@ -643,7 +683,7 @@ module.exports = function registerCleanupTests() {
       await fixture(page, 'fail_reassignment', { id: '0' });
       await api(page, 'discard');
       expect((await api(page, 'history')).operations).toEqual([
-        { mode: 'purge', time: job.now, phase: 'executing', success: 0, skipped: 0, failed: 0 },
+        { mode: 'purge', selection: 'inactive', time: job.now, phase: 'executing', success: 0, skipped: 0, failed: 0 },
       ]);
       expect((await fixture(page, 'snapshot')).users.interrupted).toBeDefined();
     });

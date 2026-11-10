@@ -40,7 +40,7 @@ Don't hesitate to contribute to this project. You can fork it and make pull requ
 
 = Features included =
 
-* Manual CAS account marking (all accounts or by role) and inactive-account purge with a configurable period in days (730 by default), preview, optional inclusion of accounts without a login date, content reassignment and resumable batches. No scheduled deletion.
+* Manual CAS account marking (all accounts or by role) and inactive-account purge with a configurable period in days (730 by default), preview, optional inclusion of accounts without a login date, content reassignment and resumable batches. Explicit list selection by WordPress username or ID is also available. No scheduled deletion.
 * SLO (Single Log Out) support (thanks to dedotombo and me)
 * Adding NCONTAINS operator (thanks to blandman)
 * Fix bug on Gateway mode (autologin) (thanks to dedotombo again). Now it's now necessary to hack theme files to fire it.
@@ -156,12 +156,21 @@ On multisite, back up the entire network. The backup checkbox is an administrato
 acknowledgement: WP Cassify does not create or validate backups.
 
 Cleanup is manual and requires a preview and confirmation. Administrators,
-the operator, accounts with live WordPress browser sessions and accounts with
-application passwords are excluded. The date tracks successful logins, not all
-activity; authentication performed by third-party systems may not be tracked.
+the operator and accounts with application passwords are excluded. Accounts with
+live WordPress browser sessions are also excluded from inactivity purges.
+The date tracks successful logins, not all activity; authentication performed by third-party systems may not be tracked.
 Accounts without a login date are kept unless explicitly included AND their
 known CAS marking date is older than the selected period. No historical CAS
 login dates are inferred when upgrading.
+
+Alternatively, paste up to 1000 WordPress usernames or numeric WordPress IDs,
+one per line, choosing the identifier type explicitly. List selection only deletes
+CAS-marked accounts, regardless of login dates or active browser sessions.
+The preview reports duplicates, unknown identifiers, local and protected accounts.
+Deletion requires the same content recipient, backup acknowledgement and explicit
+confirmation as an inactivity purge, and supports resumable batches. CAS server
+identities are not deleted; automatic account creation may recreate the WordPress
+account on a later CAS login.
 
 Content ownership is transferred in small steps and checked before deletion.
 An interruption can leave partial transfers or removed site memberships; resume
@@ -193,6 +202,7 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.5.1 =
+* Add: manual deletion of explicitly listed CAS accounts by WordPress username or numeric ID, with preview, duplicate and exclusion reporting, content reassignment and resumable batches. List selection ignores inactivity and active browser sessions while retaining privileged-account and application-password protections.
 * Security: keep random PHP session IDs and register complete CAS tickets server-side only after successful authentication. Validate and bound SLO XML; ignore unknown tickets and revoke only the associated WordPress session. Existing logins must authenticate again to register for SLO after this update.
 * Fix: send direct CAS login callbacks to wp-admin when wp-login.php has no redirect target, avoiding repeated CAS redirects caused by admin cookies being scoped to wp-admin.
 * Fix: preserve public multisite access without granting membership from network cookies. Protected access starts CAS validation once per user/site session, with an explicit denial if it does not grant membership. Only explicit CAS role rules can grant new membership; existing site roles and super administrators are preserved.

@@ -43,6 +43,8 @@ They cover the same critical flows:
  * Multisite bootstrap, network activation, and CAS login on sub-sites
  * Manual account marking and purge: eligibility, content/file preservation, interrupted
    writes, resume, deletion hooks, database locks and task result summaries
+ * Explicit CAS account deletion from a list of WordPress usernames or IDs, with
+   preview, duplicate/exclusion reporting and the same content reassignment workflow
 
 ## Usage
 

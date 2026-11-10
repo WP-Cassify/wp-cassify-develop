@@ -27,7 +27,7 @@
     if (!job || job.phase === 'idle') {
       el('status').textContent = 'No saved operation.';
       el('target').disabled = false;
-      for (const name of ['users', 'errors']) el(name).replaceChildren();
+      for (const name of ['users', 'errors', 'input-report']) el(name).replaceChildren();
       for (const name of ['prev', 'next', 'confirm', 'resume', 'recipient']) el(name).hidden = true;
       el('warning').textContent = '';
       el('summary').textContent = '';
@@ -35,9 +35,9 @@
       return;
     }
     if (job.phase === 'done') {
-      const mode = job.mode === 'mark' ? 'CAS marking' : 'CAS purge';
+      const mode = job.mode === 'mark' ? 'CAS marking' : job.selection === 'list' ? 'Listed CAS account deletion' : 'CAS purge';
       el('status').textContent = `${mode} completed: ${job.success} completed, ${job.skipped} skipped, ${job.failed} failed.`;
-      for (const name of ['users', 'errors']) el(name).replaceChildren();
+      for (const name of ['users', 'errors', 'input-report']) el(name).replaceChildren();
       for (const message of job.errors || []) {
         const li = document.createElement('li');
         li.textContent = message;
@@ -53,7 +53,7 @@
     el('recipient').hidden = job.mode !== 'purge' || job.phase !== 'ready' || !job.total;
     if (job.target_login) el('target').value = job.target_login;
     el('backup-row').hidden = !job.total || job.mode !== 'purge' || job.phase !== 'ready';
-    const mode = job.mode === 'mark' ? 'CAS marking' : 'CAS purge';
+    const mode = job.mode === 'mark' ? 'CAS marking' : job.selection === 'list' ? 'Listed CAS account deletion' : 'CAS purge';
     el('status').textContent = `${mode}: ${job.phase}. Selected: ${job.total}. Old: ${job.old}. Without date: ${job.missing_count}. Invalid dates: ${job.invalid}. Protected: ${job.protected || 0}. Completed: ${job.success}. Skipped: ${job.skipped}. Failed: ${job.failed}.`;
     const date = value => {
       if (!/^\d+$/.test(String(value)) || Number(value) <= 0) return 'unknown';
@@ -61,10 +61,10 @@
       return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : 'unknown';
     };
     el('summary').textContent = job.mode === 'purge'
-      ? `${job.total} accounts selected. Login cutoff: ${date(job.cutoff)} (${job.days} days). Include accounts without a login date: ${job.missing ? 'yes, subject to the marking grace period' : 'no'}.`
+      ? job.selection === 'list' ? `${job.total} explicitly listed CAS accounts selected. Login dates and active browser sessions do not exclude them.` : `${job.total} accounts selected. Login cutoff: ${date(job.cutoff)} (${job.days} days). Include accounts without a login date: ${job.missing ? 'yes, subject to the marking grace period' : 'no'}.`
       : `${job.total} accounts will be marked as CAS. Scope: ${job.role ? `role ${job.role} on site ${job.blog}` : 'all WordPress accounts, including local accounts'}. This can make them eligible for future purges.`;
     el('warning').textContent = job.target_login ? `Content recipient: #${job.target} ${job.target_login}.` : '';
-    for (const [name, rows] of [['users', job.users || []], ['errors', job.errors || []]]) {
+    for (const [name, rows] of [['users', job.users || []], ['errors', job.errors || []], ['input-report', job.input_report || []]]) {
       el(name).replaceChildren();
       rows.forEach(row => {
         const li = document.createElement('li');
@@ -108,14 +108,17 @@
     }
   }
 
-  for (const mode of ['mark', 'purge']) {
-    el(mode).addEventListener('click', () => run(async () => {
+  for (const action of ['mark', 'purge', 'list']) {
+    const mode = action === 'list' ? 'purge' : action;
+    el(action).addEventListener('click', () => run(async () => {
       const role = el('scope').value === 'role' ? el('role').value.trim() : '';
       if (mode === 'mark' && el('scope').value === 'role' && !role) throw new Error('Enter a role slug.');
       el('backup').checked = false;
       if (mode === 'mark' && el('scope').value === 'all' && !el('all-accounts').checked) throw new Error('Explicitly acknowledge marking all accounts, including local accounts.');
       await request('start', {
         all_accounts: el('scope').value === 'all' && el('all-accounts').checked ? '1' : '',
+        selection: action === 'list' ? 'list' : 'inactive',
+        identifier_type: el('identifier-type').value, identifiers: action === 'list' ? el('identifiers').value : '',
         mode, days: el('days').value, missing: el('missing').checked ? '1' : '',
         role: mode === 'mark' ? role : '', blog: el('blog')?.value || '',
       });
@@ -144,7 +147,7 @@
     if (!result.operations.length) el('history').textContent = 'No tasks performed.';
     for (const item of result.operations) {
       const li = document.createElement('li');
-      const mode = item.mode === 'mark' ? 'CAS marking' : 'CAS purge';
+      const mode = item.mode === 'mark' ? 'CAS marking' : item.selection === 'list' ? 'Listed CAS account deletion' : 'CAS purge';
       const state = item.phase === 'done' ? 'Completed' : 'Interrupted or in progress';
       li.textContent = `${new Date(item.time * 1000).toLocaleString()} — ${mode}: ${item.success} completed, ${item.skipped} skipped, ${item.failed} failed. ${state}.`;
       el('history').appendChild(li);

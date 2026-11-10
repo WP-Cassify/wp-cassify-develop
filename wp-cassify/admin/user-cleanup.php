@@ -19,7 +19,7 @@ wp_localize_script( 'wp-cassify-cleanup', 'wpCassifyCleanup', array( 'url' => ad
     #wp-cassify-cleanup [hidden] { display: none !important; }
 </style>
 <div id="wp-cassify-cleanup">
-    <p>Manual operations only. No scheduled purge. Administrators, the current operator, accounts with active browser sessions and application passwords are protected from deletion.</p>
+    <p>Manual operations only. No scheduled purge. Administrators, the current operator and accounts with application passwords are protected from deletion. Active browser sessions also protect accounts during inactivity purges.</p>
     <p>Marking changes which accounts may be purged later; it does not authenticate them with CAS. Previous CAS connections cannot be reconstructed. Mark pre-created CAS accounts explicitly before including accounts without a connection date.</p>
     <fieldset id="cassify-cleanup-settings">
         <h3>Mark accounts as CAS</h3>
@@ -36,10 +36,16 @@ wp_localize_script( 'wp-cassify-cleanup', 'wpCassifyCleanup', array( 'url' => ad
         <label>Inactivity (days) <input id="cassify-cleanup-days" type="number" min="1" max="36600" step="1" value="<?php echo esc_attr( $days ); ?>" /></label>
         <p><label><input id="cassify-cleanup-missing" type="checkbox" /> Include CAS accounts without a connection date only after their CAS marking is older than the selected period; accounts with an unknown marking date are kept</label></p>
         <button type="button" class="button" id="cassify-cleanup-purge">Preview purge</button>
+        <h3>Delete CAS accounts from a list</h3>
+        <p>Only the listed CAS accounts are selected, regardless of login or marking dates. Active browser sessions do not prevent this deletion. Local accounts and protected accounts are excluded. WordPress accounts are deleted; identities on the CAS server are not deleted.</p>
+        <p><label>Identifier type <select id="cassify-cleanup-identifier-type"><option value="login">WordPress username</option><option value="id">WordPress numeric ID</option></select></label></p>
+        <p><label for="cassify-cleanup-identifiers">Identifiers (one per line, up to 1000)</label><br /><textarea id="cassify-cleanup-identifiers" rows="8" cols="50" spellcheck="false" autocomplete="off"></textarea></p>
+        <button type="button" class="button" id="cassify-cleanup-list">Preview listed accounts</button>
     </fieldset>
     <p id="cassify-cleanup-status" role="status" aria-live="polite"></p>
     <p id="cassify-cleanup-summary"></p>
     <p id="cassify-cleanup-warning"></p>
+    <ul id="cassify-cleanup-input-report"></ul>
     <ul id="cassify-cleanup-errors"></ul>
     <ul id="cassify-cleanup-users"></ul>
     <button type="button" class="button" id="cassify-cleanup-prev" hidden>Previous page</button>

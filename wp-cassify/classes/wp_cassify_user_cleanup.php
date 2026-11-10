@@ -8,7 +8,7 @@ class WP_Cassify_User_Cleanup {
     const CAS_META = 'wp_cassify_cas_user';
     const LOGIN_META = 'wp_cassify_last_login_at';
     const SINCE_META = 'wp_cassify_cas_marked_at';
-    const SCHEMA = 3;
+    const SCHEMA = 4;
     const CONTENT_SIZE = 25;
     const STATE = 'wp_cassify_cleanup_job';
     const DAYS = 'wp_cassify_cleanup_days';
@@ -50,8 +50,8 @@ class WP_Cassify_User_Cleanup {
             && ( ! is_multisite() || count( get_networks( array( 'number' => 2, 'fields' => 'ids' ) ) ) === 1 );
     }
 
-    /** Privileged accounts, the operator, and live browser sessions are never purged. */
-    private static function protected_user( $id ) {
+    /** Always protect privileged accounts; list deletion may include live browser sessions. */
+    private static function protected_user( $id, $explicit = false ) {
         $account = get_userdata( $id );
         if ( ! $account ) { return true; }
         if ( (int) $id === get_current_user_id() || is_super_admin( $id )
@@ -68,7 +68,7 @@ class WP_Cassify_User_Cleanup {
             }
         }
         foreach ( \WP_Session_Tokens::get_instance( $id )->get_all() as $session ) {
-            if ( ! empty( $session['expiration'] ) && $session['expiration'] > time() ) {
+            if ( ! $explicit && ! empty( $session['expiration'] ) && $session['expiration'] > time() ) {
                 return true;
             }
         }
@@ -125,12 +125,18 @@ class WP_Cassify_User_Cleanup {
     /** One decision policy, evaluated afresh at preview and each processing step. */
     private static function decision( $id, $job ) {
         clean_user_cache( $id );
+        if ( isset( $job['selection'] ) && 'list' === $job['selection'] ) {
+            if ( ! in_array( (int) $id, $job['selected_ids'], true ) ) { return 'not_selected'; }
+            if ( ! get_userdata( $id ) ) { return 'not_found'; }
+            if ( '1' !== (string) get_user_meta( $id, self::CAS_META, true ) ) { return 'not_cas'; }
+            return self::protected_user( $id, true ) ? 'protected' : 'explicit';
+        }
         $reason = self::date_reason( $id, $job['cutoff'], time(), $job['missing'] );
         return in_array( $reason, array( 'old', 'missing' ), true ) && self::protected_user( $id ) ? 'protected' : $reason;
     }
 
     private static function eligible( $id, $job ) {
-        return in_array( self::decision( $id, $job ), array( 'old', 'missing' ), true );
+        return in_array( self::decision( $id, $job ), array( 'old', 'missing', 'explicit' ), true );
     }
 
     private static function snapshot( $id, $reason ) {
@@ -146,7 +152,7 @@ class WP_Cassify_User_Cleanup {
 
     private static function archive_job( $job ) {
         if ( ! in_array( $job['phase'], array( 'executing', 'done' ), true ) ) { return; }
-        $summary = array_intersect_key( $job, array_flip( array( 'token', 'owner', 'mode', 'now', 'phase', 'success', 'skipped', 'failed' ) ) );
+        $summary = array_intersect_key( $job, array_flip( array( 'token', 'owner', 'mode', 'selection', 'now', 'phase', 'success', 'skipped', 'failed' ) ) );
         self::persist( self::archive_key( $job['token'] ), $summary );
     }
 
@@ -178,7 +184,7 @@ class WP_Cassify_User_Cleanup {
         foreach ( $keys as $key ) {
             $job = get_option( $key );
             if ( $job && $job['owner'] === $owner && in_array( $job['phase'], array( 'executing', 'done' ), true ) ) {
-                $items[] = array( 'mode' => $job['mode'], 'time' => $job['now'], 'phase' => $job['phase'], 'success' => $job['success'], 'skipped' => $job['skipped'], 'failed' => $job['failed'] );
+                $items[] = array( 'selection' => isset( $job['selection'] ) ? $job['selection'] : 'inactive', 'mode' => $job['mode'], 'time' => $job['now'], 'phase' => $job['phase'], 'success' => $job['success'], 'skipped' => $job['skipped'], 'failed' => $job['failed'] );
             }
         }
         return array( 'operations' => $items, 'next_offset' => count( $keys ) === 20 ? $offset + 20 : null );
@@ -350,7 +356,9 @@ class WP_Cassify_User_Cleanup {
         if ( ! in_array( $mode, array( 'mark', 'purge' ), true ) ) {
             self::error( 'Invalid operation.' );
         }
-        $days = isset( $request['days'] ) ? (string) $request['days'] : (string) self::configured_days();
+        $days = isset( $request['selection'] ) && 'list' === $request['selection']
+            ? (string) self::configured_days()
+            : ( isset( $request['days'] ) ? (string) $request['days'] : (string) self::configured_days() );
         if ( ! ctype_digit( $days ) || (int) $days < 1 || (int) $days > 36600 ) {
             self::error( 'Choose a whole number of days between 1 and 36600.' );
         }
@@ -373,9 +381,36 @@ class WP_Cassify_User_Cleanup {
                 self::error( 'Unknown role on this site.' );
             }
         }
+        $selection = isset( $request['selection'] ) ? $request['selection'] : 'inactive';
+        if ( ! in_array( $selection, array( 'inactive', 'list' ), true ) || ( 'list' === $selection && 'purge' !== $mode ) ) {
+            self::error( 'Invalid account selection.' );
+        }
+        $selected_ids = array();
+        $input_report = array();
+        if ( 'list' === $selection ) {
+            $type = isset( $request['identifier_type'] ) ? $request['identifier_type'] : '';
+            if ( ! in_array( $type, array( 'login', 'id' ), true ) ) { self::error( 'Choose WordPress usernames or IDs.' ); }
+            $raw = isset( $request['identifiers'] ) ? $request['identifiers'] : '';
+            if ( strlen( $raw ) > 100000 ) { self::error( 'The identifier list is too large.' ); }
+            $lines = preg_split( '/\r\n|\r|\n/', $raw );
+            $lines = array_values( array_filter( array_map( 'trim', $lines ), 'strlen' ) );
+            if ( ! $lines || count( $lines ) > 1000 ) { self::error( 'Enter between 1 and 1000 identifiers, one per line.' ); }
+            foreach ( $lines as $line ) {
+                // Do not sanitize logins or coerce malformed IDs into a different account.
+                $user = 'id' === $type
+                    ? ( ctype_digit( $line ) && (int) $line > 0 && (string) (int) $line === ltrim( $line, '0' ) ? get_user_by( 'id', (int) $line ) : false )
+                    : get_user_by( 'login', $line );
+                if ( $user && 'login' === $type && $user->user_login !== $line ) { $user = false; }
+                if ( ! $user ) { $input_report[] = $line . ': not found or invalid identifier'; continue; }
+                $id = (int) $user->ID;
+                if ( in_array( $id, $selected_ids, true ) ) { $input_report[] = $line . ': duplicate'; continue; }
+                $selected_ids[] = $id;
+            }
+        }
         self::discard( $job );
         $now = time();
         $job = array(
+            'selection' => $selection, 'selected_ids' => $selected_ids, 'input_report' => $input_report,
             'schema' => self::SCHEMA, 'token' => wp_generate_uuid4(), 'owner' => $owner, 'mode' => $mode,
             'phase' => 'scanning', 'cursor' => 0, 'max' => (int) $wpdb->get_var( "SELECT MAX(ID) FROM {$wpdb->users}" ),
             'now' => $now, 'cutoff' => self::cutoff( $now, (int) $days ),
@@ -386,7 +421,7 @@ class WP_Cassify_User_Cleanup {
             'sites' => is_multisite() ? get_sites( array( 'network_id' => get_current_network_id(), 'fields' => 'ids', 'number' => 0, 'orderby' => 'id', 'order' => 'ASC' ) ) : array(),
         );
         if ( is_multisite() && ! $job['sites'] ) { self::error( 'Could not read the network site list.' ); }
-        WP_Cassify_Utils::wp_cassify_update_option( $wp_cassify_network_activated, self::DAYS, (int) $days );
+        if ( 'inactive' === $selection ) { WP_Cassify_Utils::wp_cassify_update_option( $wp_cassify_network_activated, self::DAYS, (int) $days ); }
         self::save( $job );
         self::archive_job( $job );
         return $job;
@@ -394,12 +429,12 @@ class WP_Cassify_User_Cleanup {
 
     private static function scan( &$job ) {
         global $wpdb;
-        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->users} WHERE ID > %d AND ID <= %d ORDER BY ID LIMIT %d", $job['cursor'], $job['max'], self::SCAN_SIZE ) );
+        $ids = 'list' === $job['selection'] ? array_slice( $job['selected_ids'], $job['cursor'], self::SCAN_SIZE ) : $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->users} WHERE ID > %d AND ID <= %d ORDER BY ID LIMIT %d", $job['cursor'], $job['max'], self::SCAN_SIZE ) );
         if ( $wpdb->last_error ) { self::error( 'Could not read the user list.' ); }
         $entries = array();
         foreach ( $ids as $id ) {
             $id = (int) $id;
-            $job['cursor'] = $id;
+            if ( 'list' === $job['selection'] ) { $job['cursor']++; } else { $job['cursor'] = $id; }
             if ( 'mark' === $job['mode'] ) {
                 $user = new \WP_User( $id, '', $job['blog'] );
                 if ( $job['role'] && ! in_array( $job['role'], $user->roles, true ) ) {
@@ -415,14 +450,16 @@ class WP_Cassify_User_Cleanup {
                     $job['invalid']++;
                     continue;
                 }
-                if ( ! in_array( $reason, array( 'old', 'missing', 'protected' ), true ) ) {
+                if ( ! in_array( $reason, array( 'old', 'missing', 'protected', 'explicit' ), true ) ) {
+                    if ( 'list' === $job['selection'] ) { $job['input_report'][] = '#' . $id . ': ' . $reason; }
                     continue;
                 }
                 if ( 'protected' === $reason ) {
                     $job['protected']++;
+                    if ( 'list' === $job['selection'] ) { $job['input_report'][] = '#' . $id . ': protected'; }
                     continue;
                 }
-                $job[ 'missing' === $reason ? 'missing_count' : 'old' ]++;
+                if ( 'explicit' !== $reason ) { $job[ 'missing' === $reason ? 'missing_count' : 'old' ]++; }
             }
             $entries[] = self::snapshot( $id, $reason );
             $job['total']++;
