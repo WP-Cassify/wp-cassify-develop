@@ -293,35 +293,15 @@ class WP_Cassify_Utils {
 		if ( username_exists( $cas_user_id ) ) {
 			$user = get_user_by( 'login', $cas_user_id );
 
-			// In multisite, a user can exist at network level (wp_users) but not
-			// be a member of the current sub-site. Without blog membership,
-			// is_user_member_of_blog() stays false after authentication, which
-			// causes wp_cassify_grab_service_ticket() to re-enter the auth flow
-			// on every page load, creating an infinite redirect loop.
-			// Role rules (wp_cassify_get_roles_to_push) already run before this
-			// function and may have added the user via add_role(). We only fall
-			// back to add_user_to_blog() when the user is still not a member
-			// (no role rules matched, or the plugin is not network-activated).
-			if ( is_multisite() && ! is_user_member_of_blog( $user->ID, get_current_blog_id() ) ) {
-				$current_blog_id = get_current_blog_id();
-
-				if ( is_super_admin( $user->ID ) ) {
-					self::wp_cassify_log(
-						'Multisite: super admin user ' . $cas_user_id . ' was not added to blog ' . $current_blog_id . '.',
-						'INFO'
-					);
-				} elseif ( ! self::wp_cassify_user_has_blog_capabilities( $user->ID, $current_blog_id ) ) {
-					add_user_to_blog( $current_blog_id, $user->ID, get_option( 'default_role', 'subscriber' ) );
-					self::wp_cassify_log(
-						'Multisite: user ' . $cas_user_id . ' added to blog ' . $current_blog_id . ' with default role.',
-						'INFO'
-					);
-				} else {
-					self::wp_cassify_log(
-						'Multisite: user ' . $cas_user_id . ' already has capabilities on blog ' . $current_blog_id . ' (blog may be archived). Skipping add_user_to_blog to preserve existing roles.',
-						'INFO'
-					);
-				}
+			// Membership must come from existing capabilities or explicit role rules
+			// evaluated after CAS validation. Never replace roles with a default role.
+			if ( is_multisite() && ! is_super_admin( $user->ID ) &&
+				! self::wp_cassify_user_has_blog_capabilities( $user->ID, get_current_blog_id() ) ) {
+				wp_die(
+					__( 'CAS authentication did not grant access to this site.', 'wp-cassify' ),
+					__( 'Access denied', 'wp-cassify' ),
+					array( 'response' => 403 )
+				);
 			}
 
 			WP_Cassify_User_Cleanup::mark_cas( $user->ID );

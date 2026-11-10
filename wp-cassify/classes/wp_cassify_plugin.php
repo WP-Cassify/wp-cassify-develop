@@ -209,6 +209,7 @@ class WP_Cassify_Plugin {
 			add_filter( 'login_url', array( $this, 'wp_cassify_clear_reauth' ) );
 			add_filter( 'the_content', array( $this, 'wp_cassify_display_message' ) );			
 			add_action( 'login_init', array( $this, 'wp_cassify_login_init' ), 1 );
+			add_action( 'auth_redirect', array( $this, 'wp_cassify_require_site_membership' ), 1, 0 );
 
 			// Start PHP Session.
 			add_action( 'wp_loaded', array( $this , 'wp_cassify_session_start' ), 1 ); 
@@ -301,6 +302,8 @@ class WP_Cassify_Plugin {
 			return;
 		}
 
+		$this->wp_cassify_require_site_membership();
+
 		if ( $this->wp_cassify_is_authenticated() ) {
 			$admin_auth_scheme = is_ssl() ? 'secure_auth' : 'auth';
 
@@ -325,6 +328,37 @@ class WP_Cassify_Plugin {
 		if ( ! is_user_logged_in() ) {
 			$this->wp_cassify_redirect();
 		}
+	}
+
+	/**
+	 * Revalidate network users only when WordPress requests protected access.
+	 * The server-side, per-site attempt survives a CAS return without a ticket.
+	 */
+	public function wp_cassify_require_site_membership() {
+		if ( $this->wp_cassify_is_url_bypass_request() || ! is_multisite() || ! is_user_logged_in() ) {
+			return;
+		}
+		$user_id = get_current_user_id();
+		$blog_id = get_current_blog_id();
+		if ( is_super_admin( $user_id ) || WP_Cassify_Utils::wp_cassify_user_has_blog_capabilities( $user_id, $blog_id ) ) {
+			return;
+		}
+
+		$this->wp_cassify_session_start( true );
+		if ( ! isset( $_GET['wp_cassify_membership_retry'] ) &&
+			( empty( $_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] ) ||
+			(int) $_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] !== $user_id ) ) {
+			$_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] = $user_id;
+			$this->wp_cassify_redirect( false, true );
+		}
+
+		// CAS did not produce membership, or configuration prevented a redirect.
+		// Fail here rather than redirecting between CAS, wp-login and wp-admin.
+		wp_die(
+			__( 'CAS authentication did not grant access to this site.', 'wp-cassify' ),
+			__( 'Access denied', 'wp-cassify' ),
+			array( 'response' => 403 )
+		);
 	}
 
 	/**
@@ -464,50 +498,7 @@ class WP_Cassify_Plugin {
 
 		if ( (! is_user_logged_in() ) || (! is_user_member_of_blog() ) ) {
 
-			// Multisite: user is network-authenticated (valid cookie) but not yet a member
-			// of this specific sub-site and there is no service ticket to process.
-			// This happens when a user who authenticated via CAS on one sub-site navigates
-			// to another sub-site they never joined.
-			// Without this branch the outer condition stays TRUE on every request
-			// (because !is_user_member_of_blog() is still TRUE), WordPress redirects
-			// the user to wp-login.php for private content, but wp_cassify_redirect()
-			// refuses to forward to CAS (user IS logged in), creating an infinite
-			// wp-login ↔ private-page redirect loop.
-			// Solution: grant sub-site membership directly with the blog's default role,
-			// but ONLY if the user does not already have capabilities on this blog.
-			// NOTE: is_user_member_of_blog() returns false for archived/spam/deleted blogs
-			// even when the user IS already a member (e.g. a blog admin). In that case,
-			// calling add_user_to_blog() would invoke WP_User::set_role() and replace
-			// the existing admin role with the default subscriber role. We therefore
-			// check the user capabilities meta directly, independently of the blog status,
-			// to avoid destroying the roles of existing members on archived blogs.
-			if ( is_multisite() && is_user_logged_in() && ! is_user_member_of_blog() && empty( $service_ticket ) ) {
-				$_current_user = wp_get_current_user();
-				if ( $_current_user && $_current_user->ID > 0 ) {
-					$_blog_id_for_check = get_current_blog_id();
-
-					if ( is_super_admin( $_current_user->ID ) ) {
-						WP_Cassify_Utils::wp_cassify_log(
-							'Multisite: super admin user (ID=' . $_current_user->ID . ') was not added to blog ' . $_blog_id_for_check . ' (no service ticket).',
-							'INFO'
-						);
-					} elseif ( ! WP_Cassify_Utils::wp_cassify_user_has_blog_capabilities( $_current_user->ID, $_blog_id_for_check ) ) {
-						// User is genuinely not a member of this blog: add with default role.
-						add_user_to_blog( $_blog_id_for_check, $_current_user->ID, get_option( 'default_role', 'subscriber' ) );
-						WP_Cassify_Utils::wp_cassify_log(
-							'Multisite: network user (ID=' . $_current_user->ID . ') added to blog ' . $_blog_id_for_check . ' with default role (no service ticket).',
-							'INFO'
-						);
-					} else {
-						// User already has capabilities on this blog (blog may be archived).
-						// Do not overwrite existing roles.
-						WP_Cassify_Utils::wp_cassify_log(
-							'Multisite: network user (ID=' . $_current_user->ID . ') already has capabilities on blog ' . $_blog_id_for_check . ' (blog may be archived). Skipping add_user_to_blog to preserve existing roles.',
-							'INFO'
-						);
-					}
-				}
-			}
+			// Public requests without a ticket must not grant membership or force login.
 
 			if (! empty( $service_ticket ) ) {
 				// Ensure session is started
@@ -716,6 +707,7 @@ class WP_Cassify_Plugin {
 				
 				// Auth user into wordpress
 				WP_Cassify_Utils::wp_cassify_auth_user_wordpress( $cas_user_datas[ 'cas_user_id' ] );
+				unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'] );
 
 				// Custom hook to perform action after wordpress authentication.
 				do_action( 'wp_cassify_after_auth_user_wordpress', $cas_user_datas );
@@ -739,9 +731,13 @@ class WP_Cassify_Plugin {
 	
 	/**
 	 * Perform a redirection to cas server to obtain service ticket.
+	 * @param bool $require_membership Allow a protected multisite request to revalidate a network cookie.
 	 * @param	bool	$gateway_mode	Make gateway request. See CAS documentation here : https://wiki.jasig.org/display/CAS/gateway.
 	 */ 
-	public function wp_cassify_redirect( $gateway_mode = false ) {
+	public function wp_cassify_redirect( $gateway_mode = false, $require_membership = false ) {
+		if ( ! $gateway_mode && ! $require_membership ) {
+			$this->wp_cassify_require_site_membership();
+		}
 		
 		do_action( 'wp_cassify_before_redirect' );
 
@@ -770,7 +766,7 @@ class WP_Cassify_Plugin {
 		
 		$current_user = wp_get_current_user();
 		
-		if ( ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) || ( $gateway_mode === true ) )  {	
+		if ( ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) || ( $gateway_mode === true ) || ( $require_membership === true && ! empty( $wp_cassify_base_url ) ) ) {
 			if (! $this->wp_cassify_is_in_while_list( $service_url ) ) {	
 				if ( empty( $service_url ) ) {
 					if ( $wp_cassify_log_out_on_errors === 'log_out_on_errors' )
@@ -783,7 +779,7 @@ class WP_Cassify_Plugin {
 				}	
 				elseif ( empty( $service_ticket ) ) {	
 
-					if ( parse_url( $service_url, PHP_URL_QUERY) ) {
+					if ( ! $require_membership && parse_url( $service_url, PHP_URL_QUERY) ) {
 						$service_url = WP_Cassify_Utils::wp_cassify_encode_query_in_url( $service_url );
 					}					
 					
@@ -803,7 +799,16 @@ class WP_Cassify_Plugin {
 						$service_url = apply_filters( 'wp_cassify_redirect_service_url_filter', $service_url );
 					}
 
+					if ( $require_membership ) {
+						// Keep a denial-only return marker even if the PHP session cookie
+						// is lost. This flag never authorizes access or assigns a role.
+						$service_url = add_query_arg( 'wp_cassify_membership_retry', '1', $service_url );
+					}
+
 					$service_url = $this->wp_cassify_apply_service_url_validation( $service_url, 'redirect' );
+					if ( $require_membership ) {
+						$service_url = WP_Cassify_Utils::wp_cassify_encode_query_in_url( $service_url );
+					}
 
 					$redirect_url = $wp_cassify_base_url .
 						$wp_cassify_login_servlet . '?' .
@@ -979,6 +984,12 @@ class WP_Cassify_Plugin {
 	 * Enable support for auto-login (Gateway Mode).
 	 */
 	public function wp_cassify_gateway_mode() {
+		// A network cookie must not turn public browsing into membership checks.
+		// Protected requests use auth_redirect/login_init instead of gateway mode.
+		if ( is_multisite() && is_user_logged_in() ) {
+			return;
+		}
+
 		
 		$wp_cassify_enable_gateway_mode = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_gateway_mode' );
 		
@@ -1098,7 +1109,15 @@ class WP_Cassify_Plugin {
 		$wp_cassify_redirect_parameter = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $wp_cassify_callback_service_url , $this->wp_cassify_default_redirect_parameter_name );
 		$wp_cassify_service_ticket_parameter = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $wp_cassify_callback_service_url , $this->wp_cassify_default_service_ticket_parameter_name );
 		
-		if ( !empty( $wp_cassify_redirect_parameter ) ) {
+		// Admin auth cookies are scoped to wp-admin and are unavailable on
+		// wp-login.php. A CAS callback to a bare login page would therefore
+		// restart CAS forever when login_init checks the admin cookie.
+		if ( empty( $wp_cassify_redirect_parameter ) &&
+			isset( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] === 'wp-login.php' &&
+			( $_REQUEST['action'] ?? 'login' ) === 'login' ) {
+			$wp_cassify_callback_service_url = admin_url();
+		}
+		else if ( !empty( $wp_cassify_redirect_parameter ) ) {
 			$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_extract_get_parameter( 
 				$wp_cassify_callback_service_url, 
 				$this->wp_cassify_default_redirect_parameter_name 
@@ -1445,6 +1464,18 @@ class WP_Cassify_Plugin {
 	 * @param string $wp_cassify_error_code	Error code passing by GET to display custom error messages after logout.	
 	 */ 
 	private function wp_cassify_logout_if_not_allowed( $wp_cassify_error_code = '' ) {
+		// A protected-site retry must stop on denied/expired identities instead
+		// of redirecting to a configured denial URL that may itself require login.
+		$blog_id = get_current_blog_id();
+		if ( isset( $_GET['wp_cassify_membership_retry'] ) ||
+			! empty( $_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] ) ) {
+			wp_die(
+				__( 'CAS authentication did not grant access to this site.', 'wp-cassify' ),
+				__( 'Access denied', 'wp-cassify' ),
+				array( 'response' => 403 )
+			);
+		}
+
 
 		$wp_cassify_logout_servlet = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_logout_servlet' );
 		$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
