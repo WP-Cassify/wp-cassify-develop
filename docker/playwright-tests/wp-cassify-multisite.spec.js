@@ -30,19 +30,23 @@ test('bootstrap multisite, network-activate WP Cassify, and write the WordPress 
     enableSlo: true,
   });
 
-  await createNetworkSite(page, {
+  const firstBlogId = await createNetworkSite(page, {
     domain: 'wordpress1',
     title: 'WP Cassify multisite 1',
     email: 'adm@example.org',
   });
-  await createNetworkSite(page, {
+  const secondBlogId = await createNetworkSite(page, {
     domain: 'wordpress2',
     title: 'WP Cassify multisite 2',
     email: 'adm@example.org',
   });
 
 
-  await configureRoleRule(page, { purgeRolesBeforeApplying: false, blogId: 2 });
+  await configureRoleRule(page, { resetRules: true, blogId: firstBlogId });
+  // New membership requires an explicit CAS role rule on each child site.
+  await configureRoleRule(page, { role: 'subscriber', blogId: secondBlogId });
+  // Cleanup tests may have promoted this fixture account on a previous run.
+  await runWordPressTestAction(page, 'prepare_multisite_cas_user', { user_login: CAS_USER });
 
   await logoutWordPress(page);
   await logoutCas(page);

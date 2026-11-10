@@ -18,7 +18,6 @@ const WORDPRESS_VOLUME_PATH = process.env.PLAYWRIGHT_WORDPRESS_VOLUME_PATH || '/
 const WORDPRESS_CONFIG_PATH = path.join(WORDPRESS_VOLUME_PATH, 'wp-config.php');
 const WORDPRESS_HTACCESS_PATH = path.join(WORDPRESS_VOLUME_PATH, '.htaccess');
 const WORDPRESS_MU_PLUGINS_PATH = path.join(WORDPRESS_VOLUME_PATH, 'wp-content', 'mu-plugins');
-const WORDPRESS_TEST_HELPER_PATH = path.join(WORDPRESS_MU_PLUGINS_PATH, 'wp-cassify-playwright-helper.php');
 const WORDPRESS_TEST_HELPER_TOKEN_PATH = path.join(WORDPRESS_MU_PLUGINS_PATH, 'wp-cassify-playwright-helper.token');
 const WORDPRESS_TEST_HELPER_TOKEN = process.env.PLAYWRIGHT_WORDPRESS_TEST_HELPER_TOKEN || crypto.randomBytes(24).toString('hex');
 
@@ -49,7 +48,7 @@ function installWordPressTestHelper() {
   if (wordpressTestHelperInstalled) return;
   const helperSource = `<?php
 add_action( 'init', function () {
-    if ( 'auth_archived_blog_user' !== ( $_REQUEST['wp_cassify_playwright_action'] ?? '' ) ) {
+    if ( ! in_array( $_REQUEST['wp_cassify_playwright_action'] ?? '', array( 'auth_archived_blog_user', 'prepare_multisite_cas_user' ), true ) ) {
         return;
     }
 
@@ -66,6 +65,15 @@ add_action( 'init', function () {
     $user_login = isset( $_REQUEST['user_login'] ) ? sanitize_user( wp_unslash( $_REQUEST['user_login'] ), true ) : '';
     $role = isset( $_REQUEST['role'] ) ? sanitize_key( $_REQUEST['role'] ) : 'administrator';
     $user = get_user_by( 'login', $user_login );
+    if ( 'prepare_multisite_cas_user' === $_REQUEST['wp_cassify_playwright_action'] ) {
+        if ( $user ) {
+            revoke_super_admin( $user->ID );
+            if ( is_super_admin( $user->ID ) ) {
+                wp_send_json_error( array( 'message' => 'CAS test user must not be a super administrator.' ) );
+            }
+        }
+        wp_send_json_success();
+    }
     if ( ! $blog_id || ! $user ) {
         wp_send_json_error( array( 'message' => 'Missing blog or user.' ) );
     }
@@ -106,7 +114,13 @@ add_action( 'init', function () {
 `;
 
   fs.mkdirSync(WORDPRESS_MU_PLUGINS_PATH, { recursive: true });
-  fs.writeFileSync(WORDPRESS_TEST_HELPER_PATH, helperSource, 'utf8');
+  const helperName = `wp-cassify-playwright-helper-${crypto.createHash('sha256').update(helperSource).digest('hex').slice(0, 12)}.php`;
+  for (const file of fs.readdirSync(WORDPRESS_MU_PLUGINS_PATH)) {
+    if (/^wp-cassify-playwright-helper(?:-[a-f0-9]+)?\.php$/.test(file) && file !== helperName) {
+      fs.unlinkSync(path.join(WORDPRESS_MU_PLUGINS_PATH, file));
+    }
+  }
+  fs.writeFileSync(path.join(WORDPRESS_MU_PLUGINS_PATH, helperName), helperSource, 'utf8');
   const fixtureSource = fs.readFileSync(path.join(__dirname, 'cleanup-fixtures.php'), 'utf8');
   const fixtureName = `wp-cassify-cleanup-fixtures-${crypto.createHash('sha256').update(fixtureSource).digest('hex').slice(0, 12)}.php`;
   for (const file of fs.readdirSync(WORDPRESS_MU_PLUGINS_PATH)) {
@@ -215,6 +229,13 @@ async function ensureMultisiteNetwork(page, { siteName = 'wp-cassify-network', a
 }
 
 async function createNetworkSite(page, { domain, title, email = `${ADMIN_USER}@example.org` }) {
+  const hostname = `${domain}.example.org`;
+  await page.goto(`/wp-admin/network/sites.php?s=${encodeURIComponent(hostname)}`);
+  const existingSite = page.locator('#the-list tr').filter({ hasText: hostname });
+  const existingEdit = existingSite.locator('a[href*="site-info.php?id="]').first();
+  if (await existingEdit.count()) {
+    return Number(new URL(await existingEdit.getAttribute('href'), BASE_URL).searchParams.get('id'));
+  }
   await page.goto('/wp-admin/network/site-new.php');
   await expect(page.locator('#site-address')).toBeVisible();
 
@@ -231,6 +252,7 @@ async function createNetworkSite(page, { domain, title, email = `${ADMIN_USER}@e
   await expect(page.locator('input[name="blog[url]"]')).toBeVisible();
   await page.locator('input[name="blog[url]"]').fill('http://' + domain + '.example.org');
   await page.locator('#submit').click();
+  return Number(new URL(page.url()).searchParams.get('id'));
 }
 
 
@@ -400,15 +422,21 @@ async function configureUrlSettings(page, options = {}) {
 
 async function configureRoleRule(page, {
   purgeRolesBeforeApplying = true,
+  resetRules = false,
   role = 'administrator',
   rule = BASELINE_ROLE_RULE,
   blogId = MULTISITE_MODE ? 0 : null,
 } = {}) {
   await openPluginSettings(page);
 
+  if (resetRules) {
+    await page.locator('#wp_cassify_user_role_rules').evaluate(select => select.replaceChildren());
+  }
+
   const expectedRoleRuleOption = buildRoleRuleOption(role, rule, blogId);
   const existingRoleRuleOptions = await page.locator('#wp_cassify_user_role_rules option').allTextContents();
   if (!existingRoleRuleOptions.includes(expectedRoleRuleOption)) {
+    await page.locator('#wp_cassify_default_user_roles').selectOption(role);
     if (MULTISITE_MODE && blogId !== null && blogId !== undefined && await page.locator('#wp_cassify_user_role_blog_id').isVisible().catch(() => false)) {
       await page.locator('#wp_cassify_user_role_blog_id').selectOption(String(blogId));
     }
