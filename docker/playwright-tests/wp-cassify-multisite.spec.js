@@ -43,6 +43,8 @@ test('bootstrap multisite, network-activate WP Cassify, and write the WordPress 
 
 
   await configureRoleRule(page, { resetRules: true, blogId: firstBlogId });
+  // Cleanup scenarios also exercise CAS profile access on the main site.
+  await configureRoleRule(page, { role: 'subscriber', blogId: 1 });
   // New membership requires an explicit CAS role rule on each child site.
   await configureRoleRule(page, { role: 'subscriber', blogId: secondBlogId });
   // Cleanup tests may have promoted this fixture account on a previous run.

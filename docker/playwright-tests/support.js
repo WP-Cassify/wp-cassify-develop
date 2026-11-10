@@ -316,7 +316,12 @@ async function ensureAdminAccess(page) {
   await installFreshWordPressIfNeeded(page);
 
   if (await page.locator('#username').isVisible().catch(() => false)) {
-    await fillAndSubmitCasLogin(page);
+    // Administration setup must use the local operator, not the CAS fixture
+    // whose site membership and privileges are deliberately limited by tests.
+    await runWordPressTestAction(page, 'cleanup_fixture', {
+      command: 'admin_signin', login: ADMIN_USER, password: ADMIN_PASSWORD,
+    });
+    await page.goto('/wp-admin/');
   } else if (await page.locator('#loginform #user_login').isVisible().catch(() => false)) {
     await fillAndSubmitLocalLogin(page);
   }

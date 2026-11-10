@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const {
-  ensureAdminAccess, activatePluginIfNeeded, runWordPressTestAction,
+  activatePluginIfNeeded, runWordPressTestAction,
   loginThroughWordPress, logoutWordPress, CAS_USER, ADMIN_USER, ADMIN_PASSWORD,
 } = require('./support');
 
@@ -37,7 +37,8 @@ module.exports = function registerCleanupTests() {
 
   test.describe('Manual CAS account tools', () => {
     test.beforeEach(async ({ page }) => {
-      await ensureAdminAccess(page);
+      // The parent suite already bootstrapped WordPress. Sign in as the local
+      // operator before navigating: the CAS account need not belong to the main site.
       await fixture(page, 'admin_signin', { login: ADMIN_USER, password: ADMIN_PASSWORD });
       await activatePluginIfNeeded(page);
       await fixture(page, 'reset');
