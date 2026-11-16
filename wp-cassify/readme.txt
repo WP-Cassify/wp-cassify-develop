@@ -163,7 +163,7 @@ Accounts without a login date are kept unless explicitly included AND their
 known CAS marking date is older than the selected period. No historical CAS
 login dates are inferred when upgrading.
 
-Alternatively, paste up to 1000 WordPress usernames or numeric WordPress IDs,
+Alternatively, paste up to 100000 WordPress usernames or numeric WordPress IDs,
 one per line, choosing the identifier type explicitly. List selection only deletes
 CAS-marked accounts, regardless of login dates or active browser sessions.
 The preview reports duplicates, unknown identifiers, local and protected accounts.

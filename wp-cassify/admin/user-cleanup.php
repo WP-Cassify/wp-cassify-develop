@@ -39,7 +39,7 @@ wp_localize_script( 'wp-cassify-cleanup', 'wpCassifyCleanup', array( 'url' => ad
         <h3>Delete CAS accounts from a list</h3>
         <p>Only the listed CAS accounts are selected, regardless of login or marking dates. Active browser sessions do not prevent this deletion. Local accounts and protected accounts are excluded. WordPress accounts are deleted; identities on the CAS server are not deleted.</p>
         <p><label>Identifier type <select id="cassify-cleanup-identifier-type"><option value="login">WordPress username</option><option value="id">WordPress numeric ID</option></select></label></p>
-        <p><label for="cassify-cleanup-identifiers">Identifiers (one per line, up to 1000)</label><br /><textarea id="cassify-cleanup-identifiers" rows="8" cols="50" spellcheck="false" autocomplete="off"></textarea></p>
+        <p><label for="cassify-cleanup-identifiers">Identifiers (one per line, up to 100000)</label><br /><textarea id="cassify-cleanup-identifiers" rows="8" cols="50" spellcheck="false" autocomplete="off"></textarea></p>
         <button type="button" class="button" id="cassify-cleanup-list">Preview listed accounts</button>
     </fieldset>
     <p id="cassify-cleanup-status" role="status" aria-live="polite"></p>

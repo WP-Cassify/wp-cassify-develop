@@ -14,6 +14,8 @@ class WP_Cassify_User_Cleanup {
     const DAYS = 'wp_cassify_cleanup_days';
     const SCAN_SIZE = 200;
     const BATCH_SIZE = 20;
+    const MAX_IDENTIFIERS = 100000;
+    const MAX_IDENTIFIER_BYTES = 32000000;
 
     private static $connection_lock = '';
 
@@ -347,7 +349,7 @@ class WP_Cassify_User_Cleanup {
         }
         $result = $job;
         $result['site_count'] = count( $job['sites'] );
-        unset( $result['sites'] );
+        unset( $result['sites'], $result['selected_ids'], $result['identifiers'] );
         $page = isset( $request['preview_page'] ) ? max( 0, (int) $request['preview_page'] ) : 0;
         $result['preview_page'] = $page;
         $result['users'] = $job['pages'] ? self::entries( $job, min( $page, $job['pages'] - 1 ) ) : array();
@@ -394,30 +396,20 @@ class WP_Cassify_User_Cleanup {
         }
         $selected_ids = array();
         $input_report = array();
+        $lines = array();
         if ( 'list' === $selection ) {
             $type = isset( $request['identifier_type'] ) ? $request['identifier_type'] : '';
             if ( ! in_array( $type, array( 'login', 'id' ), true ) ) { self::error( 'Choose WordPress usernames or IDs.' ); }
             $raw = isset( $request['identifiers'] ) ? $request['identifiers'] : '';
-            if ( strlen( $raw ) > 100000 ) { self::error( 'The identifier list is too large.' ); }
+            if ( strlen( $raw ) > self::MAX_IDENTIFIER_BYTES ) { self::error( 'The identifier list is too large.' ); }
             $lines = preg_split( '/\r\n|\r|\n/', $raw );
             $lines = array_values( array_filter( array_map( 'trim', $lines ), 'strlen' ) );
-            if ( ! $lines || count( $lines ) > 1000 ) { self::error( 'Enter between 1 and 1000 identifiers, one per line.' ); }
-            foreach ( $lines as $line ) {
-                // Do not sanitize logins or coerce malformed IDs into a different account.
-                $user = 'id' === $type
-                    ? ( ctype_digit( $line ) && (int) $line > 0 && (string) (int) $line === ltrim( $line, '0' ) ? get_user_by( 'id', (int) $line ) : false )
-                    : get_user_by( 'login', $line );
-                if ( $user && 'login' === $type && $user->user_login !== $line ) { $user = false; }
-                if ( ! $user ) { $input_report[] = $line . ': not found or invalid identifier'; continue; }
-                $id = (int) $user->ID;
-                if ( in_array( $id, $selected_ids, true ) ) { $input_report[] = $line . ': duplicate'; continue; }
-                $selected_ids[] = $id;
-            }
+            if ( ! $lines || count( $lines ) > self::MAX_IDENTIFIERS ) { self::error( 'Enter between 1 and 100000 identifiers, one per line.' ); }
         }
         self::discard( $job );
         $now = time();
         $job = array(
-            'selection' => $selection, 'selected_ids' => $selected_ids, 'input_report' => $input_report,
+            'selection' => $selection, 'identifiers' => $lines, 'identifier_type' => isset( $type ) ? $type : '', 'selected_ids' => $selected_ids, 'input_report' => $input_report,
             'schema' => self::SCHEMA, 'token' => wp_generate_uuid4(), 'owner' => $owner, 'mode' => $mode,
             'phase' => 'scanning', 'cursor' => 0, 'max' => (int) $wpdb->get_var( "SELECT MAX(ID) FROM {$wpdb->users}" ),
             'now' => $now, 'cutoff' => self::cutoff( $now, (int) $days ),
@@ -436,12 +428,40 @@ class WP_Cassify_User_Cleanup {
 
     private static function scan( &$job ) {
         global $wpdb;
-        $ids = 'list' === $job['selection'] ? array_slice( $job['selected_ids'], $job['cursor'], self::SCAN_SIZE ) : $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->users} WHERE ID > %d AND ID <= %d ORDER BY ID LIMIT %d", $job['cursor'], $job['max'], self::SCAN_SIZE ) );
+        // Resolve only one batch per request, including duplicate/unknown lines.
+        // Older saved previews already contain resolved IDs and remain resumable.
+        $resolving = 'list' === $job['selection'] && isset( $job['identifiers'] );
+        $processed = 0;
+        if ( $resolving ) {
+            $lines = array_slice( $job['identifiers'], $job['cursor'], self::SCAN_SIZE );
+            $processed = count( $lines );
+            $seen = array_fill_keys( $job['selected_ids'], true );
+            $ids = array();
+            foreach ( $lines as $line ) {
+                // Never coerce malformed IDs or normalize logins to another account.
+                $user = 'id' === $job['identifier_type']
+                    ? ( ctype_digit( $line ) && (int) $line > 0 && (string) (int) $line === ltrim( $line, '0' ) ? get_user_by( 'id', (int) $line ) : false )
+                    : get_user_by( 'login', $line );
+                if ( $user && 'login' === $job['identifier_type'] && $user->user_login !== $line ) { $user = false; }
+                if ( ! $user ) { $job['input_report'][] = $line . ': not found or invalid identifier'; continue; }
+                $id = (int) $user->ID;
+                if ( isset( $seen[$id] ) ) { $job['input_report'][] = $line . ': duplicate'; continue; }
+                $seen[$id] = true;
+                $job['selected_ids'][] = $id;
+                $ids[] = $id;
+            }
+            $job['cursor'] += $processed;
+        } else {
+            $ids = 'list' === $job['selection'] ? array_slice( $job['selected_ids'], $job['cursor'], self::SCAN_SIZE ) : $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->users} WHERE ID > %d AND ID <= %d ORDER BY ID LIMIT %d", $job['cursor'], $job['max'], self::SCAN_SIZE ) );
+            $processed = count( $ids );
+        }
         if ( $wpdb->last_error ) { self::error( 'Could not read the user list.' ); }
         $entries = array();
         foreach ( $ids as $id ) {
             $id = (int) $id;
-            if ( 'list' === $job['selection'] ) { $job['cursor']++; } else { $job['cursor'] = $id; }
+            if ( 'list' === $job['selection'] ) {
+                if ( ! $resolving ) { $job['cursor']++; }
+            } else { $job['cursor'] = $id; }
             if ( 'mark' === $job['mode'] ) {
                 $user = new \WP_User( $id, '', $job['blog'] );
                 if ( $job['role'] && ! in_array( $job['role'], $user->roles, true ) ) {
@@ -475,7 +495,8 @@ class WP_Cassify_User_Cleanup {
             self::persist( self::page_key( $job, $job['pages'] ), $entries );
             $job['pages']++;
         }
-        if ( count( $ids ) < self::SCAN_SIZE ) {
+        if ( $processed < self::SCAN_SIZE ) {
+            unset( $job['identifiers'] );
             $job['phase'] = 'ready';
             self::archive_job( $job );
         }

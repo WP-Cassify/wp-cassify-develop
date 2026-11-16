@@ -51,6 +51,28 @@ module.exports = function registerCleanupTests() {
       await fixture(page, 'reset');
     });
 
+    test('large identifier lists are validated and resolved in resumable batches', async ({ page }) => {
+      const values = { mode: 'purge', selection: 'list', identifier_type: 'login' };
+      const line = 'cassify_cleanup_missing_account';
+      const rejected = await api(page, 'start', { ...values, identifiers: Array(100001).fill(line).join('\n') }, 400);
+      expect(rejected.message).toContain('100000');
+      let job = await api(page, 'start', { ...values, identifiers: Array(100000).fill(line).join('\n') });
+      expect(job.phase).toBe('scanning');
+      expect(job.cursor).toBe(0);
+      expect(job.input_report).toHaveLength(0);
+      expect(job.identifiers).toBeUndefined();
+      expect(job.selected_ids).toBeUndefined();
+      job = await api(page, 'scan', { token: job.token });
+      expect(job.phase).toBe('scanning');
+      expect(job.cursor).toBe(200);
+      expect(job.input_report).toHaveLength(200);
+      job = await api(page, 'status');
+      job = await api(page, 'scan', { token: job.token });
+      expect(job.cursor).toBe(400);
+      expect(job.input_report).toHaveLength(400);
+      await api(page, 'discard');
+    });
+
     test('listed accounts ignore activity but retain protections and require a reviewed recipient', async ({ page }) => {
       const ids = await fixture(page, 'create', { users: JSON.stringify([
         { name: 'target' },
