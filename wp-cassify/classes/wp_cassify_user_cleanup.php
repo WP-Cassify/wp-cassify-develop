@@ -309,7 +309,14 @@ class WP_Cassify_User_Cleanup {
             self::error( 'Another administrator owns the current operation.' );
         }
         if ( $job && ( ! isset( $job['schema'] ) || self::SCHEMA !== $job['schema'] ) && 'discard' !== $action ) {
-            self::error( 'This preview predates the safety update. Discard it and create a new preview.' );
+            $message = 'This preview predates the safety update. Clear the current task and create a new preview. Clearing does not undo completed changes.';
+            // Report legacy state without interpreting its obsolete structure or resuming it.
+            if ( 'status' === $action ) {
+                return $job['owner'] === $owner
+                    ? array( 'phase' => 'incompatible', 'message' => $message )
+                    : array( 'phase' => 'idle' );
+            }
+            self::error( $message );
         }
         if ( 'discard' === $action ) {
             self::discard( $job );

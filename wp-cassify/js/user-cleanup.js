@@ -24,8 +24,8 @@
   }
 
   function render() {
-    if (!job || job.phase === 'idle') {
-      el('status').textContent = 'No saved operation.';
+    if (!job || ['idle', 'incompatible'].includes(job.phase)) {
+      el('status').textContent = job?.phase === 'incompatible' ? job.message : 'No saved operation.';
       el('target').disabled = false;
       for (const name of ['users', 'errors', 'input-report']) el(name).replaceChildren();
       for (const name of ['prev', 'next', 'confirm', 'resume', 'recipient']) el(name).hidden = true;
