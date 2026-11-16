@@ -222,4 +222,5 @@ test('URL bypass is disabled by default, configurable, and can be turned off aga
 });
 
 
+require('./gateway-tests')();
 require('./cleanup-tests')();

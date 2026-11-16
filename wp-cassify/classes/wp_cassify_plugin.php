@@ -1700,13 +1700,20 @@ class WP_Cassify_Plugin {
 	 private function wp_cassify_is_in_while_list( $url ) {
 		 
 		 $is_in_while_list = false;
+		 $url = (string) $url;
+		 $offset = strlen( site_url() );
+
+		 // PHP 8 throws when the site URL offset exceeds the requested URL length.
+		 if ( strlen( $url ) < $offset ) {
+			 return false;
+		 }
 		 
 		 $wp_cassify_redirect_url_white_list = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_white_list' );
 		 $white_list_urls = explode( ';', $wp_cassify_redirect_url_white_list );
 		 
 		 if ( ( is_array( $white_list_urls ) ) && ( count( $white_list_urls ) > 0 ) ){
 			foreach( $white_list_urls as $white_url ) {
-				if ( strlen($white_url)>0 && strrpos( $url, $white_url, strlen( site_url() ) ) !== false ) {
+				if ( strlen($white_url)>0 && strrpos( $url, $white_url, $offset ) !== false ) {
 					$is_in_while_list = true;
 				}
 			} 

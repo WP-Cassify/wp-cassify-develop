@@ -774,7 +774,7 @@ class WP_Cassify_Admin_Page {
 				<th scope="row"><label for="wp_cassify_redirect_url_white_list">White List URL(s)</label></th>
 				<td>
 					<input type="text" id="wp_cassify_redirect_url_white_list" name="wp_cassify_redirect_url_white_list" value="<?php echo esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_white_list' ) ); ?>" size="40" class="regular-text post_form" />
-					<br /><span class="description">List of URL(s) that don't intercepted by CAS Authentication. Use ';' as URL separator.</span>
+					<br /><span class="description">Path fragments that bypass CAS authentication, separated by ';' (for example: /wp-login.php;/public/). Matching searches only the part of the requested URL after the WordPress Address (site_url), including query strings. Do not enter full URLs.</span>
 				</td>
 			</tr>
 		</table>
