@@ -208,3 +208,15 @@ The action is defined in the file `.github/workflows/release.yml`.
 ## License
 
 This project is licensed under the GPLv2 License - same as WP-Cassify plugin and as WordPress itself.
+
+### Upgrading from 2.5.0
+
+Before upgrading, review the CAS exceptions and site membership rules:
+
+- Convert substring or query-based whitelist entries to explicit paths relative to the WordPress Address. A query-based exception has no automatic equivalent. Remove it or provide a dedicated exempt path.
+- On multisite, provision membership or an explicit CAS role rule on each affected site. A previously issued network cookie does not grant new memberships. Existing site memberships are retained. For a site whose policy allows every CAS identity, an explicit site role rule such as `(CAS{cas_user_id} -NEQ "")` can grant the intended low-privilege role after CAS validation.
+- If Single Logout is required for all active sessions, schedule a local sign-out and fresh CAS login for any legacy browser sessions whose PHP session has expired.
+- Verify exact service registrations for gateway and multisite retry URLs, and test custom service URL filters on staging.
+
+Run the isolated database and browser upgrade test with `bash docker/playwright-tests/run-upgrade.sh`.
+It starts from the 2.5.0 tag and replaces the plugin files while keeping the test database and browser contexts.

@@ -11,6 +11,7 @@ namespace wp_cassify {
     function site_url() { return $GLOBALS['wp_cassify_test_site_url'] ?? home_url(); }
     function admin_url() { return 'https://example.org/wp-admin/'; }
     function do_action( $name, ...$args ) {}
+    function apply_filters( $name, $value ) { return $GLOBALS['wp_cassify_test_filters'][$name] ?? $value; }
     function shortcode_atts( $defaults, $attributes ) { return array_merge( $defaults, $attributes ); }
     function esc_url_raw( $url ) { return $url; }
     function wp_safe_redirect( $url ) { throw new \wp_cassify\tests\Request_Redirect( $url ); }

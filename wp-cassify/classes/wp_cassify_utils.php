@@ -19,7 +19,7 @@ class WP_Cassify_Utils {
 		$ssl_cipher, 
 		$ssl_check_certificate = 'disabled', 
 		$curlopt_cainfo = '',
-		$curlopt_capath = '' ) {
+		$curlopt_capath = '', $timeout = 10, $on_transport_error = null ) {
 		
 		if (! function_exists ( 'curl_init' ) ) {
 			wp_die(
@@ -30,13 +30,14 @@ class WP_Cassify_Utils {
 		}
 
 		$ch = curl_init();
-		$timeout = 10;
 
 		curl_setopt( $ch, CURLOPT_HEADER, false );
 		curl_setopt( $ch, CURLOPT_URL, $url ) ;
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, $timeout );
+		if ( $timeout > 0 ) {
+			curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout );
+			curl_setopt( $ch, CURLOPT_TIMEOUT, $timeout );
+		}
 		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 2 );
 		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, ( ( $ssl_check_certificate === 'enabled' ) ? 1 : 0 ) );
 
@@ -59,6 +60,9 @@ class WP_Cassify_Utils {
 		$response = curl_exec( $ch );
 
 		$error_number = curl_errno( $ch );
+		if ( $error_number && $on_transport_error !== null ) {
+			$on_transport_error();
+		}
 		if ( $error_number === CURLE_OPERATION_TIMEDOUT ) {
 			unset( $ch );
 			wp_die(

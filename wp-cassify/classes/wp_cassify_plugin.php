@@ -527,6 +527,8 @@ class WP_Cassify_Plugin {
 		$wp_cassify_default_service_ticket_parameter_name = $this->wp_cassify_default_service_ticket_parameter_name;
 		$wp_cassify_default_service_service_parameter_name = $this->wp_cassify_default_service_service_parameter_name;
 		
+		$this->wp_cassify_refresh_legacy_slo_session();
+
 		if ( ! is_user_logged_in() || ( is_multisite() && ! is_user_member_of_blog() ) ) {
 			$service_ticket = $this->wp_cassify_get_service_ticket();
 			$request_uri = wp_unslash( $_SERVER['REQUEST_URI'] ?? '/' );
@@ -616,12 +618,23 @@ class WP_Cassify_Plugin {
 					session_write_close();
 				}
 
+				$timeout = $this->wp_cassify_get_raw_option( 'wp_cassify_validation_timeout' );
+				$timeout = apply_filters( 'wp_cassify_validation_timeout', $timeout === false ? 10 : (int) $timeout );
+				$clear_membership_retry = function () use ( $session_was_active, $current_blog_id ) {
+					if ( $session_was_active && isset( $_GET['wp_cassify_membership_retry'] ) && session_start() ) {
+						unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'] );
+						session_write_close();
+					}
+				};
+
 				$cas_server_xml_response = WP_Cassify_Utils::wp_cassify_do_ssl_web_request( 
 					$service_validate_url, 
 					$wp_cassify_ssl_cipher_selected,
 					$wp_cassify_ssl_check_certificate,
 					esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_cainfo' ) ),
-					esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_capath' ) )
+					esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_capath' ) ),
+					max( 0, (int) $timeout ),
+					$clear_membership_retry
 				);
 				
 				if ( $session_was_active ) {
@@ -768,6 +781,9 @@ class WP_Cassify_Plugin {
 					$this->wp_cassify_register_slo( $service_ticket, $user_id, $token, $expiration );
 				};
 				if ( $wp_cassify_enable_slo === 'enable_slo' ) {
+					if ( session_status() === PHP_SESSION_ACTIVE ) {
+						session_regenerate_id( true );
+					}
 					add_action( 'set_logged_in_cookie', $slo_cookie_hook, 10, 6 );
 				}
 				try {
@@ -777,6 +793,7 @@ class WP_Cassify_Plugin {
 						remove_action( 'set_logged_in_cookie', $slo_cookie_hook, 10 );
 					}
 				}
+				$_SESSION['wp_cassify'][ $current_blog_id ]['session_version'] = '2.6.0';
 				unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'] );
 
 				// Custom hook to perform action after wordpress authentication.
@@ -793,12 +810,48 @@ class WP_Cassify_Plugin {
 					do_action( 'wp_cassify_send_notification', 'User ' . $cas_user_datas[ 'cas_user_id' ] . ' is logged in' );							
 				}
 
+				if ( isset( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] === 'wp-login.php' &&
+					( $_REQUEST['action'] ?? 'login' ) === 'login' &&
+					parse_url( $return_url, PHP_URL_QUERY ) === null ) {
+					$return_url = admin_url();
+				}
 				// Redirect to the service url.
 				WP_Cassify_Utils::wp_cassify_redirect_url( $this->wp_cassify_apply_service_url_validation( $return_url, 'callback_service_url' ) );
 			}
 		}
 	}		
 	
+	/** Refresh only the browser session identified by pre-upgrade CAS state. */
+	private function wp_cassify_refresh_legacy_slo_session() {
+		if ( ( $_SERVER['REQUEST_METHOD'] ?? '' ) !== 'GET' || ! isset( $_COOKIE[ session_name() ] ) ||
+			wp_doing_ajax() || wp_doing_cron() || ( $_REQUEST['action'] ?? '' ) === 'logout' ||
+			WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_enable_slo' ) !== 'enable_slo' ) {
+			return;
+		}
+
+		// The ordinary session hook skips wp-admin even when a PHP cookie exists.
+		$this->wp_cassify_session_start( true );
+		$session = $_SESSION['wp_cassify'][ $this->wp_cassify_current_blog_id ] ?? array();
+		if ( empty( $session['user_auth'] ) || ! empty( $session['session_version'] ) ||
+			empty( $session['wp_cassify_cas_user_datas']['cas_user_id'] ) ) {
+			return;
+		}
+
+		$user = wp_get_current_user();
+		if ( ! $user->exists() || strcasecmp( $user->user_login, $session['wp_cassify_cas_user_datas']['cas_user_id'] ) !== 0 ) {
+			return;
+		}
+
+		wp_destroy_current_session();
+		wp_clear_auth_cookie();
+		wp_set_current_user( 0 );
+		$this->wp_cassify_destroy_session();
+		wp_safe_redirect( wp_login_url( wp_unslash( WP_Cassify_Utils::wp_cassify_get_current_url(
+			$this->wp_cassify_default_wordpress_blog_http_port, $this->wp_cassify_default_wordpress_blog_https_port
+		) ) ) );
+		exit();
+	}
+
 	/**
 	 * Perform a redirection to cas server to obtain service ticket.
 	 * @param bool $require_membership Allow a protected multisite request to revalidate a network cookie.
@@ -831,13 +884,23 @@ class WP_Cassify_Plugin {
 	private function wp_cassify_build_login_url( $endpoint, $gateway_mode, $require_membership ) {
 		$service_url = $this->wp_cassify_get_service_callback_url( false );
 		$override = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_override_service_url' );
+		$has_service_filter = has_filter( 'wp_cassify_redirect_service_url_filter' );
+		if ( ( $has_service_filter || ! empty( $override ) ) &&
+			$this->wp_cassify_get_raw_option( 'wp_cassify_pre_260_allow_deny_order' ) !== false &&
+			parse_url( $service_url, PHP_URL_QUERY ) ) {
+			$service_url = WP_Cassify_Utils::wp_cassify_encode_query_in_url( $service_url );
+		}
 		if ( ! empty( $override ) ) {
 			$service_url = str_replace( '{WP_CASSIFY_CURRENT_SERVICE_URL}', $service_url, $override );
 		}
-		if ( has_filter( 'wp_cassify_redirect_service_url_filter' ) ) {
+		if ( $has_service_filter ) {
 			$service_url = apply_filters( 'wp_cassify_redirect_service_url_filter', $service_url );
 		}
 
+		// Older integrations could return a fully encoded URL for direct query concatenation.
+		if ( preg_match( '/^https?%3a%2f%2f/i', $service_url ) === 1 ) {
+			$service_url = rawurldecode( $service_url );
+		}
 		$service_url = $this->wp_cassify_apply_service_url_validation( $service_url, 'redirect' );
 		$service_url = WP_Cassify_Utils::wp_cassify_prepare_cas_service( $service_url, $this->wp_cassify_default_service_ticket_parameter_name );
 		if ( $require_membership ) {
@@ -1112,7 +1175,7 @@ class WP_Cassify_Plugin {
 		// Admin auth cookies are scoped to wp-admin and are unavailable on
 		// wp-login.php. A CAS callback to a bare login page would therefore
 		// restart CAS forever when login_init checks the admin cookie.
-		if ( empty( $wp_cassify_redirect_parameter ) &&
+		if ( $is_callback && empty( $wp_cassify_redirect_parameter ) &&
 			isset( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] === 'wp-login.php' &&
 			( $_REQUEST['action'] ?? 'login' ) === 'login' ) {
 			$wp_cassify_callback_service_url = admin_url();

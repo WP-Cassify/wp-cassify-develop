@@ -100,6 +100,26 @@ function wp_cassify_maybe_migrate_options() {
 		}
 	}
 
+	// Preserve the effective 2.5.x precedence when the two rule groups overlap.
+	if ( $stored_version !== '' && version_compare( $stored_version, '2.6.0', '<' ) ) {
+		$option = 'wp_cassify_allow_deny_order';
+		$original_key = 'wp_cassify_pre_260_allow_deny_order';
+		$read = $wp_cassify_network_activated ? 'get_site_option' : 'get_option';
+		$add = $wp_cassify_network_activated ? 'add_site_option' : 'add_option';
+		$original = $read( $original_key, false );
+		if ( $original === false ) {
+			$add( $original_key, (string) $read( $option, '' ) );
+			$original = $read( $original_key, false );
+		}
+		$orders = array( 'allow, deny' => 'deny, allow', 'deny, allow' => 'allow, deny' );
+		if ( isset( $orders[ $original ] ) ) {
+			\wp_cassify\WP_Cassify_Utils::wp_cassify_update_option( $wp_cassify_network_activated, $option, $orders[ $original ] );
+		}
+
+		// Keep the legacy transport budget unless the operator has chosen one.
+		$add( 'wp_cassify_validation_timeout', '0' );
+	}
+
 	// Persist the current plugin version so this migration only runs once.
 	if ( $wp_cassify_network_activated ) {
 		update_site_option( 'wp_cassify_plugin_version', WP_CASSIFY_VERSION );

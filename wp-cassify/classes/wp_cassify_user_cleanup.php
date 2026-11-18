@@ -310,6 +310,13 @@ class WP_Cassify_User_Cleanup {
         if ( $job && $job['owner'] !== $owner && $job['phase'] !== 'done' ) {
             self::error( 'Another administrator owns the current operation.' );
         }
+        // Version 2.5.0 used this same cursor and confirmation format for inactivity jobs.
+        if ( $job && ( $job['schema'] ?? null ) === 3 && 'discard' !== $action ) {
+            $job['schema'] = self::SCHEMA;
+            $job['selection'] = 'inactive';
+            $job['input_report'] = array();
+            self::save( $job );
+        }
         if ( $job && ( ! isset( $job['schema'] ) || self::SCHEMA !== $job['schema'] ) && 'discard' !== $action ) {
             $message = 'This preview predates the safety update. Clear the current task and create a new preview. Clearing does not undo completed changes.';
             // Report legacy state without interpreting its obsolete structure or resuming it.

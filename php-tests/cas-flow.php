@@ -79,11 +79,35 @@ return array(
             unset( $GLOBALS['wp_cassify_test_curl_errno'], $GLOBALS['wp_cassify_test_validation_url'] );
         }
     },
+    'keep the legacy bare login service identifier' => function () {
+        $GLOBALS['pagenow'] = 'wp-login.php';
+        $_SERVER['REQUEST_URI'] = '/wp-login.php';
+        $login = invoke_private( create_plugin(), 'wp_cassify_build_login_url', 'https://cas.example.org/login', false, false );
+        parse_str( parse_url( $login, PHP_URL_QUERY ), $parameters );
+        expect_same( 'https://example.org/wp-login.php', $parameters['service'] );
+    },
     'append the membership retry parameter to a service without a query' => function () {
         $_SERVER['REQUEST_URI'] = '/wp-admin/';
         $login = invoke_private( create_plugin(), 'wp_cassify_build_login_url', 'https://cas.example.org/login', false, true );
         parse_str( parse_url( $login, PHP_URL_QUERY ), $parameters );
         expect_same( 'https://example.org/wp-admin/?wp_cassify_membership_retry=1', $parameters['service'] );
+    },
+    'accept an encoded legacy service filter in enforce mode' => function () {
+        $settings = $GLOBALS['wp_cassify_test_options'] ?? array();
+        $GLOBALS['wp_cassify_test_options'] = array(
+            'wp_cassify_service_url_validation_mode' => 'enforce',
+            'wp_cassify_service_url_allowed_hosts' => 'example.org',
+        );
+        $service = 'https://example.org/search/?q=hello%20world';
+        $GLOBALS['wp_cassify_test_filters']['wp_cassify_redirect_service_url_filter'] = rawurlencode( $service );
+        try {
+            $login = invoke_private( create_plugin(), 'wp_cassify_build_login_url', 'https://cas.example.org/login', false, false );
+            parse_str( parse_url( $login, PHP_URL_QUERY ), $parameters );
+            expect_same( $service, $parameters['service'] );
+        } finally {
+            $GLOBALS['wp_cassify_test_options'] = $settings;
+            unset( $GLOBALS['wp_cassify_test_filters']['wp_cassify_redirect_service_url_filter'] );
+        }
     },
     'preserve the query when an unlisted service falls back to the canonical host' => function () {
         $settings = $GLOBALS['wp_cassify_test_options'] ?? array();
