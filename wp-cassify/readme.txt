@@ -202,20 +202,14 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.6.0 =
-* Fix: validate CAS service URLs before encoding the login request, and preserve query strings across ticket validation.
-* Fix: ignore unrelated ticket query parameters and send only well-formed ST- service tickets to CAS for validation.
-* Fix: release the PHP session lock during CAS validation. New installations use a 10-second budget with HTTP 504 on timeout. Upgrades keep the legacy cURL budget. The wp_cassify_validation_timeout filter accepts a positive number of seconds or 0 for the legacy budget.
-* Security: reject malformed CAS service tickets and encode ticket and service values as separate RFC 3986 query parameters in CAS validation requests.
-* Security: match CAS whitelist entries against paths relative to the WordPress Address. An entry exempts its exact path and subpaths at segment boundaries. A lone / matches only the WordPress Address. Query strings and fragments are ignored. Update any former substring entries to the intended path.
-* Security: evaluate CAS ALLOW and DENY rules independently. The last matching group takes precedence. On upgrade, a saved explicit order is translated once to preserve its previous effective precedence.
-* Fix: PHP 8 compatibility for legacy expiration dates, empty CAS responses, array-valued redirect parameters and URLs without query parameters. Add regression tests outside the distributed plugin and a PHP 7.4 / PHP 8.0-8.4 CI matrix (php php-tests/run.php).
-* Fix: resume 2.5.0 inactivity cleanup jobs at their saved cursor, using the same preview, recipient and confirmation. Older unsupported schemas must be cleared and previewed again.
-* Fix: prevent a PHP 8 fatal error on fresh Gateway Mode requests when the home URL is shorter than the WordPress site URL (subdirectory installations such as Bedrock).
-* Add: manual deletion of explicitly listed CAS accounts by WordPress username or numeric ID, with preview, duplicate and exclusion reporting, content reassignment and resumable batches. List selection ignores inactivity and active browser sessions while retaining privileged-account and application-password protections.
-* Security: keep random PHP session IDs and register complete CAS tickets server-side only after successful authentication. Validate and bound SLO XML; ignore unknown tickets and revoke only the associated WordPress session. On the next browser navigation, a matching legacy CAS and WordPress session is refreshed once. Sessions whose PHP state has expired must sign out locally and sign back in to register for SLO.
-* Fix: send direct CAS login callbacks to wp-admin after ticket validation when wp-login.php has no redirect target. The original login URL remains the CAS service identifier.
-* Fix: preserve public multisite access without granting membership from network cookies. Protected access starts CAS validation once per user/site session, with an explicit denial if it does not grant membership. Only explicit CAS role rules can grant new membership; existing site roles and super administrators are preserved.
-* Add: persistent administrator warning when CAS server certificate verification is disabled, including network administration. Add security guidance and a live warning beside the TLS setting to encourage HTTPS and trusted CA configuration. Existing TLS defaults and saved settings remain unchanged.
+* CAS login: preserve service URLs with query strings in enforce mode, ignore unrelated ticket parameters, fix direct login, and fix Gateway Mode on subdirectory installations.
+* CAS validation: send only well-formed ST- tickets, encode validation parameters separately, and release the PHP session lock while waiting for CAS. New installs time out after 10 seconds with HTTP 504. Upgrades keep the previous cURL timeout. Override it with the wp_cassify_validation_timeout filter.
+* Access rules: preserve the effective ALLOW/DENY precedence of saved settings on upgrade. Whitelist entries now match paths relative to the WordPress Address. Convert old substring or query-based exceptions to explicit paths. A lone / covers only the root.
+* Multisite: retain existing memberships and require explicit CAS role rules to grant new ones. Review those rules before upgrading sites that relied on automatic membership.
+* Single Logout: revoke only the WordPress session associated with the CAS ticket. Recognized legacy sessions renew once. If the PHP session has expired, sign out locally and sign back in through CAS.
+* Account cleanup: delete selected CAS accounts by username or ID, with a preview and content reassignment. Explicit selection can include active accounts, while privileged accounts and accounts with application passwords remain protected. Inactivity jobs started in 2.5.0 can resume.
+* Compatibility: fix PHP 8 handling of legacy expiration dates and malformed CAS responses or redirect parameters.
+* TLS: warn administrators when CAS certificate verification is disabled. Existing TLS settings are preserved.
 
 = 2.5.0 =
 * Add: manual tools to mark CAS accounts and purge inactive CAS accounts, including WordPress multisite support. Includes preview and confirmation, protected-account exclusions, content reassignment, resumable processing and simple task results. Backup acknowledgement is required before purging.
