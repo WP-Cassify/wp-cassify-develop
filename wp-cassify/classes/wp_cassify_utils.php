@@ -2,6 +2,8 @@
 namespace wp_cassify;
 
 class WP_Cassify_Utils {
+	const CAS_CALLBACK_PARAMETER = 'wp_cassify_callback';
+	const CAS_RETURN_SUFFIX_PARAMETER = 'wp_cassify_return_suffix';
 
 	/**
 	 * Perform an SSL web request to retrieve xml response containing cas-user id and cas-user attributes.
@@ -213,37 +215,50 @@ class WP_Cassify_Utils {
 	 * @param 	string $get_parameter_name		GET parameter name
 	 * @return 	string $stripped_url			Url without stripped value
 	 */ 
-	public static function wp_cassify_strip_get_parameter( $url , $get_parameter_name ) {
-		
-		$stripped_url = null;
-		
-		$parsed_url = parse_url( $url );
-		
-		$scheme   	= isset( $parsed_url['scheme'] ) ? $parsed_url['scheme'] . '://' : ''; 
-		$host     	= isset( $parsed_url['host'] ) ? $parsed_url['host'] : ''; 
-		$port     	= isset( $parsed_url['port'] ) ? ':' . $parsed_url['port'] : ''; 
-		$user     	= isset( $parsed_url['user'] ) ? $parsed_url['user'] : ''; 
-		$pass     	= isset( $parsed_url['pass'] ) ? ':' . $parsed_url['pass']  : ''; 
-		$pass     	= ( $user || $pass ) ? "$pass@" : ''; 
-		$path     	= isset( $parsed_url['path'] ) ? $parsed_url['path'] : ''; 
-		$fragment	= isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : ''; 		
-		
-		$query 		= parse_url( $url , PHP_URL_QUERY );
-
-		parse_str( $query ?? '', $url_params );
-		unset( $url_params[ $get_parameter_name ] );
-
-		$query 		= http_build_query( $url_params );
-
-		if (! empty( $query ) ) {
-			$query = '?' . $query;
+	public static function wp_cassify_strip_get_parameter( $url, $get_parameter_name ) {
+		list( $url, $fragment ) = array_pad( explode( '#', $url, 2 ), 2, null );
+		list( $base, $query ) = array_pad( explode( '?', $url, 2 ), 2, null );
+		if ( $query === null ) {
+			return $url . ( $fragment === null ? '' : '#' . $fragment );
 		}
 
-		$stripped_url = "$scheme$user$pass$host$port$path$query$fragment"; 
+		// CAS compares service identifiers. Keep the original spelling, order and repetitions.
+		$fields = array_filter( explode( '&', $query ), function ( $field ) use ( $get_parameter_name ) {
+			$name = urldecode( explode( '=', $field, 2 )[0] );
+			return $name !== $get_parameter_name;
+		} );
 
-		return $stripped_url;
-	}	
-	
+		return $base . ( $fields ? '?' . implode( '&', $fields ) : '' ) . ( $fragment === null ? '' : '#' . $fragment );
+	}
+
+	public static function wp_cassify_mark_cas_service( $url, $ticket_parameter ) {
+		$url = self::wp_cassify_strip_get_parameter( $url, self::CAS_CALLBACK_PARAMETER );
+		$url = self::wp_cassify_strip_get_parameter( $url, self::CAS_RETURN_SUFFIX_PARAMETER );
+		$offset = strcspn( $url, '?#' );
+		$base = substr( $url, 0, $offset );
+		$suffix = substr( $url, $offset );
+		$query = parse_url( $url, PHP_URL_QUERY );
+		parse_str( $query ?: '', $parameters );
+
+		// Keep a business ticket or a browser-only fragment inside a separate parameter.
+		if ( array_key_exists( $ticket_parameter, $parameters ) || strpos( $suffix, '#' ) !== false || $suffix === '?' ) {
+			return $base . '?' . self::CAS_CALLBACK_PARAMETER . '=1&' . self::CAS_RETURN_SUFFIX_PARAMETER . '=' . rawurlencode( $suffix );
+		}
+
+		return $url . ( $query === null ? '?' : '&' ) . self::CAS_CALLBACK_PARAMETER . '=1';
+	}
+
+	public static function wp_cassify_get_cas_return_url( $request_url, $ticket_parameter ) {
+		$suffix = self::wp_cassify_extract_get_parameter( $request_url, self::CAS_RETURN_SUFFIX_PARAMETER );
+		if ( is_string( $suffix ) && ( $suffix[0] === '?' || $suffix[0] === '#' ) ) {
+			return substr( $request_url, 0, strcspn( $request_url, '?#' ) ) . $suffix;
+		}
+
+		$url = self::wp_cassify_strip_get_parameter( $request_url, $ticket_parameter );
+		$url = self::wp_cassify_strip_get_parameter( $url, self::CAS_RETURN_SUFFIX_PARAMETER );
+		return self::wp_cassify_strip_get_parameter( $url, self::CAS_CALLBACK_PARAMETER );
+	}
+
 	/**
 	 * Return url with query parameters encoded
 	 * @param 	string $url						Http url from wich you want to strip GET parameter

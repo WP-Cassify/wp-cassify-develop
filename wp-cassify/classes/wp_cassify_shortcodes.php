@@ -8,6 +8,7 @@ class WP_Cassify_Shortcodes {
 	public $wp_cassify_base_url;
 	public $wp_cassify_default_redirect_parameter_name;
 	public $wp_cassify_default_service_service_parameter_name;
+	public $wp_cassify_default_service_ticket_parameter_name = 'ticket';
 	public $wp_cassify_default_wordpress_blog_http_port;
 	public $wp_cassify_default_wordpress_blog_https_port;
 	public $wp_cassify_default_login_servlet;
@@ -37,7 +38,8 @@ class WP_Cassify_Shortcodes {
 		$wp_cassify_default_wordpress_blog_http_port,
 		$wp_cassify_default_wordpress_blog_https_port,
 		$wp_cassify_default_login_servlet,
-		$wp_cassify_default_logout_servlet
+		$wp_cassify_default_logout_servlet,
+		$wp_cassify_default_service_ticket_parameter_name = 'ticket'
 	) {
 		
 		$this->wp_cassify_network_activated = $wp_cassify_network_activated;
@@ -47,6 +49,7 @@ class WP_Cassify_Shortcodes {
 		$this->wp_cassify_default_wordpress_blog_https_port = $wp_cassify_default_wordpress_blog_https_port;
 		$this->wp_cassify_default_login_servlet = $wp_cassify_default_login_servlet;
 		$this->wp_cassify_default_logout_servlet = $wp_cassify_default_logout_servlet;
+		$this->wp_cassify_default_service_ticket_parameter_name = $wp_cassify_default_service_ticket_parameter_name;
 
 		$this->wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 		
@@ -72,16 +75,14 @@ class WP_Cassify_Shortcodes {
 			$shortcode_attributes 
 		);
 		
-		// Sanitize and validate the URL	
-		$service_redirect_url = esc_url( $attributes['service_redirect_url'] );
-		
-		// Build the CAS login URL with the sanitized redirect parameter
-		$login_with_redirect_link = $this->wp_cassify_base_url . 
-			$this->wp_cassify_default_login_servlet . '?' .
-			$this->wp_cassify_default_service_service_parameter_name . '=' .
-			urlencode($service_redirect_url);  // Encode to prevent injection issues
-		
-		return $login_with_redirect_link;
+		$service_redirect_url = esc_url_raw( $attributes['service_redirect_url'] );
+		if ( $service_redirect_url === '' ) {
+			return '';
+		}
+
+		$service_url = WP_Cassify_Utils::wp_cassify_mark_cas_service( $service_redirect_url, $this->wp_cassify_default_service_ticket_parameter_name );
+		$query = http_build_query( array( $this->wp_cassify_default_service_service_parameter_name => $service_url ), '', '&', PHP_QUERY_RFC3986 );
+		return $this->wp_cassify_base_url . $this->wp_cassify_default_login_servlet . '?' . $query;
 	}
 	
 	/**

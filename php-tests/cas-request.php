@@ -1,7 +1,10 @@
 <?php
 namespace wp_cassify {
     function get_current_blog_id() { return 1; }
-    function is_user_logged_in() { return false; }
+    function is_user_logged_in() { return $GLOBALS['wp_cassify_test_logged_in'] ?? false; }
+    function is_multisite() { return false; }
+    function wp_doing_ajax() { return false; }
+    function wp_doing_cron() { return false; }
     function has_filter( $name ) { return false; }
     function esc_attr( $value ) { return (string) $value; }
 
@@ -14,6 +17,7 @@ namespace wp_cassify {
         \wp_cassify\tests\expect_same( 10, $handle->options[CURLOPT_CONNECTTIMEOUT] ?? null );
         \wp_cassify\tests\expect_same( 10, $handle->options[CURLOPT_TIMEOUT] ?? null );
         \wp_cassify\tests\expect_same( PHP_SESSION_NONE, session_status() );
+        $GLOBALS['wp_cassify_test_validation_url'] = $handle->options[CURLOPT_URL];
         return curl_errno( $handle ) ? false : '<broken>';
     }
     function curl_errno( $handle ) { return $GLOBALS['wp_cassify_test_curl_errno']; }
@@ -25,7 +29,7 @@ namespace wp_cassify\tests {
 
     return array(
         'release the session during validation and resume it after the response' => function () {
-            $_SERVER['REQUEST_URI'] = '/?ticket=ST-demo';
+            $_SERVER['REQUEST_URI'] = '/?wp_cassify_callback=1&ticket=ST-demo';
             $plugin = create_plugin();
             $save_path = session_save_path();
             $session = $_SESSION ?? null;
@@ -68,7 +72,7 @@ namespace wp_cassify\tests {
                 } else {
                     $_SESSION = $session;
                 }
-                unset( $GLOBALS['wp_cassify_test_curl_errno'] );
+                unset( $GLOBALS['wp_cassify_test_curl_errno'], $GLOBALS['wp_cassify_test_validation_url'] );
             }
         },
         'keep HTTP 502 for other cURL errors' => function () {
@@ -79,7 +83,7 @@ namespace wp_cassify\tests {
                 expect_same( 502, $error->getCode() );
                 return;
             } finally {
-                unset( $GLOBALS['wp_cassify_test_curl_errno'] );
+                unset( $GLOBALS['wp_cassify_test_curl_errno'], $GLOBALS['wp_cassify_test_validation_url'] );
             }
             throw new \RuntimeException( 'Expected the connection error to stop validation' );
         },

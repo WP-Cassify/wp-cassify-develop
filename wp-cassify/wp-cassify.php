@@ -218,7 +218,8 @@ $wp_cassify_shortcodes->init_parameters(
 	$wp_cassify_default_wordpress_blog_http_port,
 	$wp_cassify_default_wordpress_blog_https_port,
 	$wp_cassify_default_login_servlet,
-	$wp_cassify_default_logout_servlet
+	$wp_cassify_default_logout_servlet,
+	$wp_cassify_default_service_ticket_parameter_name
 );
 
 ?>

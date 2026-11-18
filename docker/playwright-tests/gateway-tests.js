@@ -39,7 +39,9 @@ module.exports = function registerGatewayTests() {
               const location = new URL(response.headers().location);
               expect(location.origin + location.pathname).toBe(`${CAS_BASE_URL}/login`);
               expect(location.searchParams.get('gateway')).toBe('true');
-              expect(location.searchParams.get('service')).toBe(new URL(scenario.url, baseURL).href);
+              const service = new URL(scenario.url, baseURL);
+              service.searchParams.set('wp_cassify_callback', '1');
+              expect(location.searchParams.get('service')).toBe(service.href);
             } else {
               // The synthetic path may be a WordPress 404; it must not redirect to CAS.
               expect([200, 404]).toContain(response.status());

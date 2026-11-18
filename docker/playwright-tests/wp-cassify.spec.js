@@ -52,6 +52,31 @@ test('CAS login opens the admin area and the profile page', async ({ page }) => 
   await logoutWordPress(page);
 });
 
+test('enforce mode preserves a query string and a business ticket across CAS login', async ({ page }) => {
+  const publicPage = await page.goto('/?ticket=order-123');
+  expect(publicPage.status()).toBe(200);
+
+  const urlSettings = '/wp-admin/options-general.php?page=wp-cassify.php';
+  await loginThroughWordPress(page, urlSettings);
+  await configureUrlSettings(page, {
+    serviceUrlValidationMode: 'enforce',
+    serviceUrlAllowedHosts: new URL(page.url()).hostname,
+  });
+  await logoutWordPress(page);
+
+  await loginThroughWordPress(page, '/wp-admin/profile.php?ticket=order-123&cassify_sample=two%20words');
+  await expect(page.locator('#nickname')).toHaveValue(CAS_USER);
+  const destination = new URL(page.url());
+  expect(destination.pathname).toBe('/wp-admin/profile.php');
+  expect(destination.searchParams.get('ticket')).toBe('order-123');
+  expect(destination.searchParams.get('cassify_sample')).toBe('two words');
+  expect(destination.searchParams.has('wp_cassify_callback')).toBe(false);
+
+  await page.goto(urlSettings);
+  await configureUrlSettings(page, { serviceUrlValidationMode: 'monitor', serviceUrlAllowedHosts: '' });
+  await logoutWordPress(page);
+});
+
 test('stale CAS PHP session does not trap users away from wp-admin when WordPress auth cookies are missing', async ({ page, context }) => {
   await loginThroughWordPress(page, '/wp-admin/');
   await expect(page.locator('#wpadminbar')).toBeVisible();

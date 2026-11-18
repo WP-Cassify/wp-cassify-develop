@@ -10,6 +10,10 @@ namespace wp_cassify {
     function home_url() { return 'https://example.org'; }
     function site_url() { return $GLOBALS['wp_cassify_test_site_url'] ?? home_url(); }
     function admin_url() { return 'https://example.org/wp-admin/'; }
+    function do_action( $name, ...$args ) {}
+    function shortcode_atts( $defaults, $attributes ) { return array_merge( $defaults, $attributes ); }
+    function esc_url_raw( $url ) { return $url; }
+    function wp_safe_redirect( $url ) { throw new \wp_cassify\tests\Request_Redirect( $url ); }
     function __( $message, $domain = '' ) { return $message; }
     function wp_die( $message, $title = '', $args = array() ) {
         throw new \wp_cassify\tests\Request_Error( $message, $args['response'] );
@@ -20,8 +24,10 @@ namespace wp_cassify\tests {
     require_once __DIR__ . '/../wp-cassify/classes/wp_cassify_utils.php';
     require_once __DIR__ . '/../wp-cassify/classes/wp_cassify_plugin.php';
     require_once __DIR__ . '/../wp-cassify/classes/wp_cassify_rule_solver.php';
+    require_once __DIR__ . '/../wp-cassify/classes/wp_cassify_shortcodes.php';
 
     class Request_Error extends \RuntimeException {}
+    class Request_Redirect extends \RuntimeException {}
 
     function expect_same( $expected, $actual ) {
         if ( $actual !== $expected ) {

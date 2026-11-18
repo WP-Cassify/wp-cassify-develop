@@ -10,7 +10,7 @@ require __DIR__ . '/bootstrap.php';
 ob_start();
 $total = 0;
 $failures = 0;
-foreach ( array( 'rule-solver', 'authorization', 'expiration', 'service-url', 'service-ticket', 'white-list', 'cas-response', 'cas-request', 'logging' ) as $suite ) {
+foreach ( array( 'rule-solver', 'authorization', 'expiration', 'service-url', 'service-ticket', 'white-list', 'cas-response', 'cas-request', 'cas-flow', 'release', 'logging' ) as $suite ) {
     $tests = require __DIR__ . '/' . $suite . '.php';
     foreach ( $tests as $name => $test ) {
         ++$total;
