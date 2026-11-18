@@ -1,9 +1,12 @@
 <?php
 namespace wp_cassify {
     // WordPress doubles are namespaced so these tests need no WordPress installation.
-    function get_option( $name ) { return $name === 'wp_cassify_service_url_validation_mode' ? 'off' : false; }
+    function get_option( $name ) {
+        return $GLOBALS['wp_cassify_test_options'][$name] ?? ( $name === 'wp_cassify_service_url_validation_mode' ? 'off' : false );
+    }
     function get_site_option( $name ) { return get_option( $name ); }
     function home_url() { return 'https://example.org'; }
+    function site_url() { return $GLOBALS['wp_cassify_test_site_url'] ?? home_url(); }
     function admin_url() { return 'https://example.org/wp-admin/'; }
     function __( $message, $domain = '' ) { return $message; }
     function wp_die( $message, $title = '', $args = array() ) {

@@ -808,7 +808,7 @@ class WP_Cassify_Plugin {
 		$current_user = wp_get_current_user();
 		
 		if ( ( (! is_user_logged_in() ) && (! empty( $wp_cassify_base_url ) ) ) || ( $gateway_mode === true ) || ( $require_membership === true && ! empty( $wp_cassify_base_url ) ) ) {
-			if (! $this->wp_cassify_is_in_while_list( $service_url ) ) {	
+			if ( ! $this->wp_cassify_is_in_white_list( $_SERVER['REQUEST_URI'] ?? '/' ) ) {
 				if ( empty( $service_url ) ) {
 					if ( $wp_cassify_log_out_on_errors === 'log_out_on_errors' )
 						$this->wp_cassify_logout();
@@ -1714,34 +1714,62 @@ class WP_Cassify_Plugin {
 	}
 	
 	/**
-	 * Check if url is in white list and don't be authenticated by CAS.
-	 * @param 	string 	$url				Url of to test		
-	 * @return 	bool 	$is_in_while_list	Return true if user can acess this url without to be authenticated by CAS.
+	 * Check whether the requested path is exempt from CAS authentication.
 	 */
-	 private function wp_cassify_is_in_while_list( $url ) {
-		 
-		 $is_in_while_list = false;
-		 $url = (string) $url;
-		 $offset = strlen( site_url() );
+	private function wp_cassify_is_in_white_list( $request_uri ) {
+		$path = $this->wp_cassify_normalize_white_list_path( substr( $request_uri, 0, strcspn( $request_uri, '?#' ) ) );
+		$base_path = $this->wp_cassify_normalize_white_list_path( parse_url( site_url(), PHP_URL_PATH ) ?? '/' );
+		if ( $path === null || $base_path === null ) {
+			return false;
+		}
 
-		 // PHP 8 throws when the site URL offset exceeds the requested URL length.
-		 if ( strlen( $url ) < $offset ) {
-			 return false;
-		 }
-		 
-		 $wp_cassify_redirect_url_white_list = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_white_list' );
-		 $white_list_urls = explode( ';', $wp_cassify_redirect_url_white_list );
-		 
-		 if ( ( is_array( $white_list_urls ) ) && ( count( $white_list_urls ) > 0 ) ){
-			foreach( $white_list_urls as $white_url ) {
-				if ( strlen($white_url)>0 && strrpos( $url, $white_url, $offset ) !== false ) {
-					$is_in_while_list = true;
-				}
-			} 
-		 }
-		 
-		 return $is_in_while_list;
-	 } 
+		if ( $base_path !== '/' ) {
+			if ( $path !== $base_path && strpos( $path, $base_path . '/' ) !== 0 ) {
+				return false;
+			}
+			$path = substr( $path, strlen( $base_path ) ) ?: '/';
+		}
+
+		$white_list = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_redirect_url_white_list' );
+		if ( ! is_string( $white_list ) ) {
+			return false;
+		}
+
+		foreach ( explode( ';', $white_list ) as $entry ) {
+			$entry = trim( $entry );
+			if ( $entry === '' || strpbrk( $entry, '?#:' ) !== false ) {
+				continue;
+			}
+
+			$entry_path = $this->wp_cassify_normalize_white_list_path( $entry[0] === '/' ? $entry : '/' . $entry );
+			if ( $entry_path !== null && ( $path === $entry_path ||
+				( $entry_path !== '/' && strpos( $path, $entry_path . '/' ) === 0 ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Ignore trailing slashes and require an unambiguous path for exemptions.
+	 */
+	private function wp_cassify_normalize_white_list_path( $path ) {
+		if ( ! is_string( $path ) || $path === '' || $path[0] !== '/' || strpos( $path, '//' ) !== false ) {
+			return null;
+		}
+
+		// Keep encoded paths literal and reject separators and dot segments that servers can reinterpret.
+		foreach ( explode( '/', $path ) as $segment ) {
+			$decoded = rawurldecode( $segment );
+			if ( $decoded === '.' || $decoded === '..' || strpbrk( $decoded, '/\\%' ) !== false ||
+				preg_match( '/[\x00-\x1F\x7F]/', $decoded ) ) {
+				return null;
+			}
+		}
+
+		return rtrim( $path, '/' ) ?: '/';
+	}
 
 	/**
 	 * Check if user is allow to connect according to autorization rules.
