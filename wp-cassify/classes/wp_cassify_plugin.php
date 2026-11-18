@@ -2,7 +2,8 @@
 namespace wp_cassify;
 
 class WP_Cassify_Plugin {
-	
+	const MEMBERSHIP_RETRY_DELAY = 30;
+
 	public $wp_cassify_network_activated;
     
 	public $wp_cassify_default_xpath_query_to_extact_cas_user;
@@ -345,10 +346,13 @@ class WP_Cassify_Plugin {
 		}
 
 		$this->wp_cassify_session_start( true );
+		$attempt_user = (int) ( $_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] ?? 0 );
+		$retry_at = (int) ( $_SESSION['wp_cassify'][ $blog_id ]['membership_retry_at'] ?? 0 );
+		$now = time();
 		if ( ! isset( $_GET['wp_cassify_membership_retry'] ) &&
-			( empty( $_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] ) ||
-			(int) $_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] !== $user_id ) ) {
+			( $attempt_user !== $user_id || $retry_at <= $now ) ) {
 			$_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] = $user_id;
+			$_SESSION['wp_cassify'][ $blog_id ]['membership_retry_at'] = $now + self::MEMBERSHIP_RETRY_DELAY;
 			$this->wp_cassify_redirect( false, true );
 		}
 
@@ -622,7 +626,7 @@ class WP_Cassify_Plugin {
 				$timeout = apply_filters( 'wp_cassify_validation_timeout', $timeout === false ? 10 : (int) $timeout );
 				$clear_membership_retry = function () use ( $session_was_active, $current_blog_id ) {
 					if ( $session_was_active && isset( $_GET['wp_cassify_membership_retry'] ) && session_start() ) {
-						unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'] );
+						unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'], $_SESSION['wp_cassify'][ $current_blog_id ]['membership_retry_at'] );
 						session_write_close();
 					}
 				};
@@ -676,6 +680,8 @@ class WP_Cassify_Plugin {
                           'CAS Authentication successful for user: ' . $cas_user_datas['cas_user_id'],
                           'INFO'
                     );
+					// Even a denied 2.6.0 callback is not a legacy SLO session.
+					$_SESSION['wp_cassify'][ $current_blog_id ]['session_version'] = '2.6.0';
 					$this->wp_cassify_set_authenticated( true );
 				}
 				
@@ -794,8 +800,7 @@ class WP_Cassify_Plugin {
 						remove_action( 'set_logged_in_cookie', $slo_cookie_hook, 10 );
 					}
 				}
-				$_SESSION['wp_cassify'][ $current_blog_id ]['session_version'] = '2.6.0';
-				unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'] );
+				unset( $_SESSION['wp_cassify'][ $current_blog_id ]['membership_attempt_user'], $_SESSION['wp_cassify'][ $current_blog_id ]['membership_retry_at'] );
 
 				// Custom hook to perform action after wordpress authentication.
 				do_action( 'wp_cassify_after_auth_user_wordpress', $cas_user_datas );
@@ -1498,7 +1503,7 @@ class WP_Cassify_Plugin {
 		// of redirecting to a configured denial URL that may itself require login.
 		$blog_id = get_current_blog_id();
 		if ( isset( $_GET['wp_cassify_membership_retry'] ) ||
-			! empty( $_SESSION['wp_cassify'][ $blog_id ]['membership_attempt_user'] ) ) {
+			(int) ( $_SESSION['wp_cassify'][ $blog_id ]['membership_retry_at'] ?? 0 ) > time() ) {
 			wp_die(
 				__( 'CAS authentication did not grant access to this site.', 'wp-cassify' ),
 				__( 'Access denied', 'wp-cassify' ),

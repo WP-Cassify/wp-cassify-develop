@@ -66,6 +66,11 @@ add_action( 'init', function () {
         }
         update_option( 'cassify_upgrade_test_post', $post );
     }
+    if ( $_GET['cassify_upgrade_fixture'] === 'add_role_rule' && is_multisite() ) {
+        $rules = maybe_unserialize( $read( 'wp_cassify_user_role_rules', array() ) );
+        $rules[] = 'subscriber|${Number(newSite) || 0}|(CAS{cas_user_id} -EQ "${CAS_USER}")';
+        $write( 'wp_cassify_user_role_rules', serialize( $rules ) );
+    }
     $cas_user = get_user_by( 'login', '${CAS_USER}' );
     if ( $_GET['cassify_upgrade_fixture'] === 'provision' && $cas_user && is_multisite() ) {
         add_user_to_blog( ${Number(existingSite) || 0}, $cas_user->ID, 'subscriber' );
@@ -156,9 +161,32 @@ add_action( 'init', function () {
       expect(await info(page)).toMatchObject({ root_roles: ['administrator'] });
       await casPage.goto('http://wordpress1.example.org/wp-admin/profile.php');
       await expect(casPage.locator('#nickname')).toHaveValue(CAS_USER);
-      const denied = await casPage.goto('http://wordpress2.example.org/wp-admin/profile.php');
+      const missingProfile = 'http://wordpress2.example.org/wp-admin/profile.php';
+      const beforeRetry = casRequests.length;
+      const firstAttemptStarted = Date.now();
+      const denied = await casPage.goto(missingProfile);
       expect(denied.status()).toBe(403);
+      expect(casRequests).toHaveLength(beforeRetry + 1);
       expect(await info(page)).toMatchObject({ existing_roles: ['subscriber'], new_roles: [] });
+      expect(await info(page, 'add_role_rule')).toMatchObject({ new_roles: [] });
+
+      const markedReturn = new URL(denied.url());
+      expect(markedReturn.searchParams.get('wp_cassify_membership_retry')).toBe('1');
+      markedReturn.searchParams.delete('ticket');
+      const callbackWithoutTicket = await casPage.request.get(markedReturn.href, { maxRedirects: 0 });
+      expect(callbackWithoutTicket.status()).toBe(403);
+
+      expect((await casPage.goto(missingProfile)).status()).toBe(403);
+      expect(casRequests).toHaveLength(beforeRetry + 1);
+
+      await expect.poll(async () => {
+        expect((await casPage.request.get(markedReturn.href, { maxRedirects: 0 })).status()).toBe(403);
+        return (await casPage.goto(missingProfile)).status();
+      }, { timeout: 40_000, intervals: [1000] }).toBe(200);
+      expect(Date.now() - firstAttemptStarted).toBeGreaterThanOrEqual(29_000);
+      await expect(casPage.locator('#nickname')).toHaveValue(CAS_USER);
+      expect(casRequests).toHaveLength(beforeRetry + 2);
+      expect(await info(page)).toMatchObject({ existing_roles: ['subscriber'], new_roles: ['subscriber'] });
     }
     await casPage.goto(CAS_BASE_URL + '/logout');
     await expect.poll(() => info(casPage, 'session')).toEqual({ logged_in: false });
@@ -177,7 +205,7 @@ add_action( 'init', function () {
         await Promise.all([callback, loginThroughWordPress(child, childProfile)]);
         await expect(child).toHaveURL(childProfile);
         await expect(child.locator('#nickname')).toHaveValue(CAS_USER);
-        expect(await info(page)).toMatchObject({ existing_roles: ['subscriber'], new_roles: [] });
+        expect(await info(page)).toMatchObject({ existing_roles: ['subscriber'], new_roles: ['subscriber'] });
       } finally {
         await freshContext.close();
       }

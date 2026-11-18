@@ -40,6 +40,7 @@ namespace wp_cassify\tests {
             $session_id = session_id();
             $_SESSION['cas_request_test'] = 'preserved';
             $_SESSION['wp_cassify'][1]['membership_attempt_user'] = 123;
+            $_SESSION['wp_cassify'][1]['membership_retry_at'] = time() + 30;
 
             try {
                 foreach ( array( CURLE_OPERATION_TIMEDOUT => 504, 0 => 403 ) as $curl_errno => $status ) {
@@ -59,6 +60,7 @@ namespace wp_cassify\tests {
                     if ( $curl_errno ) {
                         session_start();
                         expect_same( false, isset( $_SESSION['wp_cassify'][1]['membership_attempt_user'] ) );
+                        expect_same( false, isset( $_SESSION['wp_cassify'][1]['membership_retry_at'] ) );
                     }
                     expect_same( $session_id, session_id() );
                     expect_same( 'preserved', $_SESSION['cas_request_test'] );
