@@ -202,6 +202,7 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.5.1 =
+* Fix: cap CAS validation requests at 10 seconds, including connection setup. Release the PHP session lock while waiting for CAS and return HTTP 504 if the request times out.
 * Security: reject malformed CAS service tickets and encode ticket and service values as separate RFC 3986 query parameters in CAS validation requests.
 * Security: match CAS whitelist entries against paths relative to the WordPress Address. An entry exempts its exact path and subpaths at segment boundaries. A lone / matches only the WordPress Address. Query strings and fragments are ignored. Update any former substring entries to the intended path.
 * Security: evaluate CAS ALLOW and DENY rules independently. When both match, DENY takes precedence in the default allow, deny order, and ALLOW takes precedence in the deny, allow order.

@@ -539,9 +539,6 @@ class WP_Cassify_Plugin {
 			// Public requests without a ticket must not grant membership or force login.
 
 			if (! empty( $service_ticket ) ) {
-				// Ensure session is started
-				$this->wp_cassify_session_start( true );
-
 				// Retrieve configuration options from database
 				$wp_cassify_base_url = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_base_url' );
 				$wp_cassify_create_user_if_not_exist = WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_create_user_if_not_exist' );
@@ -598,6 +595,12 @@ class WP_Cassify_Plugin {
 					);
 				}
 
+				// Release the session lock while waiting for CAS.
+				$session_was_active = session_status() === PHP_SESSION_ACTIVE;
+				if ( $session_was_active ) {
+					session_write_close();
+				}
+
 				$cas_server_xml_response = WP_Cassify_Utils::wp_cassify_do_ssl_web_request( 
 					$service_validate_url, 
 					$wp_cassify_ssl_cipher_selected,
@@ -606,6 +609,12 @@ class WP_Cassify_Plugin {
 					esc_attr( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_curlopt_capath' ) )
 				);
 				
+				if ( $session_was_active ) {
+					session_start();
+				} else {
+					$this->wp_cassify_session_start( true );
+				}
+
 				// Dump xml cas server response if debug option is enabled.	
 				if ( WP_Cassify_Utils::wp_cassify_get_option( $this->wp_cassify_network_activated, 'wp_cassify_xml_response_dump' ) === 'enabled' ) {
 			        if ( $this->wp_cassify_network_activated ) {

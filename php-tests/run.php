@@ -6,9 +6,11 @@ set_error_handler( function ( $severity, $message, $file, $line ) {
 } );
 require __DIR__ . '/bootstrap.php';
 
+// Keep headers available for tests that close and reopen PHP sessions.
+ob_start();
 $total = 0;
 $failures = 0;
-foreach ( array( 'rule-solver', 'authorization', 'expiration', 'service-url', 'service-ticket', 'white-list', 'cas-response' ) as $suite ) {
+foreach ( array( 'rule-solver', 'authorization', 'expiration', 'service-url', 'service-ticket', 'white-list', 'cas-response', 'cas-request' ) as $suite ) {
     $tests = require __DIR__ . '/' . $suite . '.php';
     foreach ( $tests as $name => $test ) {
         ++$total;
@@ -38,4 +40,5 @@ foreach ( array( 'rule-solver', 'authorization', 'expiration', 'service-url', 's
     }
 }
 echo 'PHP ' . PHP_VERSION . ": $total tests, $failures failures\n";
+ob_end_flush();
 exit( $failures ? 1 : 0 );

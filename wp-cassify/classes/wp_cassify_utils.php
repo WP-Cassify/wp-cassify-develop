@@ -29,10 +29,13 @@ class WP_Cassify_Utils {
 		}
 
 		$ch = curl_init();
+		$timeout = 10;
 
 		curl_setopt( $ch, CURLOPT_HEADER, false );
 		curl_setopt( $ch, CURLOPT_URL, $url ) ;
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, $timeout );
 		curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 2 );
 		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, ( ( $ssl_check_certificate === 'enabled' ) ? 1 : 0 ) );
 
@@ -54,7 +57,17 @@ class WP_Cassify_Utils {
 		
 		$response = curl_exec( $ch );
 
-		if( curl_errno( $ch ) )	{		
+		$error_number = curl_errno( $ch );
+		if ( $error_number === CURLE_OPERATION_TIMEDOUT ) {
+			unset( $ch );
+			wp_die(
+				__( 'The CAS server did not respond in time. Please try signing in again.', 'wp-cassify' ),
+				__( 'CAS Request Timeout', 'wp-cassify' ),
+				array( 'response' => 504 )
+			);
+		}
+
+		if ( $error_number ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				$info = curl_getinfo( $ch );
 				wp_die(
