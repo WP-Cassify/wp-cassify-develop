@@ -2,7 +2,6 @@
 namespace wp_cassify;
 
 class WP_Cassify_Utils {
-	const CAS_CALLBACK_PARAMETER = 'wp_cassify_callback';
 	const CAS_RETURN_SUFFIX_PARAMETER = 'wp_cassify_return_suffix';
 
 	/**
@@ -231,8 +230,7 @@ class WP_Cassify_Utils {
 		return $base . ( $fields ? '?' . implode( '&', $fields ) : '' ) . ( $fragment === null ? '' : '#' . $fragment );
 	}
 
-	public static function wp_cassify_mark_cas_service( $url, $ticket_parameter ) {
-		$url = self::wp_cassify_strip_get_parameter( $url, self::CAS_CALLBACK_PARAMETER );
+	public static function wp_cassify_prepare_cas_service( $url, $ticket_parameter ) {
 		$url = self::wp_cassify_strip_get_parameter( $url, self::CAS_RETURN_SUFFIX_PARAMETER );
 		$offset = strcspn( $url, '?#' );
 		$base = substr( $url, 0, $offset );
@@ -242,10 +240,10 @@ class WP_Cassify_Utils {
 
 		// Keep a business ticket or a browser-only fragment inside a separate parameter.
 		if ( array_key_exists( $ticket_parameter, $parameters ) || strpos( $suffix, '#' ) !== false || $suffix === '?' ) {
-			return $base . '?' . self::CAS_CALLBACK_PARAMETER . '=1&' . self::CAS_RETURN_SUFFIX_PARAMETER . '=' . rawurlencode( $suffix );
+			return $base . '?' . self::CAS_RETURN_SUFFIX_PARAMETER . '=' . rawurlencode( $suffix );
 		}
 
-		return $url . ( $query === null ? '?' : '&' ) . self::CAS_CALLBACK_PARAMETER . '=1';
+		return $url;
 	}
 
 	public static function wp_cassify_get_cas_return_url( $request_url, $ticket_parameter ) {
@@ -255,8 +253,7 @@ class WP_Cassify_Utils {
 		}
 
 		$url = self::wp_cassify_strip_get_parameter( $request_url, $ticket_parameter );
-		$url = self::wp_cassify_strip_get_parameter( $url, self::CAS_RETURN_SUFFIX_PARAMETER );
-		return self::wp_cassify_strip_get_parameter( $url, self::CAS_CALLBACK_PARAMETER );
+		return self::wp_cassify_strip_get_parameter( $url, self::CAS_RETURN_SUFFIX_PARAMETER );
 	}
 
 	/**

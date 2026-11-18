@@ -521,15 +521,6 @@ class WP_Cassify_Plugin {
 	 */ 
 	public function wp_cassify_grab_service_ticket() {
 
-		$request_uri = wp_unslash( $_SERVER['REQUEST_URI'] ?? '/' );
-		if ( WP_Cassify_Utils::wp_cassify_extract_get_parameter( $request_uri, WP_Cassify_Utils::CAS_CALLBACK_PARAMETER ) !== '1' ) {
-			return;
-		}
-
-		$request_url = wp_unslash( WP_Cassify_Utils::wp_cassify_get_current_url(
-			$this->wp_cassify_default_wordpress_blog_http_port,
-			$this->wp_cassify_default_wordpress_blog_https_port
-		) );
 		$wordpress_user_account_created = false;
 		$current_blog_id = get_current_blog_id();
 		
@@ -538,10 +529,22 @@ class WP_Cassify_Plugin {
 		
 		if ( ! is_user_logged_in() || ( is_multisite() && ! is_user_member_of_blog() ) ) {
 			$service_ticket = $this->wp_cassify_get_service_ticket();
+			$request_uri = wp_unslash( $_SERVER['REQUEST_URI'] ?? '/' );
+			$restore_gateway_query = $service_ticket === null &&
+				isset( $_SESSION['wp_cassify'][ $current_blog_id ]['auth_checked'] ) &&
+				WP_Cassify_Utils::wp_cassify_extract_get_parameter( $request_uri, WP_Cassify_Utils::CAS_RETURN_SUFFIX_PARAMETER ) !== null;
+			if ( $service_ticket === null && ! $restore_gateway_query ) {
+				return;
+			}
+
+			$request_url = wp_unslash( WP_Cassify_Utils::wp_cassify_get_current_url(
+				$this->wp_cassify_default_wordpress_blog_http_port,
+				$this->wp_cassify_default_wordpress_blog_https_port
+			) );
 			$return_url = WP_Cassify_Utils::wp_cassify_get_cas_return_url( $request_url, $wp_cassify_default_service_ticket_parameter_name );
 
 			// Gateway can return without a ticket. Restore a displaced query before WordPress routes it.
-			if ( $service_ticket === null && WP_Cassify_Utils::wp_cassify_extract_get_parameter( $request_uri, WP_Cassify_Utils::CAS_RETURN_SUFFIX_PARAMETER ) !== null ) {
+			if ( $restore_gateway_query ) {
 				wp_safe_redirect( $return_url );
 				exit();
 			}
@@ -836,9 +839,10 @@ class WP_Cassify_Plugin {
 		}
 
 		$service_url = $this->wp_cassify_apply_service_url_validation( $service_url, 'redirect' );
-		$service_url = WP_Cassify_Utils::wp_cassify_mark_cas_service( $service_url, $this->wp_cassify_default_service_ticket_parameter_name );
+		$service_url = WP_Cassify_Utils::wp_cassify_prepare_cas_service( $service_url, $this->wp_cassify_default_service_ticket_parameter_name );
 		if ( $require_membership ) {
-			$service_url .= '&wp_cassify_membership_retry=1';
+			$separator = strpos( $service_url, '?' ) === false ? '?' : '&';
+			$service_url .= $separator . 'wp_cassify_membership_retry=1';
 		}
 		$query = array( $this->wp_cassify_default_service_service_parameter_name => $service_url );
 		if ( $gateway_mode ) {
@@ -960,15 +964,7 @@ class WP_Cassify_Plugin {
 			$ticket = wp_unslash( $ticket );
 		}
 
-		if ( $ticket !== null && ! $this->wp_cassify_is_valid_service_ticket( $ticket ) ) {
-			wp_die(
-				__( 'CAS service ticket is not valid.', 'wp-cassify' ),
-				__( 'Invalid Request', 'wp-cassify' ),
-				array( 'response' => 400 )
-			);
-		}
-
-		return $ticket;
+		return $this->wp_cassify_is_valid_service_ticket( $ticket ) ? $ticket : null;
 	}
 
 	private function wp_cassify_build_service_validate_url( $endpoint, $ticket, $service_url ) {
@@ -1127,7 +1123,7 @@ class WP_Cassify_Plugin {
 				$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_get_host_uri( home_url() ) . $wp_cassify_redirect_parameter;
 			}
 		}
-		else if ( $is_callback && ! empty( $wp_cassify_service_ticket_parameter ) ) {
+		else if ( $is_callback && $this->wp_cassify_is_valid_service_ticket( $wp_cassify_service_ticket_parameter ) ) {
 			$wp_cassify_callback_service_url = WP_Cassify_Utils::wp_cassify_strip_get_parameter( $wp_cassify_callback_service_url, $this->wp_cassify_default_service_ticket_parameter_name );
 		}
 

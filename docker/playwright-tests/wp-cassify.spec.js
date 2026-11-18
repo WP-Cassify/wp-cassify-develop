@@ -72,6 +72,18 @@ test('enforce mode preserves a query string and a business ticket across CAS log
   expect(destination.searchParams.get('cassify_sample')).toBe('two words');
   expect(destination.searchParams.has('wp_cassify_callback')).toBe(false);
 
+  await logoutWordPress(page);
+
+  const directService = new URL('/wp-admin/profile.php?cassify_sample=direct', destination);
+  const directLogin = new URL(`${CAS_BASE_URL}/login`);
+  directLogin.searchParams.set('service', directService.href);
+  await page.goto(directLogin.href);
+  if (await page.locator('#username').isVisible()) {
+    await fillAndSubmitCasLogin(page);
+  }
+  await expect(page).toHaveURL(directService.href);
+  await expect(page.locator('#nickname')).toHaveValue(CAS_USER);
+
   await page.goto(urlSettings);
   await configureUrlSettings(page, { serviceUrlValidationMode: 'monitor', serviceUrlAllowedHosts: '' });
   await logoutWordPress(page);

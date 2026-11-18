@@ -80,7 +80,7 @@ class WP_Cassify_Shortcodes {
 			return '';
 		}
 
-		$service_url = WP_Cassify_Utils::wp_cassify_mark_cas_service( $service_redirect_url, $this->wp_cassify_default_service_ticket_parameter_name );
+		$service_url = WP_Cassify_Utils::wp_cassify_prepare_cas_service( $service_redirect_url, $this->wp_cassify_default_service_ticket_parameter_name );
 		$query = http_build_query( array( $this->wp_cassify_default_service_service_parameter_name => $service_url ), '', '&', PHP_QUERY_RFC3986 );
 		return $this->wp_cassify_base_url . $this->wp_cassify_default_login_servlet . '?' . $query;
 	}

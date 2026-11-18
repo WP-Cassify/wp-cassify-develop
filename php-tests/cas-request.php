@@ -29,7 +29,7 @@ namespace wp_cassify\tests {
 
     return array(
         'release the session during validation and resume it after the response' => function () {
-            $_SERVER['REQUEST_URI'] = '/?wp_cassify_callback=1&ticket=ST-demo';
+            $_SERVER['REQUEST_URI'] = '/?ticket=ST-demo';
             $plugin = create_plugin();
             $save_path = session_save_path();
             $session = $_SESSION ?? null;

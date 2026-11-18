@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 7.1
 Requires PHP: 7.0
-Stable tag: 2.5.1
+Stable tag: 2.6.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -201,9 +201,9 @@ starts when their CAS marking date is first recorded.
 
 == Changelog ==
 
-= 2.5.1 =
+= 2.6.0 =
 * Fix: validate CAS service URLs before encoding the login request, and preserve query strings across ticket validation.
-* Fix: only process tickets on marked CAS callbacks. Integrations that construct CAS login links directly must add wp_cassify_callback=1 to the service URL. Plugin redirects and the login shortcode add it automatically. If your CAS service registration matches the full URL, allow the callback parameter in that registration.
+* Fix: ignore unrelated ticket query parameters and send only well-formed ST- service tickets to CAS for validation.
 * Fix: cap CAS validation requests at 10 seconds, including connection setup. Release the PHP session lock while waiting for CAS and return HTTP 504 if the request times out.
 * Security: reject malformed CAS service tickets and encode ticket and service values as separate RFC 3986 query parameters in CAS validation requests.
 * Security: match CAS whitelist entries against paths relative to the WordPress Address. An entry exempts its exact path and subpaths at segment boundaries. A lone / matches only the WordPress Address. Query strings and fragments are ignored. Update any former substring entries to the intended path.

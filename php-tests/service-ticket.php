@@ -1,16 +1,6 @@
 <?php
 namespace wp_cassify\tests;
 
-function expect_invalid_service_ticket( $plugin ) {
-    try {
-        $plugin->wp_cassify_get_service_ticket();
-    } catch ( Request_Error $error ) {
-        expect_same( 400, $error->getCode() );
-        return;
-    }
-    throw new \RuntimeException( 'Invalid CAS service ticket accepted' );
-}
-
 $tests = array(
     'no ticket at a gateway callback' => function () {
         $_SERVER['REQUEST_URI'] = '/?gateway=true';
@@ -38,7 +28,7 @@ $tests = array(
         $_SERVER['REQUEST_URI'] = '/?ticket=ST-valid';
         $GLOBALS['wp_cassify_test_query_vars']['ticket'] = array();
         try {
-            expect_invalid_service_ticket( create_plugin() );
+            expect_same( null, create_plugin()->wp_cassify_get_service_ticket() );
         } finally {
             unset( $GLOBALS['wp_cassify_test_query_vars'] );
         }
@@ -74,7 +64,7 @@ foreach ( array(
 ) as $name => $query ) {
     $tests['reject ' . $name] = function () use ( $query ) {
         $_SERVER['REQUEST_URI'] = '/?' . $query;
-        expect_invalid_service_ticket( create_plugin() );
+        expect_same( null, create_plugin()->wp_cassify_get_service_ticket() );
     };
 }
 
