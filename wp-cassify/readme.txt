@@ -201,12 +201,10 @@ starts when their CAS marking date is first recorded.
 
 == Upgrading from 2.5.0 ==
 
-Before upgrading, review the CAS exceptions and site membership rules:
+Before upgrading, check which URLs are exempt from CAS authentication and which rules grant access to multisite subsites.
 
 - Convert substring or query-based whitelist entries to explicit paths relative to the WordPress Address. A query-based exception has no automatic equivalent. Remove it or provide a dedicated exempt path.
-- On multisite, provision membership or an explicit CAS role rule on each affected site. A previously issued network cookie does not grant new memberships. Existing site memberships are retained. For a site whose policy allows every CAS identity, an explicit site role rule such as `(CAS{cas_user_id} -NEQ "")` can grant the intended low-privilege role after CAS validation.
-- If Single Logout is required for all active sessions, schedule a local sign-out and fresh CAS login for any legacy browser sessions whose PHP session has expired.
-- Verify exact service registrations for gateway and multisite retry URLs, and test custom service URL filters on staging.
+- On multisite, existing memberships are retained. To grant new memberships after CAS validation, use a CAS role rule scoped to a specific site or select `(0) ALL BLOGS` in the network settings to cover every site. Review sites that previously relied on a network login cookie alone to grant membership.
 
 == Changelog ==
 
