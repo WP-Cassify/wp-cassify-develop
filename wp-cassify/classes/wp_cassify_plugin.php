@@ -564,7 +564,6 @@ class WP_Cassify_Plugin {
 				$wp_cassify_service_validate_servlet = ( empty( $wp_cassify_service_validate_servlet ) ) ? $this->wp_cassify_default_service_validate_servlet : $wp_cassify_service_validate_servlet;
 				$wp_cassify_ssl_cipher_selected = (! empty( $wp_cassify_ssl_cipher ) ) ? $wp_cassify_ssl_cipher : '0';
 				$wp_cassify_ssl_check_certificate = ( empty( $wp_cassify_ssl_check_certificate ) ) ? $this->wp_cassify_default_ssl_check_certificate : $wp_cassify_ssl_check_certificate;
-				$wp_cassify_allow_deny_order = ( empty( $wp_cassify_allow_deny_order ) ) ? $this->wp_cassify_default_allow_deny_order : $wp_cassify_allow_deny_order;
 		
 				if ( ( is_array( $wp_cassify_autorization_rules ) ) && ( count( $wp_cassify_autorization_rules ) > 0 ) ) {
 					foreach ( $wp_cassify_autorization_rules as $rule_key => $rule_value ) {
@@ -1754,9 +1753,10 @@ class WP_Cassify_Plugin {
 	 */ 
 	private function wp_cassify_is_user_allowed( $wp_cassify_allow_deny_order, $cas_user_datas = array() ) {
 
-		$is_user_allowed = false;
-		$rule_check = false;
-		
+		if ( empty( $wp_cassify_allow_deny_order ) ) {
+			$wp_cassify_allow_deny_order = $this->wp_cassify_default_allow_deny_order[0];
+		}
+
 		$solver = new \wp_cassify\wp_cassify_rule_solver();
 
 		$solver->match_first_level_parenthesis_group_pattern = $this->wp_cassify_match_first_level_parenthesis_group_pattern;
@@ -1768,61 +1768,23 @@ class WP_Cassify_Plugin {
 		$solver->error_messages = $this->wp_cassify_error_messages;
 		$solver->cas_user_datas = $cas_user_datas;
 
-		// Check Allow rules first
-		if ( $wp_cassify_allow_deny_order === 'allow, deny' ) {
-			if ( ( is_array( $this->wp_cassify_allow_rules ) ) && ( count( $this->wp_cassify_allow_rules ) > 0 ) ) {
-				foreach ( $this->wp_cassify_allow_rules as $rule ) {
-					if (! $rule_check ) {
-						$rule_check = $solver->solve( $rule );
-						
-						if ( $rule_check ) {
-							$is_user_allowed = true;
-						}
-					}
-				}
+		$allow_matches = $this->wp_cassify_any_authorization_rule_matches( $solver, $this->wp_cassify_allow_rules );
+		$deny_matches = $this->wp_cassify_any_authorization_rule_matches( $solver, $this->wp_cassify_deny_rules );
+
+		// The last matching group takes precedence. Access requires a matching ALLOW rule.
+		return $allow_matches && ( ! $deny_matches || $wp_cassify_allow_deny_order === 'deny, allow' );
+	}
+
+	private function wp_cassify_any_authorization_rule_matches( $solver, $rules ) {
+		foreach ( $rules as $rule ) {
+			if ( $solver->solve( $rule ) ) {
+				return true;
 			}
-			
-			if ( ( is_array( $this->wp_cassify_deny_rules ) ) && ( count( $this->wp_cassify_deny_rules ) > 0 ) ) {
-				foreach ( $this->wp_cassify_deny_rules as $rule ) {
-					if (! $rule_check ) {
-						$rule_check = $solver->solve( $rule );
-						
-						if ( $rule_check ) {
-							$is_user_allowed = false;
-						}							
-					}
-				}
-			}				
-		}
-		else { // Check Deny Rules first
-			if ( ( is_array( $this->wp_cassify_deny_rules ) ) && ( count( $this->wp_cassify_deny_rules ) > 0 ) ) {
-				foreach ( $this->wp_cassify_deny_rules as $rule ) {
-					if (! $rule_check ) {
-						$rule_check = $solver->solve( $rule );
-						
-						if ( $rule_check ) {
-							$is_user_allowed = false;
-						}						
-					}
-				}
-			}
-			
-			if ( ( is_array( $this->wp_cassify_allow_rules ) ) && ( count( $this->wp_cassify_allow_rules ) > 0 ) ) {
-				foreach ( $this->wp_cassify_allow_rules as $rule ) {
-					if (! $rule_check ) {
-						$rule_check = $solver->solve( $rule );
-						
-						if ( $rule_check ) {
-							$is_user_allowed = true;
-						}							
-					}
-				}
-			}	
 		}
 
-		return $is_user_allowed;
+		return false;
 	}
-	
+
 	/**
 	 * Check if user is matched by Conditionnal Rule
 	 * 

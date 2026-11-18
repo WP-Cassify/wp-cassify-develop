@@ -24,16 +24,24 @@ namespace wp_cassify\tests {
         }
     }
 
-    function invoke_private( $plugin, $name, $value ) {
+    function invoke_private( $plugin, $name, ...$args ) {
         $method = new \ReflectionMethod( $plugin, $name );
         if ( PHP_VERSION_ID < 80100 ) { $method->setAccessible( true ); }
-        return $method->invoke( $plugin, $value );
+        return $method->invoke( $plugin, ...$args );
     }
 
     function create_plugin() {
         require __DIR__ . '/../wp-cassify/config.php';
         $plugin = new \wp_cassify\WP_Cassify_Plugin();
         foreach ( array(
+            'wp_cassify_default_allow_deny_order',
+            'wp_cassify_match_first_level_parenthesis_group_pattern',
+            'wp_cassify_match_second_level_parenthesis_group_pattern',
+            'wp_cassify_match_cas_variable_pattern',
+            'wp_cassify_allowed_operators',
+            'wp_cassify_operator_prefix',
+            'wp_cassify_allowed_parenthesis',
+            'wp_cassify_error_messages',
             'wp_cassify_default_wordpress_blog_http_port',
             'wp_cassify_default_wordpress_blog_https_port',
             'wp_cassify_default_redirect_parameter_name',

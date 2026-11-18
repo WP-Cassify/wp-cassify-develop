@@ -202,6 +202,7 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.5.1 =
+* Security: evaluate CAS ALLOW and DENY rules independently. When both match, DENY takes precedence in the default allow, deny order, and ALLOW takes precedence in the deny, allow order.
 * Fix: PHP 8 compatibility for legacy expiration dates, empty CAS responses, array-valued redirect parameters and URLs without query parameters. Add regression tests outside the distributed plugin and a PHP 7.4 / PHP 8.0-8.4 CI matrix (php php-tests/run.php).
 * Fix: loading account cleanup with an obsolete saved preview now displays instructions to clear it instead of returning HTTP 400. Resuming obsolete operations remains blocked; clearing does not undo completed changes.
 * Fix: prevent a PHP 8 fatal error on fresh Gateway Mode requests when the home URL is shorter than the WordPress site URL (subdirectory installations such as Bedrock). Clarify white list path fragment format in settings.
