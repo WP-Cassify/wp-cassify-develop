@@ -218,5 +218,5 @@ Before upgrading, review the CAS exceptions and site membership rules:
 - If Single Logout is required for all active sessions, schedule a local sign-out and fresh CAS login for any legacy browser sessions whose PHP session has expired.
 - Verify exact service registrations for gateway and multisite retry URLs, and test custom service URL filters on staging.
 
-Run the isolated database and browser upgrade test with `bash docker/playwright-tests/run-upgrade.sh`.
+Run the isolated database and browser upgrade test with `bash docker/playwright-tests/run-upgrade.sh` for a single site or `bash docker/playwright-tests/run-upgrade.sh multisite` for a network.
 It starts from the 2.5.0 tag and replaces the plugin files while keeping the test database and browser contexts.

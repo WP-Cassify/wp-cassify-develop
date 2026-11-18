@@ -2,17 +2,26 @@
 set -euo pipefail
 
 repo=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
+mode=${1:-single}
+case "$mode" in
+  single|multisite) ;;
+  *) echo "Usage: $0 [single|multisite]" >&2; exit 2 ;;
+esac
 fixture=$(mktemp -d)
 project="cassify-upgrade-${fixture##*.}"
 project=${project,,}
-compose=(docker compose -p "$project" -f "$fixture/docker-compose.yml" -f "$fixture/upgrade.yml")
+compose=(docker compose -p "$project" -f "$fixture/docker-compose.yml")
+if [[ "$mode" == multisite ]]; then
+  compose+=(-f "$fixture/docker-compose-multisite.yml")
+fi
+compose+=(-f "$fixture/upgrade.yml")
 
 cleanup() {
   "${compose[@]}" down --volumes >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
-tar -C "$repo" --exclude=docker/playwright-tests/playwright-report --exclude=docker/playwright-tests/test-results -cf - docker docker-compose.yml | tar -x -C "$fixture"
+tar -C "$repo" --exclude=docker/playwright-tests/playwright-report --exclude=docker/playwright-tests/test-results -cf - docker docker-compose.yml docker-compose-multisite.yml | tar -x -C "$fixture"
 git -C "$repo" archive 2.5.0 wp-cassify | tar -x -C "$fixture"
 cp -a "$repo/wp-cassify" "$fixture/upgrade-candidate"
 cat > "$fixture/upgrade.yml" <<'YAML'

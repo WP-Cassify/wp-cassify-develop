@@ -748,11 +748,6 @@ class WP_Cassify_Plugin {
 					}
 				}
 				
-				// Purge wordpress user roles before applying user role rules
-				if ( $wp_cassify_user_purge_user_roles_before_applying_rules ) {
-					WP_Cassify_Utils::wp_cassify_clear_roles_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ] );
-				}
-				
 				// Set wordpress user roles if defined in plugin admin settings
 				$roles_to_push = $this->wp_cassify_get_roles_to_push( $current_blog_id, $cas_user_datas, $wp_cassify_user_role_rules, $this->wp_cassify_network_activated );
                 
@@ -761,6 +756,12 @@ class WP_Cassify_Plugin {
 					$roles_to_push = apply_filters( 'wp_cassify_grab_service_ticket_roles_to_push', $roles_to_push, $cas_user_datas );
 				}                
                 
+				// On multisite, preserve existing membership when no role can replace it.
+				if ( $wp_cassify_user_purge_user_roles_before_applying_rules &&
+					( ! is_multisite() || ! empty( $roles_to_push ) ) ) {
+					WP_Cassify_Utils::wp_cassify_clear_roles_to_wordpress_user( $cas_user_datas['cas_user_id'] );
+				}
+
 				foreach ( $roles_to_push as $role ) {
 					WP_Cassify_Utils::wp_cassify_add_role_to_wordpress_user( $cas_user_datas[ 'cas_user_id' ], $role );		
 				}
