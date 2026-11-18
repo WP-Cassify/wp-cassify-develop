@@ -183,7 +183,7 @@ class WP_Cassify_Utils {
 		$query = parse_url( $url , PHP_URL_QUERY );
 		
 		if (! empty( $query ) ) {
-		  parse_str( $query, $url_params );
+		  parse_str( $query ?? '', $url_params );
 		}
 
 		if (! empty( $url_params[ $get_parameter_name ] ) ) {
@@ -216,7 +216,7 @@ class WP_Cassify_Utils {
 		
 		$query 		= parse_url( $url , PHP_URL_QUERY );
 
-		parse_str( $query, $url_params );
+		parse_str( $query ?? '', $url_params );
 		unset( $url_params[ $get_parameter_name ] );
 
 		$query 		= http_build_query( $url_params );
@@ -253,7 +253,7 @@ class WP_Cassify_Utils {
 		// $query 		= rawurlencode( parse_url( $url , PHP_URL_QUERY ) );
 		$query 		= parse_url( $url , PHP_URL_QUERY );
 		
-		parse_str( $query, $url_params );
+		parse_str( $query ?? '', $url_params );
 
 		$query 		= '?' . http_build_query( $url_params, PHP_QUERY_RFC3986 );
 

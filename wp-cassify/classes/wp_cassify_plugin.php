@@ -1111,6 +1111,14 @@ class WP_Cassify_Plugin {
 		}
 		
 		$wp_cassify_redirect_parameter = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $wp_cassify_callback_service_url , $this->wp_cassify_default_redirect_parameter_name );
+		if ( $wp_cassify_redirect_parameter !== null && ! is_string( $wp_cassify_redirect_parameter ) ) {
+			wp_die(
+				__( 'Redirect URL is not valid.', 'wp-cassify' ),
+				__( 'Invalid Request', 'wp-cassify' ),
+				array( 'response' => 400 )
+			);
+		}
+
 		$wp_cassify_service_ticket_parameter = WP_Cassify_Utils::wp_cassify_extract_get_parameter( $wp_cassify_callback_service_url , $this->wp_cassify_default_service_ticket_parameter_name );
 		
 		// Admin auth cookies are scoped to wp-admin and are unavailable on
@@ -1533,8 +1541,22 @@ class WP_Cassify_Plugin {
 
 		$cas_user_datas = array();
 
-		$cas_user_datas_xml = new \DomDocument(); 
-		$cas_user_datas_xml->loadXML( $cas_server_xml_response );
+		if ( ! is_string( $cas_server_xml_response ) || trim( $cas_server_xml_response ) === '' ) {
+			return $cas_user_datas;
+		}
+
+		$cas_user_datas_xml = new \DomDocument();
+		$previous_libxml_errors = libxml_use_internal_errors( true );
+		try {
+			$loaded = $cas_user_datas_xml->loadXML( $cas_server_xml_response, LIBXML_NONET );
+		}
+		finally {
+			libxml_clear_errors();
+			libxml_use_internal_errors( $previous_libxml_errors );
+		}
+		if ( ! $loaded ) {
+			return $cas_user_datas;
+		}
 
 		$xpath = new \DOMXPath( $cas_user_datas_xml );
 
@@ -1850,7 +1872,7 @@ class WP_Cassify_Plugin {
 			$expiration_date = \DateTime::createFromFormat( '!'. $format, $expiration_rule_type_value );
 			$errors = \DateTime::getLastErrors();
 
-			if ( ( $expiration_date instanceof \DateTime ) && ( $errors['warning_count'] === 0 ) && ( $errors['error_count'] === 0 ) ) {
+			if ( ( $expiration_date instanceof \DateTime ) && ( $errors === false || ( $errors['warning_count'] === 0 && $errors['error_count'] === 0 ) ) ) {
 				return $expiration_date;
 			}
 		}

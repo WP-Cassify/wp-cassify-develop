@@ -202,6 +202,7 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.5.1 =
+* Fix: PHP 8 compatibility for legacy expiration dates, empty CAS responses, array-valued redirect parameters and URLs without query parameters. Add PHP 7/8 regression tests to the existing test entry point (php wp-cassify/test.php).
 * Fix: loading account cleanup with an obsolete saved preview now displays instructions to clear it instead of returning HTTP 400. Resuming obsolete operations remains blocked; clearing does not undo completed changes.
 * Fix: prevent a PHP 8 fatal error on fresh Gateway Mode requests when the home URL is shorter than the WordPress site URL (subdirectory installations such as Bedrock). Clarify white list path fragment format in settings.
 * Add: manual deletion of explicitly listed CAS accounts by WordPress username or numeric ID, with preview, duplicate and exclusion reporting, content reassignment and resumable batches. List selection ignores inactivity and active browser sessions while retaining privileged-account and application-password protections.
