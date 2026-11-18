@@ -930,7 +930,7 @@ class WP_Cassify_Plugin {
 			$notification_rule_matched = $this->wp_cassify_notification_rule_matched( 
 			    'after_user_logout',
 				$cas_user_datas, 
-				$wp_cassify_notification_rules, 
+				$wp_cassify_notification_rules
 			);
 		
 			if ( $notification_rule_matched ) {

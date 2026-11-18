@@ -103,8 +103,9 @@ class WP_Cassify_Utils {
 	 *
 	 * @param string $message  The message to log.
 	 * @param string $level    Log level : DEBUG | INFO | WARN | ERROR. Default: 'INFO'.
+	 * @return void
 	 */
-	public static function wp_cassify_log( string $message, string $level = 'INFO' ): void {
+	public static function wp_cassify_log( string $message, string $level = 'INFO' ) {
 		$always_log = in_array( $level, [ 'WARN', 'ERROR' ], true );
 
 		$plugin_debug_enabled = get_option( 'wp_cassify_debug_log' ) === 'enabled'

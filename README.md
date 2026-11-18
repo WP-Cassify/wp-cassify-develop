@@ -141,7 +141,7 @@ Tests live outside the distributed `wp-cassify/` plugin directory:
 Each suite returns named test callbacks. Add new cases to the relevant suite;
 register new suites in `php-tests/run.php`.
 The `.github/workflows/php-tests.yml` workflow runs the same command on
-PHP 7.4 and PHP 8.0 through 8.4. Playwright covers full WordPress/CAS workflows.
+PHP 7.0, PHP 7.4 and PHP 8.0 through 8.4. Playwright covers full WordPress/CAS workflows.
 
 ## Playwright tests
 
