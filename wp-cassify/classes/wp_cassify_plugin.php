@@ -388,10 +388,14 @@ class WP_Cassify_Plugin {
 
 	/** Full tickets are opaque; never derive a PHP session ID from them. */
 	private function wp_cassify_slo_key( $ticket ) {
-		if ( ! is_string( $ticket ) || ! preg_match( '/\AST-[\x21-\x7e]{1,4093}\z/D', $ticket ) ) {
+		if ( ! $this->wp_cassify_is_valid_service_ticket( $ticket ) ) {
 			return false;
 		}
 		return 'wp_cassify_slo_' . hash( 'sha256', $ticket );
+	}
+
+	private function wp_cassify_is_valid_service_ticket( $ticket ) {
+		return is_string( $ticket ) && preg_match( '/\AST-[\x21-\x7e]{1,4093}\z/', $ticket ) === 1;
 	}
 
 	/** Called only by the cookie hook after CAS validation and authorization. */
@@ -525,8 +529,8 @@ class WP_Cassify_Plugin {
 		$wp_cassify_default_service_ticket_parameter_name = $this->wp_cassify_default_service_ticket_parameter_name;
 		$wp_cassify_default_service_service_parameter_name = $this->wp_cassify_default_service_service_parameter_name;
 		
+		$service_ticket = $this->wp_cassify_get_service_ticket();
 		$service_url = $this->wp_cassify_get_service_callback_url();
-		$service_ticket = $this->wp_cassify_get_service_ticket();	
 
 		$gateway_mode = $this->wp_cassify_is_gateway_request( null );
 
@@ -574,10 +578,11 @@ class WP_Cassify_Plugin {
 					$wp_cassify_autorization_rules = array();
 				}						
 				
-				$service_validate_url = $wp_cassify_base_url .
-                    $wp_cassify_service_validate_servlet . '?' .
-                    $wp_cassify_default_service_ticket_parameter_name . '=' . $service_ticket . '&' .
-                    $wp_cassify_default_service_service_parameter_name .'=' . urlencode( $service_url );					
+				$service_validate_url = $this->wp_cassify_build_service_validate_url(
+					$wp_cassify_base_url . $wp_cassify_service_validate_servlet,
+					$service_ticket,
+					$service_url
+				);
 
 				// Define custom plugin filter to override service validate url
 				if( has_filter( 'wp_cassify_override_service_validate_url' ) ) {
@@ -966,20 +971,37 @@ class WP_Cassify_Plugin {
 	 *  Get the service ticket from cas server request.
 	 */ 
 	public function wp_cassify_get_service_ticket() {
-				
-		$wp_cassify_service_ticket = get_query_var( $this->wp_cassify_default_service_ticket_parameter_name );
-		$current_url = WP_Cassify_Utils::wp_cassify_get_current_url(
-			$this->wp_cassify_default_wordpress_blog_http_port,
-			$this->wp_cassify_default_wordpress_blog_https_port	
-		);
-		
-		if ( empty( $wp_cassify_service_ticket ) ) {
-			$wp_cassify_service_ticket = WP_Cassify_Utils::wp_cassify_extract_get_parameter( 
-				rawurldecode( $current_url ), 
-				$this->wp_cassify_default_service_ticket_parameter_name );
+		$parameter = $this->wp_cassify_default_service_ticket_parameter_name;
+		$ticket = get_query_var( $parameter, null );
+
+		if ( $ticket === null ) {
+			// On wp_loaded, WordPress has not populated its query variables yet.
+			$request_uri = wp_unslash( $_SERVER['REQUEST_URI'] ?? '/' );
+			$query = explode( '?', $request_uri, 2 )[1] ?? '';
+			parse_str( $query, $parameters );
+			$ticket = $parameters[ $parameter ] ?? null;
+		} elseif ( is_string( $ticket ) ) {
+			$ticket = wp_unslash( $ticket );
 		}
 
-		return $wp_cassify_service_ticket;
+		if ( $ticket !== null && ! $this->wp_cassify_is_valid_service_ticket( $ticket ) ) {
+			wp_die(
+				__( 'CAS service ticket is not valid.', 'wp-cassify' ),
+				__( 'Invalid Request', 'wp-cassify' ),
+				array( 'response' => 400 )
+			);
+		}
+
+		return $ticket;
+	}
+
+	private function wp_cassify_build_service_validate_url( $endpoint, $ticket, $service_url ) {
+		$query = http_build_query( array(
+			$this->wp_cassify_default_service_ticket_parameter_name => $ticket,
+			$this->wp_cassify_default_service_service_parameter_name => $service_url,
+		), '', '&', PHP_QUERY_RFC3986 );
+
+		return $endpoint . '?' . $query;
 	}
 
 

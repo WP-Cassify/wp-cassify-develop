@@ -5,6 +5,8 @@ namespace wp_cassify {
         return $GLOBALS['wp_cassify_test_options'][$name] ?? ( $name === 'wp_cassify_service_url_validation_mode' ? 'off' : false );
     }
     function get_site_option( $name ) { return get_option( $name ); }
+    function get_query_var( $name, $default = '' ) { return $GLOBALS['wp_cassify_test_query_vars'][$name] ?? $default; }
+    function wp_unslash( $value ) { return stripslashes( $value ); }
     function home_url() { return 'https://example.org'; }
     function site_url() { return $GLOBALS['wp_cassify_test_site_url'] ?? home_url(); }
     function admin_url() { return 'https://example.org/wp-admin/'; }
@@ -49,6 +51,7 @@ namespace wp_cassify\tests {
             'wp_cassify_default_wordpress_blog_https_port',
             'wp_cassify_default_redirect_parameter_name',
             'wp_cassify_default_service_ticket_parameter_name',
+            'wp_cassify_default_service_service_parameter_name',
             'wp_cassify_default_gateway_parameter_name',
             'wp_cassify_default_xpath_query_to_extact_cas_user',
             'wp_cassify_default_xpath_query_to_extact_cas_attributes',

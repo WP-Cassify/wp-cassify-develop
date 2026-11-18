@@ -8,7 +8,7 @@ require __DIR__ . '/bootstrap.php';
 
 $total = 0;
 $failures = 0;
-foreach ( array( 'rule-solver', 'authorization', 'expiration', 'service-url', 'white-list', 'cas-response' ) as $suite ) {
+foreach ( array( 'rule-solver', 'authorization', 'expiration', 'service-url', 'service-ticket', 'white-list', 'cas-response' ) as $suite ) {
     $tests = require __DIR__ . '/' . $suite . '.php';
     foreach ( $tests as $name => $test ) {
         ++$total;

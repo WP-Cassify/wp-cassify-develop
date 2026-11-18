@@ -202,6 +202,7 @@ starts when their CAS marking date is first recorded.
 == Changelog ==
 
 = 2.5.1 =
+* Security: reject malformed CAS service tickets and encode ticket and service values as separate RFC 3986 query parameters in CAS validation requests.
 * Security: match CAS whitelist entries against paths relative to the WordPress Address. An entry exempts its exact path and subpaths at segment boundaries. A lone / matches only the WordPress Address. Query strings and fragments are ignored. Update any former substring entries to the intended path.
 * Security: evaluate CAS ALLOW and DENY rules independently. When both match, DENY takes precedence in the default allow, deny order, and ALLOW takes precedence in the deny, allow order.
 * Fix: PHP 8 compatibility for legacy expiration dates, empty CAS responses, array-valued redirect parameters and URLs without query parameters. Add regression tests outside the distributed plugin and a PHP 7.4 / PHP 8.0-8.4 CI matrix (php php-tests/run.php).
