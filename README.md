@@ -117,6 +117,32 @@ Run the two suites in separate Compose projects when you need to preserve each
 other's database and filesystem state. Resetting a database or removing a volume
 destroys that test environment; do not use these commands against production.
 
+## PHP tests
+
+Run all PHP tests from the repository root:
+
+```bash
+php php-tests/run.php
+```
+
+The suite requires PHP with DOM, cURL and OpenSSL. It runs without WordPress,
+a database or a CAS server. Warnings and deprecations fail tests, and the command
+returns exit code 1 if any case fails.
+
+Tests live outside the distributed `wp-cassify/` plugin directory:
+
+* `php-tests/run.php`: runs all suites and reports results.
+* `php-tests/bootstrap.php`: loads plugin classes and supplies WordPress doubles and shared helpers.
+* `php-tests/rule-solver.php`: rule parsing and evaluation.
+* `php-tests/expiration.php`: ISO and legacy expiration dates.
+* `php-tests/service-url.php`: callback URLs and query parameters.
+* `php-tests/cas-response.php`: valid, empty and malformed CAS responses.
+
+Each suite returns named test callbacks. Add new cases to the relevant suite;
+register new suites in `php-tests/run.php`.
+The `.github/workflows/php-tests.yml` workflow runs the same command on
+PHP 7.4 and PHP 8.0 through 8.4. Playwright covers full WordPress/CAS workflows.
+
 ## Playwright tests
 
 The recommended one-step Docker command is:
