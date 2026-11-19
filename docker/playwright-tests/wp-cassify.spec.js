@@ -1,5 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const {
+  ADMIN_PASSWORD,
+  ADMIN_USER,
   BASELINE_ROLE_RULE,
   BASELINE_ROLE_RULE_OPTION,
   CAS_BASE_URL,
@@ -16,6 +18,8 @@ const {
   loginThroughWordPress,
   logoutCas,
   logoutWordPress,
+  openPluginSettings,
+  runWordPressTestAction,
 } = require('./support');
 
 test.describe.configure({ mode: 'serial' });
@@ -41,6 +45,49 @@ test('setup WordPress, activate WP Cassify and configure the baseline', async ({
   await expect(page.locator('#wp_cassify_enable_url_bypass')).not.toBeChecked();
   const roleRuleOptions = await page.locator('#wp_cassify_user_role_rules option').allTextContents();
   expect(roleRuleOptions).toContain(BASELINE_ROLE_RULE_OPTION);
+});
+
+test('CAS certificate warning follows the saved verification setting after reload', async ({ page }) => {
+  await runWordPressTestAction(page, 'cleanup_fixture', {
+    command: 'admin_signin',
+    login: ADMIN_USER,
+    password: ADMIN_PASSWORD,
+  });
+  await openPluginSettings(page);
+
+  const verification = page.locator('#wp_cassify_ssl_check_certificate');
+  const warning = page.locator('#wp_cassify_tls_warning')
+    .getByText('Security risk: certificate verification is disabled.', { exact: true });
+  const save = page.locator('#wp_cassify_save_options_general_settings');
+  const settingsUrl = page.url();
+  const initiallyChecked = await verification.isChecked();
+
+  async function saveVerification(checked) {
+    await verification.setChecked(checked);
+    const [response] = await Promise.all([
+      page.waitForResponse(response => response.url() === settingsUrl && response.request().method() === 'POST'),
+      save.click(),
+    ]);
+    expect(response.ok()).toBe(true);
+  }
+
+  try {
+    await saveVerification(true);
+    // Reopen with a GET so the browser does not resubmit the settings form.
+    await page.goto(settingsUrl);
+    await expect(verification).toBeChecked();
+    await expect(warning).toBeHidden();
+
+    await saveVerification(false);
+    await page.goto(settingsUrl);
+    await expect(verification).not.toBeChecked();
+    await expect(warning).toBeVisible();
+  } finally {
+    await page.goto(settingsUrl);
+    if (await verification.isChecked() !== initiallyChecked) {
+      await saveVerification(initiallyChecked);
+    }
+  }
 });
 
 test('CAS login opens the admin area and the profile page', async ({ page }) => {

@@ -6,7 +6,7 @@ Donate link: https://wpcassify.wordpress.com/donate/
 Requires at least: 4.4
 Tested up to: 7.1
 Requires PHP: 7.0
-Stable tag: 2.6.0
+Stable tag: 2.6.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -207,6 +207,9 @@ Before upgrading, check which URLs are exempt from CAS authentication and which 
 - On multisite, existing memberships are retained. To grant new memberships after CAS validation, use a CAS role rule scoped to a specific site or select `(0) ALL BLOGS` in the network settings to cover every site. Review sites that previously relied on a network login cookie alone to grant membership.
 
 == Changelog ==
+
+= 2.6.1 =
+* TLS: hide the settings warning when CAS certificate verification is enabled.
 
 = 2.6.0 =
 * CAS login: preserve service URLs with query strings in enforce mode, ignore unrelated ticket parameters, fix direct login, and fix Gateway Mode on subdirectory installations.

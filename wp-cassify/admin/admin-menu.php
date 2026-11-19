@@ -561,8 +561,10 @@ class WP_Cassify_Admin_Page {
 						<input type="checkbox" id="wp_cassify_ssl_check_certificate" aria-describedby="wp_cassify_tls_help wp_cassify_tls_warning" name="wp_cassify_ssl_check_certificate" class="post_form" value="enabled" />
 					<?php endif; ?>
                     <p class="description" id="wp_cassify_tls_help">Keep verification enabled in production and use an HTTPS CAS URL. If your CAS server uses a private CA, configure its trusted CA bundle (CAINFO) or CA directory (CAPATH) below instead of disabling verification. Leave these paths empty to use the system trust store.</p>
-                    <div id="wp_cassify_tls_warning" class="notice notice-warning inline" role="status"<?php echo $is_ssl_check_certificate_enabled ? ' hidden' : ''; ?>>
-                        <p><strong>Security risk: certificate verification is disabled.</strong> Intercepted CAS connections could allow an attacker to impersonate users, including administrators. Enable verification, save the options, then test CAS login. If verification fails, correct the certificate chain or trusted CA configuration.</p>
+                    <div id="wp_cassify_tls_warning" role="status"<?php echo $is_ssl_check_certificate_enabled ? ' hidden' : ''; ?>>
+                        <div class="notice notice-warning inline">
+                            <p><strong>Security risk: certificate verification is disabled.</strong> Intercepted CAS connections could allow an attacker to impersonate users, including administrators. Enable verification, save the options, then test CAS login. If verification fails, correct the certificate chain or trusted CA configuration.</p>
+                        </div>
                     </div>
 				</td>
 			</tr>

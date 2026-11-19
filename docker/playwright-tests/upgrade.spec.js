@@ -136,7 +136,7 @@ add_action( 'init', function () {
     fs.cpSync(candidate, plugin, { recursive: true });
 
     await expect.poll(() => info(page)).toMatchObject({
-      version: '2.6.0', saved_version: '2.6.0', order: 'deny, allow',
+      version: '2.6.1', saved_version: '2.6.1', order: 'deny, allow',
       timeout: '0', whitelist: '/public/', login: ADMIN_USER,
     });
     await page.goto(settings);
