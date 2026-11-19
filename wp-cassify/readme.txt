@@ -3,14 +3,14 @@
 Contributors: aaf017,vbonamy
 Tags: Auth, authentication, CAS, wpCAS, central, centralized, integration, ldap, Cassify, phpCAS, server, service, system, JASIG, JASIG CAS, CAS Authentication, central authentication service, access, authorization, education
 Donate link: https://wpcassify.wordpress.com/donate/
-Requires at least: 4.4
+Requires at least: 4.8
 Tested up to: 7.1
 Requires PHP: 7.0
 Stable tag: 2.6.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-The plugin is an Apereo CAS Client. It performs CAS authentication and autorization for Wordpress.
+The plugin provides CAS authentication and attribute-based authorization for WordPress.
 
 == Description ==
 
@@ -18,9 +18,7 @@ If you're happy with this plugin :
 As a reward for my efforts, I would like to receive T-shirts (or other goodies) as gifts from the universities or companies that use it. 
 My size is L. Best regards.
 
-This Apereo CAS authentication plugin has no phpCas library dependency. This is not only an authentication plugin. 
-You can build custom authorization rules according to cas user attributes populated. If user don't exist in Wordpress 
-database, it can be created automatically. There are many features. You can customize everything.
+WP Cassify is a CAS client for WordPress with no phpCAS dependency. It can apply authorization rules based on CAS user attributes and optionally create WordPress accounts on login.
 
 = Website =
 
@@ -28,34 +26,31 @@ https://wpcassify.wordpress.com/
 
 = Development and release environment =
 
-This plugin is now developed and tested from a github repository. You can find it here :
+The source code and test suites are available on GitHub.
 https://github.com/WP-Cassify/wp-cassify-develop
 
 Don't hesitate to contribute to this project. You can fork it and make pull requests !
 
 = Requirements =
 
-* Require at least PHP version 7.0
-* Require at least PHP CURL package
+* PHP 7.0 or later with the cURL and DOM extensions.
+* SMTP email notifications require the OpenSSL extension.
 
 = Features included =
 
 * Manual CAS account marking (all accounts or by role) and inactive-account purge with a configurable period in days (730 by default), preview, optional inclusion of accounts without a login date, content reassignment and resumable batches. Explicit list selection by WordPress username or ID is also available. No scheduled deletion.
 * SLO (Single Log Out) support (thanks to dedotombo and me)
-* Adding NCONTAINS operator (thanks to blandman)
-* Fix bug on Gateway mode (autologin) (thanks to dedotombo again). Now it's now necessary to hack theme files to fire it.
-* Adding option logout on authentication failure to not disturb users
-* Initialize PHP session at a later stage (on wp_loaded not on init)
-* Adding some customs hooks and filters.
+* Rules support the `-NCONTAINS` operator (thanks to blandman).
+* Optional CAS logout after authentication failure.
 
 * Tested with Apereo CAS Server version 8.0.1.2
 * Compatible with CAS Protocol version 2 and 3
-* Automatic user creation if not exist in Wordpress database.
+* Optional automatic creation of WordPress accounts on CAS login.
 * Synchronize Wordpress User metas with CAS User attributes.
-* Add support for multivaluate cas user fields. Now multivaluate fields can be serialized to be stored in custom WP User meta.
+* Multivalued CAS attributes can be serialized and stored in custom WordPress user metadata.
 * Backup / Restore plugin configuration options settings
 * You can choose CAS User attributes you want to populate. Then you can access them via PHP Session.
-* Be careful, to access to CAS User Attributes from your theme file (from 1.8.4), use code below :
+* To read the selected CAS user attributes from a theme, use the following example.
 `
 	<?php
 		if ( isset($GLOBALS['wp-cassify']) ) {
@@ -66,9 +61,8 @@ Don't hesitate to contribute to this project. You can fork it and make pull requ
 * Set up Wordpress Roles to User according to CAS User attributes.
 * If plugin is network activated, you can define User Role Rule scope by blog id.
 * Authorization rule editor.
-* Compatible with Wordpress Access Control Plugin.
-* Manage URL White List to bypass CAS Authentication on certain pages.
-* Much simpler bypass authentication with post method provided by Susan Boland (See online documentation). Create wordpress authentication form with redirect attribute like this (works only if URL bypass is enabled in settings) :
+* The CAS redirect whitelist matches paths relative to the WordPress Address. An entry covers its path and subpaths. A lone `/` covers only the root.
+* If URL bypass is enabled, a WordPress login form can use the configured bypass parameter and value in its redirect URL. This example uses the default parameter and value (thanks to Susan Boland).
 `
     <?php
          
@@ -103,7 +97,7 @@ Don't hesitate to contribute to this project. You can fork it and make pull requ
 * Custom filter to perform custom cas server response parsing. Hook name : wp_cassify_custom_parsing_cas_xml_response (See online documentation)
 * Custom shortcode to generate CAS login/logout link into your blog. (See online documentation)
 * Debug settings, dump last xml cas server response.
-* Detect if user has already authenticated by CAS from your public pages and perform auto-login with gateway mode
+* Optional Gateway Mode attempts automatic sign-in on public pages for visitors who already have a CAS session.
 * Add '-IN' and '-NOTIN' operators to process array attributes values returned from CAS.
 When you have :
 `
@@ -122,7 +116,7 @@ e.g.
 
 1. Upload the plugin files to the `/wp-content/plugins/wp-cassify` directory, or install the plugin through the WordPress plugins screen directly.
 2. Activate the plugin through the 'Plugins' screen in WordPress
-3. Use the Settings->WP Cassify screen to configure the plugin
+3. Open Settings → WP Cassify. For a network-activated plugin, open Network Admin → Settings → WP Cassify.
 
 == Screenshots ==
 
@@ -142,11 +136,8 @@ e.g.
 * Where can i find plugin documentation ?
 You can find documentation here (See Plugin options and Screencasts) : https://wpcassify.wordpress.com/
 
-* How to perform CAS Authentication on a front Office page ?
-Install WordPress Access Control Plugin. And mark page as "Only accessible by members". You can use anoter ACL plugin. If page require an authentication, CAS Authentication is fired.
-
-* How to protect all website ?
-Install WordPress Access Control Plugin. In Settings >> Members Only, Check "Make Blog Members Only" option.
+* How do I require CAS login for a public-facing page or the entire site?
+Use a WordPress access-control plugin to restrict the relevant content and send visitors who are signed out to the standard WordPress login page. WP Cassify redirects eligible login requests to CAS.
 
 == Manual account cleanup ==
 
@@ -156,7 +147,8 @@ On multisite, back up the entire network. The backup checkbox is an administrato
 acknowledgement: WP Cassify does not create or validate backups.
 
 Cleanup is manual and requires a preview and confirmation. Administrators,
-the operator and accounts with application passwords are excluded. Accounts with
+users who can manage options or delete users, the operator and accounts with
+application passwords are excluded. Accounts with
 live WordPress browser sessions are also excluded from inactivity purges.
 The date tracks successful logins, not all activity; authentication performed by third-party systems may not be tracked.
 Accounts without a login date are kept unless explicitly included AND their

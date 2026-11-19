@@ -15,25 +15,22 @@ So if you want to develop the plugin, you can clone this repository and edit the
 
 Next, you can send a pull request to this official repository.
 
-Before to send a pull request, you can test the plugin with the docker-compose file provided in this repository.
+You can test the plugin locally with Docker Compose before opening a pull request.
 
-Actually, at each pull request on this repository, the plugin is automatically tested with the docker-compose file provided in this repository.
-
-Read on for more details.
+GitHub Actions runs the Playwright suites with Docker Compose on pushes to `main` and pull requests targeting `main`. The PHP test workflow runs on pushes and pull requests without branch filters. In the official repository, the release workflow also runs both sets of tests when a version tag is pushed.
 
 ## Docker compose
 
 The docker-compose file sets up 
- * a WordPress instance with the WP-CASSIFY plugin installed
+ * a WordPress instance with the local `wp-cassify/` directory mounted as a plugin
  * a MariaDB database
  * an Apereo CAS server
  * with an OpenLDAP server
 
 The same docker-compose provides also 
- * a `playwright-tests` service that runs the end-to-end tests
+ * a `playwright-suite` service that runs the end-to-end tests
 
-The tests are now written with Playwright.
-They cover the same critical flows:
+The Playwright tests cover:
  * WordPress install + plugin activation + baseline configuration
  * CAS login on WordPress
  * Gateway mode on/off
@@ -48,12 +45,12 @@ They cover the same critical flows:
 
 ## Usage
 
-To launch all the dockers, including the Playwright tests, with wordpress (on php8), simply run:
+To start the stack and run the Playwright tests with WordPress on PHP 8, run:
 ```
 docker compose up
 ```
 
-If you want to test with wordpress on php7, use instead :
+To test with WordPress on PHP 7.4, use:
 ```
 docker compose -f docker-compose.yml -f docker-compose-php7.yml up
 ```
@@ -63,14 +60,14 @@ To run the multisite Playwright suite, use the dedicated override:
 docker compose -f docker-compose.yml -f docker-compose-multisite.yml up
 ```
 
-If you want the multisite suite on php7, combine the php7 and multisite overrides:
+To run the multisite suite on PHP 7.4, combine the PHP 7 and multisite overrides:
 ```
 docker compose -f docker-compose.yml -f docker-compose-php7.yml -f docker-compose-multisite.yml up
 ```
 
 ## Requirements
 
-You have to install the last version of docker.
+Install Docker Engine with the Docker Compose plugin (`docker compose`).
 
 For debian for example, see the [official documentation](https://docs.docker.com/engine/install/debian/#install-using-the-repository)
 
@@ -78,7 +75,7 @@ For debian for example, see the [official documentation](https://docs.docker.com
 
 Ports 80 and 8080 are exposed on the host machine and must be free.
 
-The WordPress instance is available at http://localhost but to be compliant with the Playwright tests, it is better to modify the /etc/hosts file to add the following line:
+For browser access from the host, add these names to `/etc/hosts`. Playwright resolves them inside the Compose network.
 ```
 127.0.0.1 cas.example.org wordpress.example.org wordpress1.example.org wordpress2.example.org
 ```
@@ -129,7 +126,7 @@ The suite requires PHP with DOM, cURL and OpenSSL. It runs without WordPress,
 a database or a CAS server. Warnings and deprecations fail tests, and the command
 returns exit code 1 if any case fails.
 
-Tests live outside the distributed `wp-cassify/` plugin directory:
+Tests live outside the distributed `wp-cassify/` plugin directory. Key files include:
 
 * `php-tests/run.php`: runs all suites and reports results.
 * `php-tests/bootstrap.php`: loads plugin classes and supplies WordPress doubles and shared helpers.
@@ -152,7 +149,7 @@ docker compose up --build playwright-suite
 
 This runs Playwright in headed mode inside an Xvfb display, so it does not require an XServer on your host.
 
-The HTML report and test results are mounted on the host under:
+The HTML report is mounted on the host under:
 * `docker/playwright-tests/playwright-report`
 
 After a run, you can open the HTML report directly at `docker/playwright-tests/playwright-report/index.html`.
@@ -172,38 +169,22 @@ If you want to rerun the tests without relaunching the whole docker-compose, res
 
 ## Continuous integration tests with GitHub Actions, docker compose and Playwright
 
-The project is also configured to run the tests on GitHub Actions.
 The workflows are defined in the files `.github/workflows/docker-playwright-tests.yml`, `.github/workflows/docker-playwright-tests-php7.yml`, and `.github/workflows/docker-playwright-tests-multisite.yml`.
-The PHP7 workflow keeps compatibility with WordPress on php7 while sharing the same Playwright test suite.
+The PHP 7 workflow runs the single-site Playwright suite on PHP 7.4.
 
 ## Development environment
 
-You can use Eclipse-Php or Visual Studio Code or PhpStorm to edit wp-cassify.
-
-The best is to use the docker-compose file with xdebug to debug the plugin.
+To start WordPress with Xdebug, run:
 ```
-mkdir wordpress
-docker compose -f docker-compose.yml -f docker-compose-xdebug.yml up
+mkdir -p wordpress
+docker compose -f docker-compose.yml -f docker-compose-xdebug.yml up --build wordpress cas
 ```
-With this, you have ./wordpress that is a bind volume to /var/ww/html of the WordPress container.
-
-To edit also the wp-cassify plugin inside the whole WordPress project, just make a symbolic link in ./wordpress/wp-content/plugins to the wp-cassify plugin directory.
-```
-rm -r ./wordpress/wp-content/plugins/wp-cassify
-ln -s $(pwd)/wp-cassify $(pwd)/wordpress/wp-content/plugins/
-```
-
-Next you can open the project with your IDE from the directory ./wordpress.
-
-For XDebug, you have to configure the IDE to listen on port 9003. 
+Compose mounts `./wordpress` at `/var/www/html` and `./wp-cassify` at `/var/www/html/wp-content/plugins/wp-cassify`.
+Open the repository in your IDE and configure it to listen for Xdebug on port 9003.
 
 ## Release on wordpress.org
 
-Thanks to https://github.com/marketplace/actions/wordpress-plugin-svn-deploy, we release the plugin on wordpress.org with a GitHub action .
-
-To release the plugin, a GitHub action is triggered on each tag to synchronize the official subversion repository of the plugin with the GitHub repository. 
-
-The action is defined in the file `.github/workflows/release.yml`.
+The workflow in `.github/workflows/release.yml` runs when a tag in `X.Y.Z` format is pushed. It deploys `wp-cassify/` to WordPress.org SVN after the PHP and Playwright checks pass and the tag matches both the plugin version and the `Stable tag` in `wp-cassify/readme.txt`.
 
 ## License
 
@@ -213,3 +194,7 @@ This project is licensed under the GPLv2 License - same as WP-Cassify plugin and
 
 Run the isolated database and browser upgrade test with `bash docker/playwright-tests/run-upgrade.sh` for a single site or `bash docker/playwright-tests/run-upgrade.sh multisite` for a network.
 It starts from the 2.5.0 tag and replaces the plugin files while keeping the test database and browser contexts.
+
+## AI assistance
+
+This project is developed with the assistance of AI agents.
